@@ -41,25 +41,61 @@ The build pipeline uses a strategy pattern for different output formats:
 
 ### Preview Mode
 
-**Current Implementation** (`src/server.ts`):
-- Creates temporary directory (`/tmp/pagedmd-preview-*`)
-- Copies input files and assets to temp directory
-- Generates HTML from markdown with Paged.js polyfill injected
-- Serves via Vite dev server with HMR
-- Watches source files for changes and regenerates HTML automatically
-- Browser UI with toolbar for page navigation, zoom, view modes
+**Dual-Server Architecture** (`src/server.ts`):
+- **Bun Server** (user-specified port) - Main entry point
+  - Serves toolbar UI (index.html) at root
+  - Hosts API endpoints for directory operations
+  - Reverse proxies preview content and HMR to Vite
+  - Static file serving with security validation
+- **Vite Server** (auto-assigned port) - Development server
+  - Serves preview.html with Paged.js polyfill
+  - Provides Hot Module Replacement (HMR) for instant updates
+  - Handles asset bundling and transformations
 
-**Preview Architecture**:
-- **Server**: Vite dev server (`src/server.ts` - `startPreviewServer()`)
-- **Client**: Preview UI (`src/assets/preview/scripts/preview.js`)
-  - Toolbar controls (folder selection, page navigation, zoom)
-  - Iframe architecture - preview.html in iframe with previewAPI exposed
+**Request Flow**:
+```
+User Browser → http://localhost:{port}
+                ├─→ GET / → index.html (toolbar UI)
+                ├─→ GET /api/directories → handleListDirectories()
+                ├─→ POST /api/change-folder → handleChangeFolder() → restartPreview()
+                ├─→ GET /preview/* → reverse proxy → Vite (auto port)
+                └─→ GET /@* (HMR) → reverse proxy → Vite
+
+Vite Server (auto port) → Serves preview.html + assets with HMR
+```
+
+**Preview Workflow**:
+1. Creates temporary directory (`/tmp/pagedmd-preview-*`)
+2. Copies input files and assets to temp directory
+3. Generates HTML from markdown with Paged.js polyfill injected
+4. Starts Vite server on auto-assigned port
+5. Starts Bun server on user-specified port with reverse proxy
+6. Watches source files for changes and regenerates HTML automatically
+7. Folder switching restarts preview with new directory content
+
+**Client Architecture**:
+- **Toolbar UI** (`src/assets/preview/scripts/preview.js`)
+  - Folder selection modal with directory navigation
+  - Page navigation controls (first, prev, next, last)
+  - View mode toggles (single page, two-column)
+  - Zoom controls and debug mode toggle
+- **Iframe Integration**
+  - preview.html loaded in iframe with previewAPI exposed
   - Parent window delegates operations to iframe API
   - Event-driven page change notifications
-- **Paged.js Integration**:
-  - Polyfill injected via `injectPagedJsPolyfill()` from preview-format.ts
-  - Custom handler (`src/assets/preview/scripts/interface.js`) exposes window.previewAPI
-  - Supports page navigation, single/spread view modes, zoom levels
+- **Paged.js Integration** (`src/assets/preview/scripts/interface.js`)
+  - Custom handler exposes window.previewAPI
+  - Supports page navigation, view modes, zoom levels, debug mode
+
+**API Endpoints**:
+- `GET /api/directories?path={path}` - List subdirectories at path (restricted to home directory)
+- `POST /api/change-folder` - Switch preview to different directory (triggers restart)
+
+**Security**:
+- Path validation prevents directory traversal attacks (`src/utils/path-security.ts`)
+- Home directory boundary enforcement
+- Static file serving with comprehensive security checks
+- URL decoding, Unicode normalization, symlink resolution
 
 ### Configuration System
 
