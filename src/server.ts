@@ -13,7 +13,7 @@ import { randomBytes } from 'crypto';
 import type { PreviewServerOptions } from './types.ts';
 import { generateHtmlFromMarkdown } from './markdown/markdown.ts';
 import { ConfigurationManager } from './config/config-state.ts';
-import { copyMarkdownFiles, copyPreviewAssets, mkdir, remove, writeFile, fileExists } from './utils/file-utils.ts';
+import { mkdir, remove, writeFile, fileExists, copyDirectory } from './utils/file-utils.ts';
 import { info, debug, error as logError } from './utils/logger.ts';
 import { DEBOUNCE } from './constants.ts';
 import { injectPagedJsPolyfill } from './build/formats/preview-format.ts';
@@ -66,13 +66,13 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   };
 
   try {
-    // Copy only markdown/yaml/css files from input directory
-    await copyMarkdownFiles(inputPath, tempDir);
+    // Copy input directory to temp directory
+    await copyDirectory(inputPath, tempDir);
     debug(`Copied markdown files from ${inputPath} to ${tempDir}`);
 
     // Copy only required preview assets to temp root
-    const assetsSourceDir = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'assets');
-    await copyPreviewAssets(assetsSourceDir, tempDir);
+    const assetsSourceDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'assets');    
+    await copyDirectory(assetsSourceDir, tempDir);
     debug(`Copied preview assets from ${assetsSourceDir} to ${tempDir}`);
 
     // Initialize configuration manager
@@ -121,11 +121,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       let rebuildTimer: NodeJS.Timeout | null = null;
 
       state.watcher.on('all', (event, filePath) => {
-        // Only trigger on relevant file changes
-        const ext = path.extname(filePath);
-        if (!['.md', '.yaml', '.css'].includes(ext)) {
-          return;
-        }
+        
 
         debug(`File ${event}: ${filePath}`);
 
@@ -160,7 +156,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
             // Re-copy preview assets if CSS changed in source assets
             const assetsSourceDir = path.join(path.dirname(new URL(import.meta.url).pathname), '..', 'assets');
             if (filePath.includes('src/assets')) {
-              await copyPreviewAssets(assetsSourceDir, tempDir);
+              await copyDirectory(assetsSourceDir, tempDir);
               debug(`Re-copied preview assets after asset change`);
             }
 
