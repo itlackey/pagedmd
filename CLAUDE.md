@@ -4,84 +4,111 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pagedmd** is a thin wrapper around pagedjs-cli that converts markdown to HTML and renders it to PDF. The goal is a simple, personal-use tool for generating print-ready PDFs from markdown with custom CSS styling.
-
-Current state: Stubbed out with code copied from another project (dc-book). Much of this code is for reference and should be simplified or removed.
+**pagedmd** is a markdown-to-PDF converter using Paged.js for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents.
 
 ## Architecture
 
 ### Build Pipeline
 
-The core pipeline follows this flow:
+The build pipeline uses a strategy pattern for different output formats:
 
 1. **Markdown Processing** (`src/markdown/markdown.ts`)
-   - Converts markdown files to HTML
-   - Supports plugins for extended syntax (TTRPG directives, Dimm City extensions)
-   - Handles custom markdown extensions defined in `manifest.yaml`
+   - Converts markdown to HTML using markdown-it
+   - Supports extensible plugin system:
+     - **Core Directives** (`core/core-directives-plugin.ts`) - Auto-rules and directives (@page, @break, @spread, @columns)
+     - **TTRPG Directives** (`plugins/ttrpg-directives-plugin.ts`) - Stat blocks, dice notation, cross-references
+     - **Dimm City Extensions** (`plugins/dimm-city-plugin.ts`) - District badges, roll prompts
+   - Extension configuration via `manifest.yaml` extensions array
+   - CSS cascade: default styles → themes → custom user styles
+   - Resolves all @import statements and inlines CSS at build time
 
 2. **Format Strategy Pattern** (`src/build/formats/`)
-   - `pdf-format.ts` - Generates PDF via pagedjs-cli
-   - `html-format.ts` - Outputs standalone HTML
-   - `preview-format.ts` - Creates preview-ready HTML with live reload scripts
+   - **PdfFormatStrategy** (`pdf-format.ts`) - Generates PDF via pagedjs-cli subprocess
+   - **HtmlFormatStrategy** (`html-format.ts`) - Outputs standalone HTML
+   - **PreviewFormatStrategy** (`preview-format.ts`) - Injects Paged.js polyfill for offline viewing
+   - Each strategy implements `FormatStrategy` interface with `build()` and `validateOutput()` methods
 
 3. **Build Orchestration** (`src/build/build.ts`)
-   - Validates build options
-   - Loads manifest configuration
-   - Processes markdown to HTML
-   - Delegates to format-specific strategies
-   - Handles cleanup
+   - Loads configuration from manifest.yaml and CLI options
+   - Processes markdown files to HTML
+   - Delegates to appropriate format strategy
+   - Handles asset copying and cleanup
 
 4. **Watch Mode** (`src/build/watch.ts`)
-   - File system monitoring for auto-rebuild
-   - Debounced change detection
-   - Prevents overlapping builds
+   - File system monitoring using chokidar
+   - Debounced change detection (500ms default)
+   - Prevents overlapping builds with async lock
 
 ### Preview Mode
 
-Preview mode should:
-- Copy `inputDir` and `src/assets` to a temporary directory
-- Serve the temporary directory using Vite
-- Support hot reload when markdown/CSS/manifest changes
-- Use Vite's built-in dev server (no custom WebSocket implementation needed)
+**Current Implementation** (`src/server.ts`):
+- Creates temporary directory (`/tmp/pagedmd-preview-*`)
+- Copies input files and assets to temp directory
+- Generates HTML from markdown with Paged.js polyfill injected
+- Serves via Vite dev server with HMR
+- Watches source files for changes and regenerates HTML automatically
+- Browser UI with toolbar for page navigation, zoom, view modes
 
-**Note**: The current implementation references a preview server (`startPreviewServer`) that doesn't exist yet. This needs to be implemented using Vite.
+**Preview Architecture**:
+- **Server**: Vite dev server (`src/server.ts` - `startPreviewServer()`)
+- **Client**: Preview UI (`src/assets/preview/scripts/preview.js`)
+  - Toolbar controls (folder selection, page navigation, zoom)
+  - Iframe architecture - preview.html in iframe with previewAPI exposed
+  - Parent window delegates operations to iframe API
+  - Event-driven page change notifications
+- **Paged.js Integration**:
+  - Polyfill injected via `injectPagedJsPolyfill()` from preview-format.ts
+  - Custom handler (`src/assets/preview/scripts/interface.js`) exposes window.previewAPI
+  - Supports page navigation, single/spread view modes, zoom levels
 
-### Configuration
+### Configuration System
 
 **Manifest file** (`manifest.yaml`):
-- Project metadata (title, authors)
-- Custom CSS files via styles array (relative paths)
-- Page format (size, margins, bleed)
-- Markdown file ordering
-- Extension configuration
+- Project metadata (title, authors, description)
+- Page format configuration (size, margins, bleed)
+- Styles array - relative paths to CSS files (resolved from bundled themes/ or user directory)
+- Files array - explicit markdown file ordering (optional, defaults to alphabetical)
+- Extensions array - enable/disable markdown plugins (ttrpg, dimmCity, containers)
+- Default styles toggle (`disableDefaultStyles: true` to replace foundation CSS)
 
-**CLI Options** (`src/cli.ts`):
-- Build command: `bun src/cli.ts build [input] [options]`
-- Preview command: `bun src/cli.ts preview [input] [options]`
-- Options override manifest settings
+**Configuration Resolution** (`src/config/config-state.ts`):
+- `ConfigurationManager` class manages config state
+- Precedence: CLI options > manifest.yaml > defaults
+- Resolves paths relative to input directory
+- Validates required fields and path existence
 
-**Configuration precedence**: CLI > Manifest > Defaults
+**CLI** (`src/cli.ts`):
+```bash
+# Build commands
+bun src/cli.ts build [input] --output [file] --format [pdf|html|preview] --watch
+
+# Preview commands
+bun src/cli.ts preview [input] --port [number] --open [boolean] --no-watch
+```
 
 ### Key Modules
 
-- `src/types.ts` - TypeScript interfaces for all data structures
-- `src/constants.ts` - Application-wide constants (timeouts, ports, defaults)
-- `src/utils/config.ts` - Configuration loading and validation
-- `src/utils/file-utils.ts` - File system operations (Bun-native preferred)
-- `src/utils/logger.ts` - Logging utilities
-- `src/utils/errors.ts` - Custom error classes
+- `src/types.ts` - TypeScript interfaces for all data structures (BuildOptions, FormatStrategy, ResolvedConfig, etc.)
+- `src/constants.ts` - Application constants (DEFAULT_PORT: 3000, DEBOUNCE: 500, temp directory patterns)
+- `src/utils/config.ts` - Configuration loading (`loadManifest`, `validateManifest`)
+- `src/utils/file-utils.ts` - Bun-native file operations (fileExists, readFile, writeFile, copyDirectory)
+- `src/utils/css-utils.ts` - CSS @import resolution and inlining
+- `src/utils/logger.ts` - Logging with levels (debug, info, warn, error)
+- `src/utils/errors.ts` - Custom error classes (BuildError, ConfigError, ValidationError)
 
 ### Assets Directory
 
-`src/assets/` contains:
-- `themes/` - CSS themes for different book styles
-- `fonts/` - Web fonts
-- `core/` - Base CSS for Paged.js
+`src/assets/` structure:
+- `core/` - Base CSS (variables, typography, layout, components, book-reset)
+- `themes/` - Theme CSS files (loaded by users via manifest styles array)
 - `plugins/` - CSS for markdown extensions
-- `scripts/` - Client-side JavaScript
-- Preview-related assets (`preview.js`, `preview.css`)
+- `fonts/` - Web fonts
+- `preview/` - Preview mode assets:
+  - `scripts/` - paged.polyfill.js, interface.js, preview.js, toast.js
+  - `styles/` - interface.css, preview.css
+  - `index.html` - Preview UI shell
 
-These assets are bundled with generated HTML for self-contained output.
+Assets are bundled into HTML using Bun's text loader (`with { type: 'text' }`) for self-contained output.
 
 ## Common Commands
 
@@ -92,8 +119,8 @@ bun install
 # Build PDF from current directory
 bun src/cli.ts build
 
-# Build from specific file/directory
-bun src/cli.ts build ./my-book
+# Build from specific directory/file
+bun src/cli.ts build ./examples/my-book
 
 # Build with custom output
 bun src/cli.ts build --output my-book.pdf
@@ -101,63 +128,35 @@ bun src/cli.ts build --output my-book.pdf
 # Build HTML instead of PDF
 bun src/cli.ts build --format html
 
+# Build preview (offline Paged.js viewer)
+bun src/cli.ts build --format preview
+
 # Watch mode (auto-rebuild on changes)
 bun src/cli.ts build --watch
 
-# Preview mode (not yet implemented)
+# Preview mode (live dev server with HMR)
 bun src/cli.ts preview
 
-# Run tests
+# Preview with custom port
+bun src/cli.ts preview --port 5000
+
+# Preview without auto-opening browser
+bun src/cli.ts preview --open false
+
+# Preview without file watching
+bun src/cli.ts preview --no-watch
+
+# Run all tests
 bun test
 
 # Run specific test file
 bun test src/utils/file-utils.test.ts
+
+# Run tests in watch mode
+bun test --watch
 ```
 
-## Development Notes
-
-### Simplification Goals
-
-This project should be streamlined:
-
-1. **Remove enterprise complexity** - No need for extensive validation, sophisticated error handling, or complex abstractions
-2. **Simplify preview mode** - Use Vite's built-in dev server instead of custom WebSocket implementations
-3. **Remove unused code** - Many utilities and abstractions from dc-book may not be needed
-4. **Focus on core workflow**: markdown → HTML → PDF, with preview and watch modes
-
-### Preview Mode Implementation
-
-The preview mode should be implemented as:
-
-```typescript
-// Pseudocode for preview mode
-async function preview(inputDir: string, port: number) {
-  const tempDir = createTempDir();
-
-  // Copy input files and assets
-  copyDir(inputDir, tempDir);
-  copyDir('src/assets', path.join(tempDir, 'assets'));
-
-  // Generate initial HTML
-  const html = await generateHtmlFromMarkdown(inputDir, config);
-  writeFile(path.join(tempDir, 'index.html'), html);
-
-  // Start Vite dev server
-  const server = await vite.createServer({
-    root: tempDir,
-    server: { port }
-  });
-
-  await server.listen();
-
-  // Watch for changes and regenerate HTML
-  watchFiles(inputDir, async () => {
-    const html = await generateHtmlFromMarkdown(inputDir, config);
-    writeFile(path.join(tempDir, 'index.html'), html);
-    // Vite handles hot reload automatically
-  });
-}
-```
+## Development Workflow
 
 ### Testing
 
@@ -172,15 +171,93 @@ test("description", () => {
 ```
 
 Existing tests in:
-- `src/utils/file-utils.test.ts`
-- `src/utils/css-utils.test.ts`
-- `src/utils/manifest-writer.test.ts`
+- `src/utils/file-utils.test.ts` - File system operations
+- `src/utils/css-utils.test.ts` - CSS import resolution
+- `src/utils/manifest-writer.test.ts` - Manifest generation
 
-### Missing Components
+### Adding New Markdown Extensions
 
-Currently referenced but not implemented:
-- Preview server (`startPreviewServer` function)
-- ConfigurationManager class (referenced in build.ts but doesn't exist)
-- Some utility functions may be referenced but not yet created
+To add a new markdown-it plugin:
 
-These should be implemented or the code should be refactored to remove dependencies on them.
+1. Create plugin file in `src/markdown/plugins/`
+2. Export default function that accepts `(md: MarkdownIt, options?: PluginOptions) => void`
+3. Register plugin in `createPagedMarkdownEngine()` in `src/markdown/markdown.ts`
+4. Add corresponding CSS to `src/assets/plugins/` if needed
+5. Update `MarkdownExtensionOptions` interface in types.ts
+6. Add extension name to manifest.yaml extensions array
+
+### Adding New Build Formats
+
+To add a new output format:
+
+1. Create strategy class in `src/build/formats/` implementing `FormatStrategy` interface
+2. Implement `build(options, htmlContent)` and `validateOutput(outputPath)` methods
+3. Add format to `OutputFormat` type in types.ts
+4. Register strategy in `src/build/build.ts` format strategy map
+5. Update CLI format option in `src/cli.ts`
+
+### Code Structure Patterns
+
+**Strategy Pattern**: Used for build formats (PDF, HTML, Preview) - allows adding new formats without modifying core build logic
+
+**Configuration Cascade**: CLI > Manifest > Defaults - consistent override pattern throughout codebase
+
+**Bun-Native APIs**: Prefer Bun's built-in functions (Bun.file(), Bun.write()) over Node.js equivalents for performance
+
+**Error Handling**: Use custom error classes (BuildError, ConfigError) for domain-specific errors with context
+
+**Asset Bundling**: Use Bun's `import ... with { type: 'text' }` to inline assets at build time for self-contained output
+
+## Important Implementation Details
+
+### CSS Resolution Order
+
+The CSS cascade is critical for allowing theme customization:
+
+1. **Default Styles** (optional, controlled by `disableDefaultStyles`)
+   - Foundation: variables, typography, layout, components
+   - Bundled at build time via Bun text loader
+
+2. **User Styles** (from manifest.yaml styles array)
+   - Two-tier resolution:
+     - First checks bundled `src/assets/themes/` and `src/assets/plugins/`
+     - Falls back to user directory (relative to input)
+   - All @import statements are recursively resolved and inlined
+   - Build mode fails on missing imports, preview mode warns
+
+### Preview Mode Architecture
+
+Preview mode uses a dual-process architecture:
+
+1. **Server Process** (`src/server.ts`):
+   - Vite dev server serving temporary directory
+   - Chokidar file watcher monitoring source files
+   - Regenerates HTML on source changes
+   - Vite handles browser HMR automatically
+
+2. **Browser Client** (`src/assets/preview/scripts/`):
+   - Parent window with toolbar UI (preview.js)
+   - Iframe containing preview.html with Paged.js
+   - previewAPI exposed on iframe window for page navigation
+   - Event-driven updates (pageChanged, renderingComplete)
+   - No state duplication - iframe is source of truth
+
+### Manifest Extensions System
+
+The `extensions` array in manifest.yaml controls which markdown plugins are enabled:
+
+- `ttrpg`: Enables TTRPG directives (stat blocks, dice notation, cross-references)
+- `dimmCity`: Enables Dimm City syntax (district badges, roll prompts)
+- `containers`: Enables legacy container syntax (:::page, :::ability, etc.)
+
+Empty or omitted extensions array enables all plugins by default.
+
+## Code Index
+
+A comprehensive code index with AST analysis and Paged.js documentation has been created in `.references/`:
+
+- `.references/pagedmd.index.md` - Main index with code structure and documentation links
+- `.references/pagedmd_structure.md` - Detailed AST analysis
+- `.references/external-docs/` - Scraped Paged.js documentation
+
+Use the index for efficient context gathering without loading entire files.
