@@ -3,17 +3,10 @@
 
 <head>
     <meta charset="UTF-8">
-    <script>
-        // Disable auto mode - we'll initialize manually
-        // Must be set before loading paged.polyfill.js
-        window.PagedConfig = {
-            auto: false
-        };
-    </script>
-    <script src="/paged.polyfill.js"></script>
-    <script type="module" src="/toast.js"></script>
-    <script src="/preview.js"></script>
-    <script src="/print-preview.js"></script>
+
+    <script type="module" src="/preview/scripts/toast.js"></script>
+    <script src="/preview/scripts/preview.js"></script>
+    <script src="/preview/scripts/print-preview.js"></script>
     <style>
         /* Toolbar styles - Enhanced visual hierarchy */
         .toolbar {
@@ -215,23 +208,8 @@
             /* Gray-400 - WCAG AA compliant (4.6:1 contrast ratio) */
         }
     </style>
-    <link rel="stylesheet" href="/preview.css">
-    <link rel="stylesheet" href="/toast.css">
-
-    <!-- CSS Cascade Order: Default → Manifest (includes themes) -->
-
-    <!-- Layer 1: Default Styles (Foundation) -->
-    <!-- <link rel="stylesheet" href="/core/book-reset.css" data-css-layer="default" data-css-file="book-reset.css">
-    <link rel="stylesheet" href="/core/core-variables.css" data-css-layer="default" data-css-file="core-variables.css">
-    <link rel="stylesheet" href="/core/core-typography.css" data-css-layer="default"
-        data-css-file="core-typography.css">
-    <link rel="stylesheet" href="/core/core-layout.css" data-css-layer="default" data-css-file="core-layout.css">
-    <link rel="stylesheet" href="/core/core-components.css" data-css-layer="default"
-        data-css-file="core-components.css"> -->
-
-    <!-- Layer 2: Manifest Styles (includes themes and custom styles) -->
-    <!-- Populated dynamically by preview.js based on manifest.yaml -->
-    <!-- <div id="manifest-styles-container"></div> -->
+    <link rel="stylesheet" href="/preview/styles/preview.css">
+    <link rel="stylesheet" href="/preview/styles/toast.css">
 </head>
 
 <body>
@@ -334,7 +312,8 @@
     <!-- Preview iframe - Vite serves build output with HMR -->
     <iframe
         id="preview-iframe"
-        src="/preview"
+        src="/preview.html"
+        allow="same-origin"
         style="
             position: fixed;
             top: 56px;
@@ -344,7 +323,6 @@
             width: 100%;
             height: calc(100vh - 56px);
             border: none;
-            background: #1a1a1a;
         "
         title="Book preview content"
         aria-label="Book preview content"

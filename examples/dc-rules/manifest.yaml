@@ -11,6 +11,6 @@ extensions:
 styles:
   - plugins/dimm-city-components.css
   - themes/bw.css
-  - chapter-opener-enhancement.css
-  - SIDEBAR_SYSTEM.css
-  - styles.css
+  - styles/chapter-opener-enhancement.css
+  - styles/SIDEBAR_SYSTEM.css
+  - styles/main.css

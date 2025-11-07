@@ -91,25 +91,11 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       root: tempDir,
       server: {
         port: options.port,
-        open: options.openBrowser,
+        open: options.openBrowser ? '/preview.html' : false,
         host: '0.0.0.0', // Allow external connections
       },
       // Disable Vite's own file watching (we handle it)
       clearScreen: false,
-      appType: 'custom', // Don't inject Vite's default HTML handling
-      plugins: [
-        {
-          name: 'preview-redirect',
-          configureServer(server) {
-            server.middlewares.use((req, res, next) => {
-              if (req.url === '/' || req.url === '/index.html') {
-                req.url = '/preview.html';
-              }
-              next();
-            });
-          },
-        },
-      ],
     });
 
     await state.viteServer.listen();

@@ -249,33 +249,16 @@ export async function copyMarkdownFiles(
 }
 
 /**
- * Copy specific preview assets to temp directory root
- * Only copies: paged.polyfill.js, interface.css, interface.js
+ * Copy all preview assets from src/assets to temp directory root
+ * Recursively copies all files and directories from assets directly to root
  *
- * @param assetsDir Source assets directory path
- * @param destDir Destination directory path (files copied to root)
+ * @param assetsDir Source assets directory path (src/assets)
+ * @param destDir Destination directory path (temp directory root)
  */
 export async function copyPreviewAssets(
   assetsDir: string,
   destDir: string
 ): Promise<void> {
-  const requiredFiles = ['paged.polyfill.js', 'interface.css', 'interface.js'];
-
-  // Ensure destination directory exists
-  await mkdir(destDir);
-
-  for (const fileName of requiredFiles) {
-    const srcPath = path.join(assetsDir, fileName);
-    const destPath = path.join(destDir, fileName);
-
-    // Check if file exists in source
-    if (await fileExists(srcPath)) {
-      // Copy file using Bun's efficient operations
-      const fileContent = await Bun.file(srcPath).arrayBuffer();
-      await Bun.write(destPath, fileContent);
-    } else {
-      // Log warning but continue (non-critical)
-      console.warn(`Preview asset not found: ${fileName} (expected at ${srcPath})`);
-    }
-  }
+  // Copy entire assets directory contents directly to temp root (not into subdirectory)
+  await copyDirectory(assetsDir, destDir);
 }

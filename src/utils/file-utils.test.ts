@@ -8,6 +8,8 @@ import path from 'path';
 import os from 'os';
 import {
   copyDirectory,
+  copyMarkdownFiles,
+  copyPreviewAssets,
   fileExists,
   isDirectory,
   mkdir,
@@ -242,5 +244,255 @@ describe('copyDirectory', () => {
     // Verify destination was created and file copied
     expect(await isDirectory(newDestDir)).toBe(true);
     expect(await fileExists(path.join(newDestDir, 'file1.txt'))).toBe(true);
+  });
+});
+
+describe('copyMarkdownFiles', () => {
+  let testDir: string;
+  let srcDir: string;
+  let destDir: string;
+
+  beforeEach(async () => {
+    testDir = path.join(os.tmpdir(), `pagedmd-test-${Date.now()}`);
+    srcDir = path.join(testDir, 'src');
+    destDir = path.join(testDir, 'dest');
+
+    await mkdir(srcDir);
+  });
+
+  afterEach(async () => {
+    await remove(testDir);
+  });
+
+  it('should only copy markdown and config files', async () => {
+    // Setup: create test files with various extensions
+    await writeFile(path.join(srcDir, 'test.md'), '# Test');
+    await writeFile(path.join(srcDir, 'manifest.yaml'), 'title: Test');
+    await writeFile(path.join(srcDir, 'config.yml'), 'key: value');
+    await writeFile(path.join(srcDir, 'style.css'), 'body {}');
+    await writeFile(path.join(srcDir, 'ignore.txt'), 'should not copy');
+    await writeFile(path.join(srcDir, 'ignore.js'), 'console.log("skip")');
+    await writeFile(path.join(srcDir, 'image.png'), 'fake png data');
+
+    // Execute
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify only allowed extensions were copied
+    expect(await fileExists(path.join(destDir, 'test.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'manifest.yaml'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'config.yml'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'style.css'))).toBe(true);
+
+    // These should NOT be copied
+    expect(await fileExists(path.join(destDir, 'ignore.txt'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'ignore.js'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'image.png'))).toBe(false);
+  });
+
+  it('should skip node_modules directory', async () => {
+    // Create node_modules with files
+    await mkdir(path.join(srcDir, 'node_modules', 'package'));
+    await writeFile(path.join(srcDir, 'node_modules', 'package', 'index.md'), '# Package');
+    await writeFile(path.join(srcDir, 'node_modules', 'package.json'), '{}');
+
+    // Create valid file at root
+    await writeFile(path.join(srcDir, 'readme.md'), '# Readme');
+
+    // Execute
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify node_modules was not copied
+    expect(await fileExists(path.join(destDir, 'readme.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'node_modules'))).toBe(false);
+  });
+
+  it('should skip .git directory', async () => {
+    // Create .git directory with files
+    await mkdir(path.join(srcDir, '.git', 'refs'));
+    await writeFile(path.join(srcDir, '.git', 'config'), 'git config');
+    await writeFile(path.join(srcDir, 'readme.md'), '# Readme');
+
+    // Execute
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify .git was not copied
+    expect(await fileExists(path.join(destDir, 'readme.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, '.git'))).toBe(false);
+  });
+
+  it('should skip build artifacts', async () => {
+    // Create build directories
+    await mkdir(path.join(srcDir, 'dist'));
+    await mkdir(path.join(srcDir, 'build'));
+    await mkdir(path.join(srcDir, '.tmp'));
+    await writeFile(path.join(srcDir, 'dist', 'bundle.md'), '# Bundle');
+    await writeFile(path.join(srcDir, 'build', 'output.md'), '# Output');
+    await writeFile(path.join(srcDir, '.tmp', 'temp.md'), '# Temp');
+    await writeFile(path.join(srcDir, 'source.md'), '# Source');
+
+    // Execute
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify build directories were not copied
+    expect(await fileExists(path.join(destDir, 'source.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'dist'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'build'))).toBe(false);
+    expect(await fileExists(path.join(destDir, '.tmp'))).toBe(false);
+  });
+
+  it('should recursively copy nested directories', async () => {
+    // Create nested structure
+    await mkdir(path.join(srcDir, 'chapters', 'chapter1'));
+    await writeFile(path.join(srcDir, 'chapters', 'chapter1', 'intro.md'), '# Intro');
+    await writeFile(path.join(srcDir, 'chapters', 'chapter1', 'styles.css'), 'h1 {}');
+    await writeFile(path.join(srcDir, 'chapters', 'chapter1', 'ignore.txt'), 'skip');
+
+    // Execute
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify nested structure preserved
+    expect(await fileExists(path.join(destDir, 'chapters', 'chapter1', 'intro.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'chapters', 'chapter1', 'styles.css'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'chapters', 'chapter1', 'ignore.txt'))).toBe(false);
+  });
+
+  it('should handle custom extensions parameter', async () => {
+    // Create files
+    await writeFile(path.join(srcDir, 'doc.md'), '# Doc');
+    await writeFile(path.join(srcDir, 'config.yaml'), 'key: value');
+    await writeFile(path.join(srcDir, 'style.css'), 'body {}');
+
+    // Execute with only .md extension
+    await copyMarkdownFiles(srcDir, destDir, ['.md']);
+
+    // Verify only .md files were copied
+    expect(await fileExists(path.join(destDir, 'doc.md'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'config.yaml'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'style.css'))).toBe(false);
+  });
+
+  it('should handle empty source directory', async () => {
+    // Execute with empty directory
+    await copyMarkdownFiles(srcDir, destDir);
+
+    // Verify destination was created but is empty
+    expect(await isDirectory(destDir)).toBe(true);
+    const entries = await fs.readdir(destDir);
+    expect(entries.length).toBe(0);
+  });
+});
+
+describe('copyPreviewAssets', () => {
+  let testDir: string;
+  let assetsDir: string;
+  let destDir: string;
+
+  beforeEach(async () => {
+    testDir = path.join(os.tmpdir(), `pagedmd-assets-test-${Date.now()}`);
+    assetsDir = path.join(testDir, 'assets');
+    destDir = path.join(testDir, 'dest');
+
+    await mkdir(assetsDir);
+  });
+
+  afterEach(async () => {
+    await remove(testDir);
+  });
+
+  it('should only copy required preview files', async () => {
+    // Setup: create required and extra files
+    await writeFile(path.join(assetsDir, 'paged.polyfill.js'), '// polyfill');
+    await writeFile(path.join(assetsDir, 'interface.css'), '/* css */');
+    await writeFile(path.join(assetsDir, 'interface.js'), '// js');
+    await writeFile(path.join(assetsDir, 'other.js'), '// should not copy');
+    await writeFile(path.join(assetsDir, 'preview.js'), '// should not copy');
+    await writeFile(path.join(assetsDir, 'theme.css'), '/* should not copy */');
+
+    // Execute
+    await mkdir(destDir);
+    await copyPreviewAssets(assetsDir, destDir);
+
+    // Verify only required files were copied
+    expect(await fileExists(path.join(destDir, 'paged.polyfill.js'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'interface.css'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'interface.js'))).toBe(true);
+
+    // These should NOT be copied
+    expect(await fileExists(path.join(destDir, 'other.js'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'preview.js'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'theme.css'))).toBe(false);
+  });
+
+  it('should copy files to destination root, not subdirectory', async () => {
+    // Setup
+    await writeFile(path.join(assetsDir, 'paged.polyfill.js'), '// polyfill');
+    await writeFile(path.join(assetsDir, 'interface.css'), '/* css */');
+    await writeFile(path.join(assetsDir, 'interface.js'), '// js');
+
+    // Execute
+    await mkdir(destDir);
+    await copyPreviewAssets(assetsDir, destDir);
+
+    // Verify files are at root of destination
+    expect(await fileExists(path.join(destDir, 'paged.polyfill.js'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'interface.css'))).toBe(true);
+    expect(await fileExists(path.join(destDir, 'interface.js'))).toBe(true);
+
+    // Should NOT be in subdirectory
+    expect(await fileExists(path.join(destDir, 'assets', 'paged.polyfill.js'))).toBe(false);
+  });
+
+  it('should handle missing files gracefully', async () => {
+    // Setup: only create one of three required files
+    await writeFile(path.join(assetsDir, 'paged.polyfill.js'), '// polyfill');
+    // Missing: interface.css and interface.js
+
+    // Execute - should not throw
+    await mkdir(destDir);
+    await copyPreviewAssets(assetsDir, destDir);
+
+    // Verify existing file was copied
+    expect(await fileExists(path.join(destDir, 'paged.polyfill.js'))).toBe(true);
+
+    // Missing files should not exist
+    expect(await fileExists(path.join(destDir, 'interface.css'))).toBe(false);
+    expect(await fileExists(path.join(destDir, 'interface.js'))).toBe(false);
+  });
+
+  it('should create destination directory if it does not exist', async () => {
+    // Setup
+    await writeFile(path.join(assetsDir, 'paged.polyfill.js'), '// polyfill');
+
+    // Execute with non-existent destination
+    const newDestDir = path.join(testDir, 'new-dest');
+    await copyPreviewAssets(assetsDir, newDestDir);
+
+    // Verify destination was created and file copied
+    expect(await isDirectory(newDestDir)).toBe(true);
+    expect(await fileExists(path.join(newDestDir, 'paged.polyfill.js'))).toBe(true);
+  });
+
+  it('should verify file content is preserved', async () => {
+    // Setup with specific content
+    const polyfillContent = '// paged.js polyfill v0.1.0\nconsole.log("loaded");';
+    const cssContent = '/* Interface styles */\n.preview { display: block; }';
+    const jsContent = '// Interface script\nwindow.preview = true;';
+
+    await writeFile(path.join(assetsDir, 'paged.polyfill.js'), polyfillContent);
+    await writeFile(path.join(assetsDir, 'interface.css'), cssContent);
+    await writeFile(path.join(assetsDir, 'interface.js'), jsContent);
+
+    // Execute
+    await mkdir(destDir);
+    await copyPreviewAssets(assetsDir, destDir);
+
+    // Verify content is identical
+    const copiedPolyfill = await fs.readFile(path.join(destDir, 'paged.polyfill.js'), 'utf-8');
+    const copiedCss = await fs.readFile(path.join(destDir, 'interface.css'), 'utf-8');
+    const copiedJs = await fs.readFile(path.join(destDir, 'interface.js'), 'utf-8');
+
+    expect(copiedPolyfill).toBe(polyfillContent);
+    expect(copiedCss).toBe(cssContent);
+    expect(copiedJs).toBe(jsContent);
   });
 });
