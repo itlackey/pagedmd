@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <script>
+        // Disable auto mode - we'll initialize manually
+        // Must be set before loading paged.polyfill.js
+        window.PagedConfig = {
+            auto: false
+        };
+    </script>
+    <script src="/paged.polyfill.js"></script>
+    <script type="module" src="/toast.js"></script>
+    <script src="/preview.js"></script>
+    <script src="/print-preview.js"></script>
+    <style>
+        /* Toolbar styles - Enhanced visual hierarchy */
+        .toolbar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 56px;
+            background: #1e1e1e;
+            background: linear-gradient(to bottom, #252525 0%, #1e1e1e 100%);
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 24px;
+            z-index: 10000;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.5),
+                0 1px 0 rgba(255, 255, 255, 0.05) inset;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
+            gap: 24px;
+            border-bottom: 1px solid #3a3a3a;
+
+            &>* {
+                transition: none;
+            }
+        }
+
+        .toolbar-section {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .toolbar-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ffffff;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+            letter-spacing: 0.01em;
+        }
+
+        /* Base button styles */
+        .toolbar-btn {
+            background: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            color: #e0e0e0;
+            padding: 7px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            font-weight: 500;
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+            white-space: nowrap;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            position: relative;
+        }
+
+        .toolbar-btn svg {
+            width: 16px;
+            height: 16px;
+            flex-shrink: 0;
+            display: block;
+        }
+
+        /* Primary action buttons - Stand out with accent color */
+        .toolbar-btn.primary,
+        #btn-folder {
+            background: linear-gradient(to bottom, #0077dd 0%, #0066cc 100%);
+            border-color: #0055aa;
+            color: #ffffff;
+            font-weight: 600;
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset;
+        }
+
+        .toolbar-btn.primary:hover,
+        #btn-folder:hover {
+            background: linear-gradient(to bottom, #0088ee 0%, #0077dd 100%);
+            border-color: #0066cc;
+            transform: translateY(-1px);
+            box-shadow: 0 3px 6px rgba(0, 102, 204, 0.4),
+                0 1px 0 rgba(255, 255, 255, 0.15) inset;
+        }
+
+        /* Secondary action buttons - Subtle, don't compete with primary */
+        .toolbar-btn.secondary {
+            background: transparent;
+            border: 1px solid #4a4a4a;
+            color: #b0b0b0;
+        }
+
+        .toolbar-btn.secondary:hover {
+            background: rgba(255, 255, 255, 0.05);
+            border-color: #5a5a5a;
+            color: #e0e0e0;
+        }
+
+        /* Default button hover state */
+        .toolbar-btn:hover {
+            background: #4a4a4a;
+            border-color: #5a5a5a;
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        .toolbar-btn:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+        }
+
+        .toolbar-btn:active {
+            transform: translateY(0);
+            box-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) inset;
+        }
+
+        .toolbar-btn:disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .toolbar-btn:disabled:hover {
+            background: #3a3a3a;
+            border-color: #4a4a4a;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* Active state for toggle buttons */
+        .toolbar-btn.active {
+            background: linear-gradient(to bottom, #0077dd 0%, #0066cc 100%);
+            border-color: #0055aa;
+            color: #ffffff;
+            box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3),
+                0 1px 0 rgba(255, 255, 255, 0.1) inset;
+        }
+
+        .toolbar-btn.active:hover {
+            background: linear-gradient(to bottom, #0088ee 0%, #0077dd 100%);
+            box-shadow: 0 3px 6px rgba(0, 102, 204, 0.4);
+        }
+
+        .page-input {
+            appearance: none;
+            width: 50px;
+            background: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 13px;
+            transition: all 0.15s ease-out;
+        }
+
+        .page-input:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+            border-color: #0066cc;
+            background: #404040;
+        }
+
+        .toolbar-separator {
+            width: 1px;
+            height: 24px;
+            background: #4a4a4a;
+        }
+
+        .zoom-select {
+            background: #3a3a3a;
+            border: 1px solid #4a4a4a;
+            color: #e0e0e0;
+            padding: 6px 8px;
+            border-radius: 4px;
+            font-size: 13px;
+            cursor: pointer;
+            transition: all 0.15s ease-out;
+        }
+
+        .zoom-select:focus {
+            outline: 2px solid #0066cc;
+            outline-offset: 2px;
+            border-color: #0066cc;
+            background: #404040;
+        }
+
+        .zoom-select:hover {
+            background: #404040;
+            border-color: #5a5a5a;
+        }
+
+        .status-text {
+            font-size: 12px;
+            color: #9ca3af;
+            /* Gray-400 - WCAG AA compliant (4.6:1 contrast ratio) */
+        }
+    </style>
+    <link rel="stylesheet" href="/preview.css">
+    <link rel="stylesheet" href="/toast.css">
+
+    <!-- CSS Cascade Order: Default → Manifest (includes themes) -->
+
+    <!-- Layer 1: Default Styles (Foundation) -->
+    <!-- <link rel="stylesheet" href="/core/book-reset.css" data-css-layer="default" data-css-file="book-reset.css">
+    <link rel="stylesheet" href="/core/core-variables.css" data-css-layer="default" data-css-file="core-variables.css">
+    <link rel="stylesheet" href="/core/core-typography.css" data-css-layer="default"
+        data-css-file="core-typography.css">
+    <link rel="stylesheet" href="/core/core-layout.css" data-css-layer="default" data-css-file="core-layout.css">
+    <link rel="stylesheet" href="/core/core-components.css" data-css-layer="default"
+        data-css-file="core-components.css"> -->
+
+    <!-- Layer 2: Manifest Styles (includes themes and custom styles) -->
+    <!-- Populated dynamically by preview.js based on manifest.yaml -->
+    <!-- <div id="manifest-styles-container"></div> -->
+</head>
+
+<body>
+    <div class="toolbar" style="width: stretch;">
+        <!-- Left section: Title and Folder Selector -->
+        <div class="toolbar-section">
+            <button class="toolbar-btn" id="btn-folder" title="Select folder">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path
+                        d="M1.75 1A1.75 1.75 0 000 2.75v10.5C0 14.216.784 15 1.75 15h12.5A1.75 1.75 0 0016 13.25v-8.5A1.75 1.75 0 0014.25 3H7.5L5.879 1.879A1.75 1.75 0 004.765 1H1.75z" />
+                </svg>
+            </button>
+            <span class="toolbar-title">Preview<span class="reload-indicator"></span></span>
+
+
+            <span id="debug-console">Initializing...</span>
+        </div>
+
+        <!-- Center section: Navigation -->
+        <div class="toolbar-section">
+            <button class="toolbar-btn" id="btn-first" title="First page">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M2 3h1v10H2V3zm2 5l7-5v10l-7-5z" />
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-prev" title="Previous page">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M11 3L5 8l6 5V3z" />
+                </svg>
+            </button>
+            <input type="number" class="page-input" id="page-input" min="1" value="1" title="Current page">
+            <span class="status-text">/ <span id="total-pages">-</span></span>
+            <button class="toolbar-btn" id="btn-next" title="Next page">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M5 3v10l6-5-6-5z" />
+                </svg>
+            </button>
+            <button class="toolbar-btn" id="btn-last" title="Last page">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M13 3h1v10h-1V3zm-2 5l-7 5V3l7 5z" />
+                </svg>
+            </button>
+        </div>
+
+        <!-- Right section: View controls -->
+        <div class="toolbar-section">
+            <button class="toolbar-btn" id="btn-single" title="Single page view">Single</button>
+            <button class="toolbar-btn active" id="btn-spread" title="Two page spread">Spread</button>
+            <div class="toolbar-separator"></div>
+            <select class="zoom-select" id="zoom-select" title="Zoom level">
+                <option value="0.5">50%</option>
+                <option value="0.75">75%</option>
+                <option value="1" selected>100%</option>
+                <option value="1.25">125%</option>
+                <option value="1.5">150%</option>
+                <option value="2">200%</option>
+                <option value="fit-width">Fit Width</option>
+            </select>
+        </div>
+    </div>
+
+    <!-- Folder Selection Modal -->
+    <div class="folder-modal" id="folder-modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"
+        aria-describedby="modal-description" style="display: none;">
+        <div class="folder-modal-content">
+            <div class="folder-modal-header">
+                <h3 id="modal-title">Select Content Folder</h3>
+                <button class="folder-modal-close" id="modal-close" aria-label="Close folder selector"
+                    type="button">&times;</button>
+            </div>
+            <p id="modal-description" class="visually-hidden">
+                Navigate through directories to select a folder containing markdown files to preview. Use arrow keys to
+                navigate between folders, Enter to select, and Escape to close.
+            </p>
+            <div class="folder-modal-body">
+                <div class="folder-current-path">
+                    <span id="current-path-display" aria-live="polite">Loading...</span>
+                </div>
+                <div class="folder-list" id="folder-list" role="list" aria-label="Available folders">
+                    <div class="folder-loading">Loading folders...</div>
+                </div>
+            </div>
+            <div class="folder-modal-footer">
+                <button class="toolbar-btn" id="btn-open-folder" type="button">Open This Folder</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Status announcer for screen readers -->
+    <div id="status-announcer" role="status" aria-live="polite" aria-atomic="true" class="visually-hidden"></div>
+
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-content">
+            <div class="loading-spinner" role="status" aria-label="Loading preview"></div>
+            <div class="loading-message" id="loading-message">Loading preview...</div>
+            <span class="visually-hidden">Loading preview, please wait...</span>
+        </div>
+    </div>
+
+    <!-- Preview iframe - Vite serves build output with HMR -->
+    <iframe
+        id="preview-iframe"
+        src="/preview"
+        style="
+            position: fixed;
+            top: 56px;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            width: 100%;
+            height: calc(100vh - 56px);
+            border: none;
+            background: #1a1a1a;
+        "
+        title="Book preview content"
+        aria-label="Book preview content"
+    ></iframe>
+</body>
+
+</html>
