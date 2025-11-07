@@ -11,19 +11,12 @@
     --pagedjs-crop-shadow: white;
     --pagedjs-crop-stroke: 1px;
 }
-
+body {
+    background-color: var(--color-background);
+    background-color: red;
+}
 /* To define how the book look on the screen: */
 @media screen, pagedjs-ignore {
-    body {
-        background-color: var(--color-background);
-    }
-
-    body.debug {
-        @page {
-            markers: cross crop;
-        }
-    }
-
     .pagedjs_pages {
         display: grid;
         grid-template-columns: repeat(2, auto);
