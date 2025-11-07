@@ -328,7 +328,7 @@ function goToLastPage() {
 }
 
 /**
- * Change view mode (single/spread) via iframe API
+ * Change view mode (single/two-column) via iframe API
  */
 function setViewMode(mode) {
 	const iframeWin = getIframeWindow();
@@ -338,22 +338,18 @@ function setViewMode(mode) {
 
 	// Update button states
 	const singleBtn = document.getElementById('btn-single');
-	const spreadBtn = document.getElementById('btn-spread');
+	const twoColumnBtn = document.getElementById('btn-two-column');
 
 	if (singleBtn) {
 		singleBtn.classList.toggle('active', mode === 'single');
 	}
 
-	if (spreadBtn) {
-		spreadBtn.classList.toggle('active', mode === 'spread');
+	if (twoColumnBtn) {
+		twoColumnBtn.classList.toggle('active', mode === 'two-column');
 	}
 
 	// Apply view mode via API
-	if (mode === 'single') {
-		api.setSinglePageMode();
-	} else {
-		api.setSpreadMode();
-	}
+	api.setViewMode(mode);
 }
 
 /**
@@ -431,8 +427,8 @@ function onRenderingComplete(event) {
 	// Update UI with initial page state
 	updatePageDisplay();
 
-	// Apply default view mode
-	setViewMode('spread');
+	// Apply default view mode (two-column)
+	setViewMode('two-column');
 
 	// Apply default zoom
 	setZoom(1.0);
@@ -544,9 +540,9 @@ function initializeToolbarControls() {
 		singleBtn.addEventListener('click', () => setViewMode('single'));
 	}
 
-	const spreadBtn = document.getElementById('btn-spread');
-	if (spreadBtn) {
-		spreadBtn.addEventListener('click', () => setViewMode('spread'));
+	const twoColumnBtn = document.getElementById('btn-two-column');
+	if (twoColumnBtn) {
+		twoColumnBtn.addEventListener('click', () => setViewMode('two-column'));
 	}
 
 	// Zoom select

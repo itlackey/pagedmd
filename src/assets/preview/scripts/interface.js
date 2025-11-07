@@ -40,15 +40,28 @@ window.previewAPI = {
 
 	lastPage: () => window.previewAPI.goToPage(window.previewAPI.pages.length),
 
-	setSinglePageMode: () => {
-		document.body.classList.remove('spread-view');
-		document.body.classList.add('single-view');
+	setViewMode: (mode) => {
+		const viewLinkId = 'view-mode-styles';
+
+		// Remove existing view mode link if present
+		const existingLink = document.getElementById(viewLinkId);
+		if (existingLink) {
+			existingLink.remove();
+		}
+
+		// Add new view mode link
+		const viewLink = document.createElement('link');
+		viewLink.id = viewLinkId;
+		viewLink.rel = 'stylesheet';
+		viewLink.href = `/preview/styles/view-${mode}.css`;
+		document.head.appendChild(viewLink);
+
+		console.log(`View mode set to: ${mode}`);
 	},
 
-	setSpreadMode: () => {
-		document.body.classList.remove('single-view');
-		document.body.classList.add('spread-view');
-	},
+	// Legacy support - redirect to setViewMode
+	setSinglePageMode: () => window.previewAPI.setViewMode('single'),
+	setTwoColumnMode: () => window.previewAPI.setViewMode('two-column'),
 
 	setZoom: (zoomLevel) => {
 		const container = document.querySelector('.pagedjs_pages');

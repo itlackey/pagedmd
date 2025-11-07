@@ -38,3 +38,4 @@ dist/
 
 # Code index and reference files (can be regenerated)
 .references/
+manifest.yaml
