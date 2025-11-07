@@ -1,9 +1,10 @@
 {
   "name": "pagedmd",
-  "module": "index.ts",
+  "module": "src/index.ts",
   "type": "module",
   "private": true,
-    "scripts": {
+  "scripts": {
+    "build": "bun build src/index.ts src/cli.ts --target bun --external vite --outdir=dist/",
     "preview": "bun run src/cli.ts --verbose --debug"
   },
   "devDependencies": {
