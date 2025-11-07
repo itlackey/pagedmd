@@ -25,33 +25,36 @@
  * and suppress running headers for clean presentation.
  */
 @page chapter-opener {
-	size: 8.5in 11in;
-	margin-top: 1.75in;
-	margin-bottom: 0.7in;
-	margin-left: 0.7in;
-	margin-right: 0.7in;
-	bleed: 0.125in;
-	marks: crop cross;
-	orphans: 4;
-	widows: 4;
+    size: 8.5in 11in;
+    margin-top: 1.75in;
+    margin-bottom: 0.7in;
+    margin-left: 0.7in;
+    margin-right: 0.7in;
+    bleed: 0.125in;
+    orphans: 4;
+    widows: 4;
 
-	/* Suppress running headers on chapter openers */
-	@top-left { content: none; }
-	@top-right { content: none; }
+    /* Suppress running headers on chapter openers */
+    @top-left {
+        content: none;
+    }
+    @top-right {
+        content: none;
+    }
 
-	/* Keep page numbers */
-	@bottom-left {
-		content: counter(page);
-		font-family: var(--ui-font);
-		font-size: 9.5pt;
-		font-weight: 600;
-	}
-	@bottom-right {
-		content: counter(page);
-		font-family: var(--ui-font);
-		font-size: 9.5pt;
-		font-weight: 600;
-	}
+    /* Keep page numbers */
+    @bottom-left {
+        content: counter(page);
+        font-family: var(--ui-font);
+        font-size: 9.5pt;
+        font-weight: 600;
+    }
+    @bottom-right {
+        content: counter(page);
+        font-family: var(--ui-font);
+        font-size: 9.5pt;
+        font-weight: 600;
+    }
 }
 
 /* ========================================
@@ -63,15 +66,15 @@
  * Provides structure and consistent spacing for opener elements
  */
 .chapter-opener {
-	page: chapter-opener;
-	break-before: right;
-	break-after: page;
-	break-inside: avoid;
-	display: block;
-	width: 100%;
-	max-width: 100%;
-	margin: 0;
-	padding: 0;
+    page: chapter-opener;
+    break-before: right;
+    break-after: page;
+    break-inside: avoid;
+    display: block;
+    width: 100%;
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
 }
 
 /* ========================================
@@ -83,14 +86,14 @@
  * Provides visual anchor and hierarchy cue
  */
 .chapter-opener__number {
-	font-family: var(--heading-font);
-	font-size: 14pt;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.15em;
-	color: var(--gray-50);
-	margin: 0 0 0.12in 0;
-	display: block;
+    font-family: var(--heading-font);
+    font-size: 14pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--gray-50);
+    margin: 0 0 0.12in 0;
+    display: block;
 }
 
 /**
@@ -98,17 +101,17 @@
  * Large, bold treatment with underline for emphasis
  */
 .chapter-opener__title {
-	font-family: var(--heading-font);
-	font-size: 28pt;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--black);
-	border-bottom: 2.5pt solid var(--black);
-	padding-bottom: 0.15in;
-	margin: 0 0 0.24in 0;
-	break-after: avoid;
-	line-height: 1.1;
+    font-family: var(--heading-font);
+    font-size: 28pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--black);
+    border-bottom: 2.5pt solid var(--black);
+    padding-bottom: 0.15in;
+    margin: 0 0 0.24in 0;
+    break-after: avoid;
+    line-height: 1.1;
 }
 
 /**
@@ -116,14 +119,14 @@
  * Provides context or thematic description
  */
 .chapter-opener__subtitle {
-	font-family: var(--body-font);
-	font-size: 12pt;
-	font-weight: 400;
-	font-style: italic;
-	color: var(--gray-90);
-	margin: -0.18in 0 0.24in 0;
-	display: block;
-	break-after: avoid;
+    font-family: var(--body-font);
+    font-size: 12pt;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--gray-90);
+    margin: -0.18in 0 0.24in 0;
+    display: block;
+    break-after: avoid;
 }
 
 /* ========================================
@@ -135,27 +138,27 @@
  * Positioned to create visual interest without overwhelming content
  */
 .chapter-opener__badge {
-	display: inline-block;
-	margin: 0 0 0.18in 0;
-	padding: 0.08in 0.15in;
-	border: 1.5pt solid var(--black);
-	font-family: var(--ui-font);
-	font-size: 10pt;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.08em;
-	break-after: avoid;
+    display: inline-block;
+    margin: 0 0 0.18in 0;
+    padding: 0.08in 0.15in;
+    border: 1.5pt solid var(--black);
+    font-family: var(--ui-font);
+    font-size: 10pt;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    break-after: avoid;
 }
 
 /**
  * Multiple badges in a row
  */
 .chapter-opener__badges {
-	display: flex;
-	flex-wrap: wrap;
-	gap: 0.12in;
-	margin: 0 0 0.24in 0;
-	break-after: avoid;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.12in;
+    margin: 0 0 0.24in 0;
+    break-after: avoid;
 }
 
 /* ========================================
@@ -167,35 +170,35 @@
  * Provides overview and sets context for the chapter content
  */
 .chapter-opener__intro {
-	font-family: var(--body-font);
-	font-size: 11pt;
-	line-height: 1.6;
-	color: var(--black);
-	margin: 0 0 0.24in 0;
-	text-indent: 0;
-	hyphens: auto;
-	orphans: 4;
-	widows: 4;
+    font-family: var(--body-font);
+    font-size: 11pt;
+    line-height: 1.6;
+    color: var(--black);
+    margin: 0 0 0.24in 0;
+    text-indent: 0;
+    hyphens: auto;
+    orphans: 4;
+    widows: 4;
 }
 
 /**
  * First paragraph gets special treatment - no indent, slightly larger
  */
 .chapter-opener__intro:first-of-type {
-	font-size: 11.5pt;
-	line-height: 1.65;
+    font-size: 11.5pt;
+    line-height: 1.65;
 }
 
 /**
  * Emphasis within intro text
  */
 .chapter-opener__intro strong {
-	font-weight: 700;
-	color: var(--black);
+    font-weight: 700;
+    color: var(--black);
 }
 
 .chapter-opener__intro em {
-	font-style: italic;
+    font-style: italic;
 }
 
 /* ========================================
@@ -207,36 +210,36 @@
  * Provides atmosphere and thematic grounding
  */
 .chapter-opener__quote {
-	font-family: var(--body-font);
-	font-size: 12pt;
-	font-style: italic;
-	line-height: 1.5;
-	color: var(--gray-90);
-	border-left: 2pt solid var(--black);
-	padding: 0.15in 0 0.15in 0.25in;
-	margin: 0.24in 0;
-	background-color: transparent;
-	break-inside: avoid;
+    font-family: var(--body-font);
+    font-size: 12pt;
+    font-style: italic;
+    line-height: 1.5;
+    color: var(--gray-90);
+    border-left: 2pt solid var(--black);
+    padding: 0.15in 0 0.15in 0.25in;
+    margin: 0.24in 0;
+    background-color: transparent;
+    break-inside: avoid;
 }
 
 /**
  * Quote attribution - author, character, or source
  */
 .chapter-opener__attribution {
-	font-family: var(--ui-font);
-	font-size: 9.5pt;
-	font-style: normal;
-	font-weight: 600;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--gray-50);
-	margin-top: 0.08in;
-	display: block;
-	text-align: right;
+    font-family: var(--ui-font);
+    font-size: 9.5pt;
+    font-style: normal;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--gray-50);
+    margin-top: 0.08in;
+    display: block;
+    text-align: right;
 }
 
 .chapter-opener__attribution::before {
-	content: '— ';
+    content: "— ";
 }
 
 /* ========================================
@@ -248,37 +251,37 @@
  * Provides structured summary of chapter contents
  */
 .chapter-opener__overview {
-	margin: 0.3in 0 0 0;
-	padding: 0;
-	break-inside: avoid;
+    margin: 0.3in 0 0 0;
+    padding: 0;
+    break-inside: avoid;
 }
 
 /**
  * Overview section heading
  */
 .chapter-opener__overview-title {
-	font-family: var(--heading-font);
-	font-size: 13pt;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--black);
-	border-bottom: 1pt solid var(--black);
-	padding-bottom: 0.06in;
-	margin: 0 0 0.15in 0;
-	break-after: avoid;
+    font-family: var(--heading-font);
+    font-size: 13pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--black);
+    border-bottom: 1pt solid var(--black);
+    padding-bottom: 0.06in;
+    margin: 0 0 0.15in 0;
+    break-after: avoid;
 }
 
 /**
  * Overview introduction paragraph
  */
 .chapter-opener__overview-intro {
-	font-family: var(--body-font);
-	font-size: 10.5pt;
-	line-height: 1.5;
-	color: var(--black);
-	margin: 0 0 0.15in 0;
-	text-indent: 0;
+    font-family: var(--body-font);
+    font-size: 10.5pt;
+    line-height: 1.5;
+    color: var(--black);
+    margin: 0 0 0.15in 0;
+    text-indent: 0;
 }
 
 /* ========================================
@@ -290,50 +293,50 @@
  * Optimizes space usage while maintaining readability
  */
 .chapter-opener__list {
-	column-count: 2;
-	column-gap: 0.3in;
-	column-fill: balance;
-	list-style: none;
-	margin: 0;
-	padding: 0;
-	break-inside: avoid;
+    column-count: 2;
+    column-gap: 0.3in;
+    column-fill: balance;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    break-inside: avoid;
 }
 
 /**
  * Individual list items with custom bullet
  */
 .chapter-opener__list li {
-	position: relative;
-	padding-left: 0.25in;
-	margin-bottom: 0.09in;
-	font-family: var(--body-font);
-	font-size: 10.5pt;
-	line-height: 1.4;
-	color: var(--black);
-	break-inside: avoid;
-	orphans: 2;
-	widows: 2;
+    position: relative;
+    padding-left: 0.25in;
+    margin-bottom: 0.09in;
+    font-family: var(--body-font);
+    font-size: 10.5pt;
+    line-height: 1.4;
+    color: var(--black);
+    break-inside: avoid;
+    orphans: 2;
+    widows: 2;
 }
 
 /**
  * Custom bullet styling
  */
 .chapter-opener__list li::before {
-	content: '›';
-	position: absolute;
-	left: 0;
-	font-family: var(--ui-font);
-	font-size: 14pt;
-	font-weight: 700;
-	color: var(--black);
+    content: "›";
+    position: absolute;
+    left: 0;
+    font-family: var(--ui-font);
+    font-size: 14pt;
+    font-weight: 700;
+    color: var(--black);
 }
 
 /**
  * Emphasized list items (e.g., new content, important sections)
  */
 .chapter-opener__list li strong {
-	font-weight: 700;
-	color: var(--black);
+    font-weight: 700;
+    color: var(--black);
 }
 
 /* ========================================
@@ -345,7 +348,7 @@
  * Use class: chapter-opener__list--single-column
  */
 .chapter-opener__list--single-column {
-	column-count: 1;
+    column-count: 1;
 }
 
 /* ========================================
@@ -357,32 +360,32 @@
  * For highlighting key concepts, warnings, or special notes
  */
 .chapter-opener__callout {
-	border: 1.5pt solid var(--black);
-	padding: 0.12in 0.15in;
-	margin: 0.24in 0;
-	background-color: var(--white);
-	break-inside: avoid;
+    border: 1.5pt solid var(--black);
+    padding: 0.12in 0.15in;
+    margin: 0.24in 0;
+    background-color: var(--white);
+    break-inside: avoid;
 }
 
 .chapter-opener__callout-title {
-	font-family: var(--ui-font);
-	font-size: 11pt;
-	font-weight: 700;
-	text-transform: uppercase;
-	letter-spacing: 0.05em;
-	color: var(--black);
-	margin: 0 0 0.09in 0;
+    font-family: var(--ui-font);
+    font-size: 11pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--black);
+    margin: 0 0 0.09in 0;
 }
 
 .chapter-opener__callout p {
-	font-size: 10.5pt;
-	line-height: 1.5;
-	margin: 0 0 0.06in 0;
-	text-indent: 0;
+    font-size: 10.5pt;
+    line-height: 1.5;
+    margin: 0 0 0.06in 0;
+    text-indent: 0;
 }
 
 .chapter-opener__callout p:last-child {
-	margin-bottom: 0;
+    margin-bottom: 0;
 }
 
 /* ========================================
@@ -393,12 +396,12 @@
  * Decorative horizontal rule for section breaks within opener
  */
 .chapter-opener__divider {
-	border: none;
-	border-top: 0.75pt solid var(--gray-30);
-	margin: 0.24in 0;
-	width: 2in;
-	margin-left: auto;
-	margin-right: auto;
+    border: none;
+    border-top: 0.75pt solid var(--gray-30);
+    margin: 0.24in 0;
+    width: 2in;
+    margin-left: auto;
+    margin-right: auto;
 }
 
 /* ========================================
@@ -409,27 +412,27 @@
  * Ensure chapter openers render correctly in print
  */
 @media print {
-	.chapter-opener,
-	.chapter-opener__quote,
-	.chapter-opener__overview,
-	.chapter-opener__callout {
-		color-adjust: exact;
-		-webkit-print-color-adjust: exact;
-		print-color-adjust: exact;
-	}
+    .chapter-opener,
+    .chapter-opener__quote,
+    .chapter-opener__overview,
+    .chapter-opener__callout {
+        color-adjust: exact;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
 
-	/* Prevent list column breaks mid-item */
-	.chapter-opener__list li {
-		break-inside: avoid;
-		page-break-inside: avoid;
-	}
+    /* Prevent list column breaks mid-item */
+    .chapter-opener__list li {
+        break-inside: avoid;
+        page-break-inside: avoid;
+    }
 
-	/* Ensure proper black rendering */
-	.chapter-opener__title,
-	.chapter-opener__overview-title {
-		color: #000000 !important;
-		border-color: #000000 !important;
-	}
+    /* Ensure proper black rendering */
+    .chapter-opener__title,
+    .chapter-opener__overview-title {
+        color: #000000 !important;
+        border-color: #000000 !important;
+    }
 }
 
 /* ========================================

@@ -5,7 +5,7 @@
   "private": true,
   "scripts": {
     "build": "bun build src/index.ts src/cli.ts --target bun --external vite --outdir=dist/",
-    "preview": "bun run src/cli.ts --verbose --debug"
+    "preview": "bun run src/cli.ts examples/dc-rules --verbose --debug"
   },
   "devDependencies": {
     "@types/bun": "latest"
