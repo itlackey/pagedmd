@@ -381,6 +381,32 @@ function setZoom(zoom) {
 	}
 }
 
+/**
+ * Toggle debug mode (show/hide crop marks and page boxes)
+ */
+function toggleDebugMode() {
+	const iframeWin = getIframeWindow();
+	if (!iframeWin || !iframeWin.previewAPI) {
+		debugLog('Preview API not ready', true);
+		return;
+	}
+
+	const api = iframeWin.previewAPI;
+	const isDebug = api.toggleDebugMode();
+
+	// Update button state
+	const debugBtn = document.getElementById('btn-debug');
+	if (debugBtn) {
+		if (isDebug) {
+			debugBtn.classList.add('active');
+		} else {
+			debugBtn.classList.remove('active');
+		}
+	}
+
+	debugLog(`Debug mode ${isDebug ? 'enabled' : 'disabled'}`);
+}
+
 // ============================================================================
 // Iframe Event Listeners
 // ============================================================================
@@ -538,6 +564,12 @@ function initializeToolbarControls() {
 				}
 			}
 		});
+	}
+
+	// Debug mode button
+	const debugBtn = document.getElementById('btn-debug');
+	if (debugBtn) {
+		debugBtn.addEventListener('click', toggleDebugMode);
 	}
 
 	// Wait for iframe to load, then initialize

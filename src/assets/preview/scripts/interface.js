@@ -59,6 +59,27 @@ window.previewAPI = {
 		}
 	},
 
+	toggleDebugMode: () => {
+		const debugLinkId = 'debug-mode-styles';
+		let debugLink = document.getElementById(debugLinkId);
+
+		if (debugLink) {
+			// Debug mode is ON, turn it OFF
+			debugLink.remove();
+			console.log('Debug mode disabled');
+			return false;
+		} else {
+			// Debug mode is OFF, turn it ON
+			debugLink = document.createElement('link');
+			debugLink.id = debugLinkId;
+			debugLink.rel = 'stylesheet';
+			debugLink.href = '/preview/styles/debug.css';
+			document.head.appendChild(debugLink);
+			console.log('Debug mode enabled');
+			return true;
+		}
+	},
+
 	// Notify parent window of page changes
 	notifyPageChange: () => {
 		// Dispatch event that parent window can listen to
