@@ -8,19 +8,25 @@
  * - Vite handles HMR automatically
  */
 
-import path from 'path';
-import { createServer as createViteServer, type ViteDevServer } from 'vite';
-import { watch } from 'chokidar';
-import { tmpdir } from 'os';
-import { randomBytes } from 'crypto';
-import type { PreviewServerOptions } from './types.ts';
-import { generateHtmlFromMarkdown } from './markdown/markdown.ts';
-import { ConfigurationManager } from './config/config-state.ts';
-import { mkdir, remove, fileExists, copyDirectory } from './utils/file-utils.ts';
-import { info, debug, error as logError } from './utils/logger.ts';
-import { DEBOUNCE } from './constants.ts';
-import { injectPagedJsPolyfill } from './build/formats/preview-format.ts';
-import { handleListDirectories, handleChangeFolder } from './preview/routes.ts';
+import path from "path";
+import { createServer as createViteServer, type ViteDevServer } from "vite";
+import { watch } from "chokidar";
+import { tmpdir } from "os";
+import { randomBytes } from "crypto";
+import type { PreviewServerOptions } from "./types.ts";
+import { generateHtmlFromMarkdown } from "./markdown/markdown.ts";
+import { ConfigurationManager } from "./config/config-state.ts";
+import {
+  mkdir,
+  remove,
+  fileExists,
+  copyDirectory,
+} from "./utils/file-utils.ts";
+import { info, debug, error as logError } from "./utils/logger.ts";
+import { DEBOUNCE } from "./constants.ts";
+import { injectPagedJsPolyfill } from "./build/formats/preview-format.ts";
+import { handleListDirectories, handleChangeFolder } from "./preview/routes.ts";
+import type { HeadersInit } from "bun";
 
 /**
  * Generate HTML and write to temp directory
@@ -28,11 +34,11 @@ import { handleListDirectories, handleChangeFolder } from './preview/routes.ts';
 async function generateAndWriteHtml(
   inputPath: string,
   tempDir: string,
-  config: any
+  config: any,
 ): Promise<void> {
   const htmlContent = await generateHtmlFromMarkdown(inputPath, config);
   const htmlWithPolyfill = injectPagedJsPolyfill(htmlContent);
-  const outputPath = path.join(tempDir, 'preview.html');
+  const outputPath = path.join(tempDir, "preview.html");
   await Bun.write(outputPath, htmlWithPolyfill);
   debug(`Generated preview.html in ${tempDir}`);
 }
@@ -40,7 +46,9 @@ async function generateAndWriteHtml(
 /**
  * Start preview server with Vite as primary server
  */
-export async function startPreviewServer(options: PreviewServerOptions): Promise<void> {
+export async function startPreviewServer(
+  options: PreviewServerOptions,
+): Promise<void> {
   const inputPath = options.input || process.cwd();
   if (!(await fileExists(inputPath))) {
     throw new Error(`Input path not found: ${inputPath}`);
@@ -49,8 +57,8 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   info(`Starting preview server for: ${inputPath}`);
 
   // Create temporary directory
-  const tempDirBase = path.join(tmpdir(), 'pagedmd-preview');
-  const tempDirSuffix = randomBytes(8).toString('hex');
+  const tempDirBase = path.join(tmpdir(), "pagedmd-preview");
+  const tempDirSuffix = randomBytes(8).toString("hex");
   const tempDir = path.join(tempDirBase, tempDirSuffix);
   await mkdir(tempDir);
   debug(`Created temporary directory: ${tempDir}`);
@@ -60,7 +68,10 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   debug(`Copied input files to ${tempDir}`);
 
   // Copy preview assets to temp
-  const assetsSourceDir = path.join(path.dirname(new URL(import.meta.url).pathname), 'assets');
+  const assetsSourceDir = path.join(
+    path.dirname(new URL(import.meta.url).pathname),
+    "assets",
+  );
   await copyDirectory(assetsSourceDir, tempDir);
   debug(`Copied preview assets to ${tempDir}`);
 
@@ -114,7 +125,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       startFileWatcher();
     }
 
-    info('Preview restarted successfully');
+    info("Preview restarted successfully");
   }
 
   // Start file watcher for input directory
@@ -131,7 +142,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
 
     let rebuildTimer: NodeJS.Timeout | null = null;
 
-    currentWatcher.on('all', async (event, filePath) => {
+    currentWatcher.on("all", async (event, filePath) => {
       debug(`File ${event}: ${filePath}`);
 
       if (rebuildTimer) clearTimeout(rebuildTimer);
@@ -141,10 +152,14 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
 
         isRebuilding = true;
         try {
-          info('Regenerating preview...');
+          info("Regenerating preview...");
 
           // Re-copy changed file if relevant
-          if (filePath.endsWith('.md') || filePath.endsWith('.yaml') || filePath.endsWith('.yml')) {
+          if (
+            filePath.endsWith(".md") ||
+            filePath.endsWith(".yaml") ||
+            filePath.endsWith(".yml")
+          ) {
             if (filePath.startsWith(currentInputPath)) {
               const relativePath = path.relative(currentInputPath, filePath);
               const destPath = path.join(tempDir, relativePath);
@@ -159,16 +174,16 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
           const updatedConfig = configManager.getConfig();
           await generateAndWriteHtml(currentInputPath, tempDir, updatedConfig);
 
-          info('Preview updated');
+          info("Preview updated");
         } catch (err) {
-          logError('Failed to regenerate preview:', err);
+          logError("Failed to regenerate preview:", err);
         } finally {
           isRebuilding = false;
         }
       }, DEBOUNCE.FILE_WATCH);
     });
 
-    info('Watching for file changes...');
+    info("Watching for file changes...");
   }
 
   // Create Vite server with API middleware
@@ -178,24 +193,24 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
     server: {
       port: options.port,
       strictPort: true,
-      host: '0.0.0.0',
+      host: "0.0.0.0",
       open: options.openBrowser,
     },
     clearScreen: false,
     plugins: [
       {
-        name: 'api-middleware',
+        name: "api-middleware",
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             const url = new URL(req.url!, `http://${req.headers.host}`);
 
             // Handle /api/directories
-            if (url.pathname === '/api/directories') {
+            if (url.pathname === "/api/directories") {
               const response = await handleListDirectories(
                 new Request(url.toString(), {
                   method: req.method,
                   headers: req.headers as HeadersInit,
-                })
+                }),
               );
 
               res.statusCode = response.status;
@@ -207,17 +222,20 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
             }
 
             // Handle /api/change-folder
-            if (url.pathname === '/api/change-folder' && req.method === 'POST') {
-              let body = '';
-              req.on('data', (chunk) => (body += chunk));
-              req.on('end', async () => {
+            if (
+              url.pathname === "/api/change-folder" &&
+              req.method === "POST"
+            ) {
+              let body = "";
+              req.on("data", (chunk) => (body += chunk));
+              req.on("end", async () => {
                 const response = await handleChangeFolder(
                   new Request(url.toString(), {
-                    method: 'POST',
+                    method: "POST",
                     headers: req.headers as HeadersInit,
                     body,
                   }),
-                  restartPreview
+                  restartPreview,
                 );
 
                 res.statusCode = response.status;
@@ -241,7 +259,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
 
   const serverUrl = `http://localhost:${options.port}`;
   info(`Preview server running at ${serverUrl}`);
-  info('Press Ctrl+C to stop');
+  info("Press Ctrl+C to stop");
 
   // Start file watching if enabled
   if (!options.noWatch) {
@@ -250,13 +268,13 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
 
   // Graceful shutdown
   const cleanup = async () => {
-    info('\nShutting down preview server...');
+    info("\nShutting down preview server...");
     if (currentWatcher) await currentWatcher.close();
     await viteServer.close();
     await remove(tempDir);
     process.exit(0);
   };
 
-  process.on('SIGINT', cleanup);
-  process.on('SIGTERM', cleanup);
+  process.on("SIGINT", cleanup);
+  process.on("SIGTERM", cleanup);
 }
