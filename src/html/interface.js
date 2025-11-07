@@ -89,26 +89,100 @@ function detectCurrentPage() {
 
 // Paged.js Handler class
 class Handler extends Paged.Handler {
+    constructor() {
+        super();
+        // Store abort controller for cleanup
+        this.scrollAbortController = null;
+        this.scrollTimeout = null;
+    }
+
     afterRendered(pages) {
-        console.log(`✓ Paged.js rendered ${pages.length} pages`);
+        try {
+            // Validate pages array
+            if (!Array.isArray(pages) || pages.length === 0) {
+                console.warn('Paged.js rendered with invalid or empty pages array');
+                return;
+            }
 
-        // Update the API with rendered pages
-        window.previewAPI.pages = pages;
-        window.previewAPI.currentPage = 0;
-        window.previewAPI.updateUI();
+            console.log(`✓ Paged.js rendered ${pages.length} pages`);
 
-        // Add scroll listener to detect page changes
-        let scrollTimeout;
-        window.addEventListener('scroll', () => {
-            clearTimeout(scrollTimeout);
-            scrollTimeout = setTimeout(detectCurrentPage, 100);
-        }, { passive: true });
+            // Update the API with rendered pages
+            window.previewAPI.pages = pages;
+            window.previewAPI.currentPage = 0;
+            window.previewAPI.updateUI();
 
-        // Dispatch ready event
-        window.dispatchEvent(new CustomEvent('afterPreviewRendered', {
-            detail: { totalPages: pages.length }
-        }));
+            // Clean up existing scroll listener if any
+            if (this.scrollAbortController) {
+                this.scrollAbortController.abort();
+            }
+
+            // Create new abort controller for this session
+            this.scrollAbortController = new AbortController();
+
+            // Add scroll listener to detect page changes
+            window.addEventListener('scroll', () => {
+                clearTimeout(this.scrollTimeout);
+                this.scrollTimeout = setTimeout(detectCurrentPage, 100);
+            }, {
+                passive: true,
+                signal: this.scrollAbortController.signal
+            });
+
+            // Dispatch ready event
+            window.dispatchEvent(new CustomEvent('afterPreviewRendered', {
+                detail: { totalPages: pages.length }
+            }));
+        } catch (error) {
+            console.error('Error in afterRendered callback:', error);
+            // Ensure we still dispatch an event even if there's an error
+            window.dispatchEvent(new CustomEvent('afterPreviewRendered', {
+                detail: { totalPages: 0, error: error.message }
+            }));
+        }
+    }
+
+    cleanup() {
+        // Clean up resources
+        if (this.scrollAbortController) {
+            this.scrollAbortController.abort();
+            this.scrollAbortController = null;
+        }
+        if (this.scrollTimeout) {
+            clearTimeout(this.scrollTimeout);
+            this.scrollTimeout = null;
+        }
     }
 }
 
+// Store handler instance globally for cleanup
+let handlerInstance = null;
+
 Paged.registerHandlers(Handler);
+
+// Initialize Paged.js after DOM is loaded
+function initializePaged() {
+    console.log('Initializing Paged.js preview...');
+    const paged = new Paged.Previewer();
+
+    // Store handler instance for cleanup
+    if (paged.handlers && paged.handlers.length > 0) {
+        handlerInstance = paged.handlers.find(h => h instanceof Handler);
+    }
+
+    paged.preview().catch(err => {
+        console.error('Paged.js preview failed:', err);
+    });
+}
+
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializePaged);
+} else {
+    initializePaged();
+}
+
+// Cleanup on page unload
+window.addEventListener('beforeunload', () => {
+    if (handlerInstance && typeof handlerInstance.cleanup === 'function') {
+        handlerInstance.cleanup();
+    }
+});

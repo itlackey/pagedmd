@@ -12,6 +12,7 @@ import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
 import type { PreviewServerOptions } from '../types.ts';
 import { generateHtmlFromMarkdown } from '../markdown/markdown.ts';
+import { injectPagedJsPolyfill } from '../html/preview-wrapper.ts';
 import { ConfigurationManager } from '../config/config-state.ts';
 import { copyMarkdownFiles, copyPreviewAssets, mkdir, remove, writeFile, fileExists } from '../utils/file-utils.ts';
 import { info, debug, error as logError } from '../utils/logger.ts';
@@ -249,8 +250,13 @@ async function generateAndWriteHtml(
   tempDir: string,
   config: any
 ): Promise<void> {
-  const html = await generateHtmlFromMarkdown(inputPath, config, { includePreviewAssets: true });
+  // Generate base HTML from markdown (without preview assets - we'll inject them)
+  const html = await generateHtmlFromMarkdown(inputPath, config, { includePreviewAssets: false });
+
+  // Inject Paged.js polyfill and interface.js code inline
+  const htmlWithPolyfill = injectPagedJsPolyfill(html);
+
   const previewPath = path.join(tempDir, 'preview.html');
-  await writeFile(previewPath, html);
+  await writeFile(previewPath, htmlWithPolyfill);
   debug(`HTML written to: ${previewPath}`);
 }
