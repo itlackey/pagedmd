@@ -8,9 +8,9 @@
 import { spawn } from 'child_process';
 import { promises as fs } from 'fs';
 import path from 'path';
-import { BuildError } from '../utils/errors.ts';
-import { info, debug } from '../utils/logger.ts';
-import type { PDFGenerationResult } from '../types.ts';
+import { BuildError } from '../../utils/errors.ts';
+import { info, debug } from '../../utils/logger.ts';
+import type { PDFGenerationResult } from '../../types.ts';
 
 /**
  * Check if pagedjs-cli is installed and available

@@ -10,13 +10,13 @@ import { createServer, ViteDevServer } from 'vite';
 import { watch } from 'chokidar';
 import { tmpdir } from 'os';
 import { randomBytes } from 'crypto';
-import type { PreviewServerOptions } from '../types.ts';
-import { generateHtmlFromMarkdown } from '../markdown/markdown.ts';
-import { injectPagedJsPolyfill } from '../html/preview-wrapper.ts';
-import { ConfigurationManager } from '../config/config-state.ts';
-import { copyMarkdownFiles, copyPreviewAssets, mkdir, remove, writeFile, fileExists } from '../utils/file-utils.ts';
-import { info, debug, error as logError } from '../utils/logger.ts';
-import { DEBOUNCE } from '../constants.ts';
+import type { PreviewServerOptions } from './types.ts';
+import { generateHtmlFromMarkdown } from './markdown/markdown.ts';
+import { ConfigurationManager } from './config/config-state.ts';
+import { copyMarkdownFiles, copyPreviewAssets, mkdir, remove, writeFile, fileExists } from './utils/file-utils.ts';
+import { info, debug, error as logError } from './utils/logger.ts';
+import { DEBOUNCE } from './constants.ts';
+import { injectPagedJsPolyfill } from './build/formats/preview-format.ts';
 
 /**
  * Preview server state
@@ -92,7 +92,7 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
       root: tempDir,
       server: {
         port: options.port,
-        open: options.openBrowser ? '/preview.html' : false,
+        open: options.openBrowser ? '/index.html' : false,
         host: '0.0.0.0', // Allow external connections
       },
       // Disable Vite's own file watching (we handle it)

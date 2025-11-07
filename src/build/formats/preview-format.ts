@@ -9,9 +9,48 @@ import path from 'path';
 import { writeFile, mkdir } from '../../utils/file-utils.ts';
 import { info } from '../../utils/logger.ts';
 import { validateOutputPath } from '../../utils/path-validation.ts';
-import { injectPagedJsPolyfill } from '../../html/preview-wrapper.ts';
 import { AssetCopier } from '../asset-copier.ts';
 import type { FormatStrategy, BuildOptions, OutputValidation, OutputFormat } from '../../types.ts';
+
+
+/**
+ * Inject Paged.js polyfill script tags into HTML head
+ *
+ * Adds Paged.js polyfill before </head> tag to enable client-side pagination
+ * Same pattern used in preview server routes.ts:666-672
+ *
+ * @param html HTML content to inject polyfill into
+ * @returns HTML with polyfill script tags injected
+ * @throws Error if HTML is missing </head> tag or assets are invalid
+ */
+export function injectPagedJsPolyfill(html: string): string {
+  // Validate input HTML has required structure
+  if (!html.includes('</head>')) {
+    throw new Error('HTML is missing required </head> tag for polyfill injection');
+  }
+
+  const polyfillScript = `
+    <script>
+      // Disable auto mode - we'll initialize manually
+      window.PagedConfig = {
+        auto: false
+      };
+    </script>
+    <script src="/preview/scripts/paged.polyfill.js"></script>
+    <script src="/preview/scripts/interface.js"></script>   
+    <link rel="stylesheet" href="/preview/styles/interface.css">  
+  `;
+
+  // Inject before closing </head> tag
+  const injectedHtml = html.replace('</head>', `${polyfillScript}</head>`);
+
+  // Verify injection occurred (paranoid check)
+  if (injectedHtml === html) {
+    throw new Error('Failed to inject polyfill script - HTML unchanged after replace operation');
+  }
+
+  return injectedHtml;
+}
 
 export class PreviewFormatStrategy implements FormatStrategy {
   /**

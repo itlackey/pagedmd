@@ -7,7 +7,7 @@
 
 import path from 'path';
 import { promises as fs } from 'fs';
-import { generatePDF } from '../pdf.ts';
+import { generatePDF } from './pagedjs-cli-wrapper.ts';
 import { writeFile, mkdir, remove, isDirectory, readDirectory, copyDirectory as copyDir } from '../../utils/file-utils.ts';
 import { info, debug } from '../../utils/logger.ts';
 import { validateOutputPath } from '../../utils/path-validation.ts';

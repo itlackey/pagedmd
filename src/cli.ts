@@ -13,7 +13,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { build } from './build/build.ts';
 import { startWatchMode } from './build/watch.ts';
-import { startPreviewServer } from './preview/preview-server.ts';
+import { startPreviewServer } from './server.ts';
 import { createBuildOptions, ensureManifest, validateFormatOption } from './utils/config.ts';
 import { fileExists } from './utils/file-utils.ts';
 import { BuildError, ConfigError } from './utils/errors.ts';
