@@ -176,3 +176,101 @@
 .pagedjs_bleed-right .pagedjs_marks-crop:last-child {
     box-shadow: 0px -1px 0px 0px var(--pagedjs-crop-shadow);
 }
+
+/* Print-specific styles - preserve Paged.js layout */
+@media print {
+    /* Ensure the preview container and Paged.js content are visible */
+    body {
+        background: white !important;
+        margin: 0;
+        padding: 0;
+        overflow: visible !important;
+    }
+
+    .preview-container {
+        display: block !important;
+        height: auto !important;
+        overflow: visible !important;
+        background: white !important;
+    }
+
+    /* Preserve page layout for print */
+    .pagedjs_pages {
+        display: block !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        width: auto !important;
+        transform: none !important; /* Remove zoom transformations */
+        grid-template-columns: none !important;
+        gap: 0 !important;
+    }
+
+    .pagedjs_page {
+        display: block !important;
+        visibility: visible !important;
+        page-break-after: always;
+        page-break-inside: avoid;
+        margin: 0 !important;
+        box-shadow: none !important;
+        position: relative !important;
+        overflow: visible !important;
+        left: 0 !important; /* Reset positioning from two-column layout */
+        width: 100% !important;
+        max-width: none !important;
+    }
+
+    /* Ensure page content is visible */
+    .pagedjs_page_content {
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+        overflow: visible !important;
+    }
+
+    .pagedjs_pagebox {
+        display: block !important;
+        visibility: visible !important;
+        position: relative !important;
+        overflow: visible !important;
+        box-shadow: none !important;
+    }
+
+    /* Ensure all text and content is visible */
+    .pagedjs_page_content * {
+        visibility: visible !important;
+        opacity: 1 !important;
+    }
+
+    /* Hide screen-only elements */
+    .pagedjs_marks,
+    .pagedjs_marks-crop,
+    .pagedjs_marks-cross,
+    .pagedjs_marks-middle,
+    .pagedjs_bleed {
+        display: none !important;
+    }
+
+    /* Hide margin boxes during print if they contain no content */
+    .pagedjs_margin-top-left-corner-holder,
+    .pagedjs_margin-top,
+    .pagedjs_margin-top-left,
+    .pagedjs_margin-top-center,
+    .pagedjs_margin-top-right,
+    .pagedjs_margin-top-right-corner-holder,
+    .pagedjs_margin-bottom-left-corner-holder,
+    .pagedjs_margin-bottom,
+    .pagedjs_margin-bottom-left,
+    .pagedjs_margin-bottom-center,
+    .pagedjs_margin-bottom-right,
+    .pagedjs_margin-bottom-right-corner-holder,
+    .pagedjs_margin-right,
+    .pagedjs_margin-right-top,
+    .pagedjs_margin-right-middle,
+    .pagedjs_margin-right-bottom,
+    .pagedjs_margin-left,
+    .pagedjs_margin-left-top,
+    .pagedjs_margin-left-middle,
+    .pagedjs_margin-left-bottom {
+        box-shadow: none !important;
+    }
+}

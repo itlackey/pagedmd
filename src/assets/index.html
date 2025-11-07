@@ -6,7 +6,6 @@
 
     <script type="module" src="/preview/scripts/toast.js"></script>
     <script src="/preview/scripts/preview.js"></script>
-    <script src="/preview/scripts/print-preview.js"></script>
     <style>
         /* Toolbar styles - Enhanced visual hierarchy */
         .toolbar {
@@ -260,6 +259,15 @@
             <button class="toolbar-btn active" id="btn-two-column" title="Two column view">Two-Column</button>
             <div class="toolbar-separator"></div>
             <button class="toolbar-btn" id="btn-debug" title="Toggle debug mode (show crop marks and page boxes)">Debug</button>
+            <div class="toolbar-separator"></div>
+            <button class="toolbar-btn" id="btn-print" title="Print (save as PDF)" aria-label="Print (disabled while rendering)">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="currentColor">
+                    <path d="M11 2H5a1 1 0 0 0-1 1v2h8V3a1 1 0 0 0-1-1z"/>
+                    <path fill-rule="evenodd" d="M0 7a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v3a2 2 0 0 1-2 2h-1v-2a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v2H2a2 2 0 0 1-2-2V7zm2.5 1a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1z"/>
+                    <path fill-rule="evenodd" d="M5 11a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1v-3zm1 0v3h4v-3H6z"/>
+                </svg>
+                Print
+            </button>
             <div class="toolbar-separator"></div>
             <select class="zoom-select" id="zoom-select" title="Zoom level">
                 <option value="0.5">50%</option>

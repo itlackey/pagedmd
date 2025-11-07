@@ -600,3 +600,42 @@
          outline-offset: 3px;
      }
  }
+
+ /* Print button specific styles */
+ #btn-print {
+     /* Use default button styles but ensure proper spacing for icon+text */
+     gap: 6px;
+ }
+
+ #btn-print:disabled {
+     /* Visual feedback when rendering is in progress */
+     opacity: 0.35;
+     cursor: not-allowed;
+ }
+
+ /* Hide toolbar and other UI elements when printing */
+ @media print {
+     .toolbar {
+         display: none !important;
+     }
+
+     .folder-modal {
+         display: none !important;
+     }
+
+     .loading-overlay {
+         display: none !important;
+     }
+
+     #status-announcer {
+         display: none !important;
+     }
+
+     #debug-console {
+         display: none !important;
+     }
+
+     .reload-indicator {
+         display: none !important;
+     }
+ }

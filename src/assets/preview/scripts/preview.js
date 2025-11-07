@@ -23,6 +23,9 @@ const clientState = {
   currentFolder: "", // Absolute path to input directory (for folder selector)
 };
 
+// Track rendering timeout to prevent race conditions
+let renderingTimeoutId = null;
+
 // ============================================================================
 // Debug and Notification Utilities
 // ============================================================================
@@ -198,6 +201,19 @@ async function switchToFolder(path) {
 
     // Show success message
     showSuccess("Folder Changed", `Now previewing: ${path}`);
+
+    // Clear rendering timeout from previous session
+    if (renderingTimeoutId) {
+      clearTimeout(renderingTimeoutId);
+      renderingTimeoutId = null;
+    }
+
+    // Disable print button while new content loads
+    const printBtn = document.getElementById("btn-print");
+    if (printBtn) {
+      printBtn.disabled = true;
+      printBtn.setAttribute("aria-label", "Print (disabled while rendering)");
+    }
 
     // Reload iframe to show new folder content
     const iframe = document.getElementById("preview-iframe");
@@ -415,6 +431,47 @@ function toggleDebugMode() {
   debugLog(`Debug mode ${isDebug ? "enabled" : "disabled"}`);
 }
 
+/**
+ * Print the iframe content (save as PDF)
+ * Accesses iframe's contentWindow to trigger browser print dialog
+ */
+function printPreview() {
+  const iframeWin = getIframeWindow();
+  if (!iframeWin) {
+    debugLog("Cannot print - iframe not accessible", true);
+    showError("Print Failed", "Preview window is not available. Try refreshing the page.");
+    return;
+  }
+
+  // Check if print button is disabled (belt-and-suspenders with keyboard shortcut check)
+  const printBtn = document.getElementById("btn-print");
+  if (printBtn && printBtn.disabled) {
+    debugLog("Print blocked - rendering still in progress", true);
+    showError("Print Not Ready", "Please wait for rendering to complete.");
+    return;
+  }
+
+  try {
+    // Validate iframe is still attached and accessible
+    if (!iframeWin.document || iframeWin.closed) {
+      throw new Error("Preview window is no longer valid");
+    }
+
+    iframeWin.print();
+    debugLog("Print dialog opened");
+  } catch (error) {
+    console.error("Print failed:", error);
+    debugLog("Print failed", true);
+
+    // Provide specific, actionable error message
+    const errorMsg = error instanceof Error ? error.message : "Unknown error";
+    showError(
+      "Print Error",
+      `Unable to open print dialog: ${errorMsg}. Try refreshing the page or check browser popup settings.`
+    );
+  }
+}
+
 // ============================================================================
 // Iframe Event Listeners
 // ============================================================================
@@ -444,6 +501,13 @@ function onRenderingComplete(event) {
 
   // Apply default zoom
   setZoom(1.0);
+
+  // Enable print button now that rendering is complete
+  const printBtn = document.getElementById("btn-print");
+  if (printBtn) {
+    printBtn.disabled = false;
+    printBtn.setAttribute("aria-label", "Print preview (save as PDF)");
+  }
 
   debugLog("✓ Preview initialized and ready");
 }
@@ -580,6 +644,30 @@ function initializeToolbarControls() {
     debugBtn.addEventListener("click", toggleDebugMode);
   }
 
+  // Print button
+  const printBtn = document.getElementById("btn-print");
+  if (printBtn) {
+    printBtn.addEventListener("click", printPreview);
+    // Start disabled - will be enabled when rendering completes
+    printBtn.disabled = true;
+  }
+
+  // Keyboard shortcut for print (Ctrl/Cmd+P)
+  document.addEventListener("keydown", (event) => {
+    if ((event.ctrlKey || event.metaKey) && event.key === "p") {
+      event.preventDefault();
+
+      const printBtn = document.getElementById("btn-print");
+      if (printBtn && printBtn.disabled) {
+        debugLog("Print blocked - rendering still in progress", true);
+        showError("Print Not Ready", "Please wait for rendering to complete.");
+        return;
+      }
+
+      printPreview();
+    }
+  });
+
   // Wait for iframe to load, then initialize
   const iframe = document.getElementById("preview-iframe");
   if (iframe) {
@@ -592,10 +680,27 @@ function initializeToolbarControls() {
  * Wait for Paged.js to finish rendering, then initialize
  */
 function onIframeLoad() {
+  // Clear any existing timeout from previous rendering
+  if (renderingTimeoutId) {
+    clearTimeout(renderingTimeoutId);
+    renderingTimeoutId = null;
+  }
+
   debugLog("Iframe loaded, setting up event listeners...");
 
   // Setup event listeners - iframe will signal when ready via 'renderingComplete' event
   setupIframeEventListeners();
+
+  // Set new timeout and store ID
+  renderingTimeoutId = setTimeout(() => {
+    const printBtn = document.getElementById("btn-print");
+    if (printBtn && printBtn.disabled) {
+      debugLog("Rendering timeout - enabling print button anyway", true);
+      showError("Rendering Warning", "Preview rendering did not complete. Print may be incomplete.");
+      printBtn.disabled = false;
+    }
+    renderingTimeoutId = null; // Clear ID after timeout fires
+  }, 30000);
 
   debugLog("✓ Waiting for renderingComplete event from iframe...");
 }
