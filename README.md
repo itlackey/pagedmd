@@ -13,6 +13,22 @@ A powerful CLI tool and live preview UI for creating professional print-ready PD
 
 ## Installation
 
+### Windows Users
+
+For easy installation on Windows 11, download and run the installation script:
+
+```powershell
+# Download the installer
+curl -o install.ps1 https://raw.githubusercontent.com/dimm-city/pagedmd/main/install.ps1
+
+# Run the installer
+.\install.ps1
+```
+
+The script will automatically install Bun and pagedmd globally.
+
+### Mac/Linux Users
+
 Install globally with npm or Bun:
 
 ```bash
@@ -264,11 +280,10 @@ pagedmd/
 │   ├── server.ts           # Preview server
 │   ├── utils/              # Utilities (config, file ops, CSS)
 │   └── assets/
-│       ├── core/           # Base CSS
+│       ├── core/           # Base Print CSS
 │       ├── themes/         # Bundled themes
 │       ├── plugins/        # Plugin CSS
 │       └── preview/        # Preview UI assets
-├── manifest.yaml           # Project configuration
 └── README.md
 ```
 
