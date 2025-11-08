@@ -274,6 +274,25 @@
                         />
                     </svg>
                 </button>
+                <button
+                    class="toolbar-btn"
+                    id="btn-github"
+                    title="Clone from GitHub"
+                >
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/>
+                        <path d="M9 18c-4.51 2-5-2-7-2"/>
+                    </svg>
+                </button>
                 <span class="toolbar-title" id="document-title"
                     >Preview</span
                 >
@@ -560,6 +579,78 @@
                         type="button"
                     >
                         Open This Folder
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- GitHub Clone Modal -->
+        <div
+            class="folder-modal"
+            id="github-modal"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="github-modal-title"
+            style="display: none"
+        >
+            <div class="folder-modal-content">
+                <div class="folder-modal-header">
+                    <h3 id="github-modal-title">Clone from GitHub</h3>
+                    <button
+                        class="folder-modal-close"
+                        id="github-modal-close"
+                        aria-label="Close GitHub clone dialog"
+                        type="button"
+                    >
+                        &times;
+                    </button>
+                </div>
+                <div class="folder-modal-body">
+                    <!-- Authentication Status -->
+                    <div class="gh-status-section">
+                        <div class="gh-status-info" id="gh-status-info">
+                            <div class="gh-status-loading">
+                                Checking GitHub CLI status...
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Repository Input -->
+                    <div class="gh-input-section">
+                        <label for="repo-url-input" class="gh-label">
+                            Repository URL
+                        </label>
+                        <input
+                            type="text"
+                            id="repo-url-input"
+                            class="gh-input"
+                            placeholder="https://github.com/owner/repo or owner/repo"
+                            aria-describedby="repo-url-hint"
+                        />
+                        <div class="gh-hint" id="repo-url-hint">
+                            Enter a GitHub repository URL or owner/repo shorthand
+                        </div>
+                    </div>
+
+                    <!-- Error/Success Messages -->
+                    <div class="gh-message" id="gh-message" style="display: none"></div>
+                </div>
+                <div class="folder-modal-footer">
+                    <button
+                        class="toolbar-btn secondary"
+                        id="btn-gh-login"
+                        type="button"
+                        style="display: none"
+                    >
+                        Login to GitHub
+                    </button>
+                    <button
+                        class="toolbar-btn primary"
+                        id="btn-gh-clone"
+                        type="button"
+                        disabled
+                    >
+                        Clone Repository
                     </button>
                 </div>
             </div>

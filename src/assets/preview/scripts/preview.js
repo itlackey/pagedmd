@@ -836,12 +836,51 @@ function initializeToolbarControls() {
     });
   }
 
-  // Close modal on Escape key
+  // GitHub button
+  const githubBtn = document.getElementById("btn-github");
+  if (githubBtn) {
+    githubBtn.addEventListener("click", openGitHubModal);
+  }
+
+  // GitHub modal close button
+  const githubCloseBtn = document.getElementById("github-modal-close");
+  if (githubCloseBtn) {
+    githubCloseBtn.addEventListener("click", closeGitHubModal);
+  }
+
+  // GitHub login button
+  const githubLoginBtn = document.getElementById("btn-gh-login");
+  if (githubLoginBtn) {
+    githubLoginBtn.addEventListener("click", handleGitHubLogin);
+  }
+
+  // GitHub clone button
+  const githubCloneBtn = document.getElementById("btn-gh-clone");
+  if (githubCloneBtn) {
+    githubCloneBtn.addEventListener("click", handleGitHubClone);
+  }
+
+  // Allow Enter key in repo URL input to trigger clone
+  const repoUrlInput = document.getElementById("repo-url-input");
+  if (repoUrlInput) {
+    repoUrlInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        handleGitHubClone();
+      }
+    });
+  }
+
+  // Close modals on Escape key
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
-      const modal = document.getElementById("folder-modal");
-      if (modal && modal.style.display === "flex") {
+      const folderModal = document.getElementById("folder-modal");
+      if (folderModal && folderModal.style.display === "flex") {
         closeFolderModal();
+      }
+      
+      const githubModal = document.getElementById("github-modal");
+      if (githubModal && githubModal.style.display === "flex") {
+        closeGitHubModal();
       }
     }
   });
@@ -1114,6 +1153,245 @@ function registerPageLifecycleListeners() {
   });
 
   console.log("✓ Page lifecycle listeners registered");
+}
+
+// ============================================================================
+// GitHub Clone Modal
+// ============================================================================
+
+/**
+ * GitHub state tracking
+ */
+const githubState = {
+  isAuthenticated: false,
+  username: null,
+  ghCliInstalled: false,
+};
+
+/**
+ * Open GitHub clone modal
+ */
+async function openGitHubModal() {
+  const modal = document.getElementById("github-modal");
+  const overlay = document.getElementById("loading-overlay");
+
+  modal.style.display = "flex";
+  if (overlay) overlay.style.display = "none";
+
+  // Reset input and message
+  const repoInput = document.getElementById("repo-url-input");
+  if (repoInput) repoInput.value = "";
+  
+  hideGitHubMessage();
+
+  // Check GitHub status
+  await checkGitHubStatus();
+}
+
+/**
+ * Close GitHub clone modal
+ */
+function closeGitHubModal() {
+  const modal = document.getElementById("github-modal");
+  modal.style.display = "none";
+}
+
+/**
+ * Check GitHub CLI and authentication status
+ */
+async function checkGitHubStatus() {
+  const statusInfo = document.getElementById("gh-status-info");
+  const loginBtn = document.getElementById("btn-gh-login");
+  const cloneBtn = document.getElementById("btn-gh-clone");
+
+  if (!statusInfo) return;
+
+  // Show loading state
+  statusInfo.innerHTML = '<div class="gh-status-loading">Checking GitHub CLI status...</div>';
+
+  try {
+    const response = await fetch("/api/gh/status");
+    const data = await response.json();
+
+    githubState.ghCliInstalled = data.ghCliInstalled;
+    githubState.isAuthenticated = data.authenticated;
+    githubState.username = data.username;
+
+    if (!data.ghCliInstalled) {
+      statusInfo.innerHTML = `
+        <div class="gh-status-error">
+          <svg class="gh-status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+          <span>GitHub CLI not installed. Please install <code>gh</code> to use this feature.</span>
+        </div>
+      `;
+      if (loginBtn) loginBtn.style.display = "none";
+      if (cloneBtn) cloneBtn.disabled = true;
+      return;
+    }
+
+    if (!data.authenticated) {
+      statusInfo.innerHTML = `
+        <div class="gh-status-not-authenticated">
+          <svg class="gh-status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"/>
+            <line x1="15" y1="9" x2="9" y2="15"/>
+            <line x1="9" y1="9" x2="15" y2="15"/>
+          </svg>
+          <span>Not authenticated with GitHub. Click "Login to GitHub" to authenticate.</span>
+        </div>
+      `;
+      if (loginBtn) loginBtn.style.display = "inline-flex";
+      if (cloneBtn) cloneBtn.disabled = true;
+      return;
+    }
+
+    // Authenticated
+    statusInfo.innerHTML = `
+      <div class="gh-status-authenticated">
+        <svg class="gh-status-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/>
+          <polyline points="22 4 12 14.01 9 11.01"/>
+        </svg>
+        <span>Authenticated as <span class="gh-username">${data.username}</span></span>
+      </div>
+    `;
+    if (loginBtn) loginBtn.style.display = "none";
+    if (cloneBtn) cloneBtn.disabled = false;
+
+  } catch (error) {
+    console.error("Failed to check GitHub status:", error);
+    statusInfo.innerHTML = `
+      <div class="gh-status-error">
+        <span>Failed to check GitHub status: ${error.message}</span>
+      </div>
+    `;
+    if (loginBtn) loginBtn.style.display = "none";
+    if (cloneBtn) cloneBtn.disabled = true;
+  }
+}
+
+/**
+ * Handle GitHub login
+ */
+async function handleGitHubLogin() {
+  const loginBtn = document.getElementById("btn-gh-login");
+  
+  if (loginBtn) {
+    loginBtn.disabled = true;
+    loginBtn.textContent = "Authenticating...";
+  }
+
+  showGitHubMessage("Opening browser for authentication. Please complete the authentication in your browser...", "info");
+
+  try {
+    const response = await fetch("/api/gh/login", {
+      method: "POST",
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showGitHubMessage("Authentication successful!", "success");
+      // Refresh status
+      await checkGitHubStatus();
+    } else {
+      showGitHubMessage(data.error || "Authentication failed", "error");
+      if (loginBtn) {
+        loginBtn.disabled = false;
+        loginBtn.textContent = "Login to GitHub";
+      }
+    }
+  } catch (error) {
+    console.error("GitHub login failed:", error);
+    showGitHubMessage(`Authentication failed: ${error.message}`, "error");
+    if (loginBtn) {
+      loginBtn.disabled = false;
+      loginBtn.textContent = "Login to GitHub";
+    }
+  }
+}
+
+/**
+ * Handle GitHub clone
+ */
+async function handleGitHubClone() {
+  const repoInput = document.getElementById("repo-url-input");
+  const cloneBtn = document.getElementById("btn-gh-clone");
+
+  if (!repoInput) return;
+
+  const repoUrl = repoInput.value.trim();
+
+  if (!repoUrl) {
+    showGitHubMessage("Please enter a repository URL", "error");
+    return;
+  }
+
+  if (cloneBtn) {
+    cloneBtn.disabled = true;
+    cloneBtn.textContent = "Cloning...";
+  }
+
+  showGitHubMessage("Cloning repository... This may take a moment.", "info");
+
+  try {
+    const response = await fetch("/api/gh/clone", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ repoUrl }),
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+      showGitHubMessage(`Repository cloned successfully! Opening ${data.localPath}...`, "success");
+      
+      // Close modal
+      setTimeout(() => {
+        closeGitHubModal();
+        showSuccess("Repository Cloned", `Now previewing: ${data.localPath}`);
+      }, 1500);
+    } else {
+      showGitHubMessage(data.error || "Clone failed", "error");
+      if (cloneBtn) {
+        cloneBtn.disabled = false;
+        cloneBtn.textContent = "Clone Repository";
+      }
+    }
+  } catch (error) {
+    console.error("GitHub clone failed:", error);
+    showGitHubMessage(`Clone failed: ${error.message}`, "error");
+    if (cloneBtn) {
+      cloneBtn.disabled = false;
+      cloneBtn.textContent = "Clone Repository";
+    }
+  }
+}
+
+/**
+ * Show message in GitHub modal
+ */
+function showGitHubMessage(message, type = "info") {
+  const messageEl = document.getElementById("gh-message");
+  if (!messageEl) return;
+
+  messageEl.textContent = message;
+  messageEl.className = `gh-message ${type}`;
+  messageEl.style.display = "block";
+}
+
+/**
+ * Hide message in GitHub modal
+ */
+function hideGitHubMessage() {
+  const messageEl = document.getElementById("gh-message");
+  if (messageEl) {
+    messageEl.style.display = "none";
+  }
 }
 
 // ============================================================================

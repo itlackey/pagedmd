@@ -790,3 +790,125 @@
     transform: none;
     box-shadow: none;
 }
+
+/* GitHub Clone Modal Specific Styles */
+.gh-status-section {
+    margin-bottom: 20px;
+    padding: 12px;
+    background: #2a2a2a;
+    border-radius: 6px;
+    border: 1px solid #3a3a3a;
+}
+
+.gh-status-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: #e0e0e0;
+    font-size: 14px;
+}
+
+.gh-status-loading {
+    color: #9ca3af;
+}
+
+.gh-status-authenticated {
+    color: #10b981;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gh-status-not-authenticated {
+    color: #f59e0b;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.gh-status-error {
+    color: #ef4444;
+}
+
+.gh-status-icon {
+    width: 20px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.gh-username {
+    font-weight: 600;
+    color: #60a5fa;
+}
+
+.gh-input-section {
+    margin-bottom: 20px;
+}
+
+.gh-label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #e0e0e0;
+    margin-bottom: 8px;
+}
+
+.gh-input {
+    width: 100%;
+    padding: 10px 12px;
+    background: #2a2a2a;
+    border: 1px solid #4a4a4a;
+    border-radius: 6px;
+    color: #e0e0e0;
+    font-size: 14px;
+    font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+    transition: all 0.15s ease-out;
+}
+
+.gh-input:focus {
+    outline: 2px solid #0066cc;
+    outline-offset: 2px;
+    border-color: #0066cc;
+    background: #333;
+}
+
+.gh-input::placeholder {
+    color: #6b7280;
+}
+
+.gh-hint {
+    margin-top: 6px;
+    font-size: 12px;
+    color: #9ca3af;
+}
+
+.gh-message {
+    padding: 12px;
+    border-radius: 6px;
+    font-size: 14px;
+    margin-bottom: 16px;
+}
+
+.gh-message.success {
+    background: rgba(16, 185, 129, 0.1);
+    border: 1px solid rgba(16, 185, 129, 0.3);
+    color: #10b981;
+}
+
+.gh-message.error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    color: #ef4444;
+}
+
+.gh-message.info {
+    background: rgba(96, 165, 250, 0.1);
+    border: 1px solid rgba(96, 165, 250, 0.3);
+    color: #60a5fa;
+}
+
+.gh-message.warning {
+    background: rgba(245, 158, 11, 0.1);
+    border: 1px solid rgba(245, 158, 11, 0.3);
+    color: #f59e0b;
+}
