@@ -220,6 +220,9 @@ async function openFolderModal() {
   modal.style.display = "flex";
   if (overlay) overlay.style.display = "none";
 
+  // Reset GitHub state - we're in local folder selection mode
+  githubState.selectedTargetDirectory = null;
+
   // Start navigation from current folder if available, otherwise fetch from server
   if (!currentPath) {
     // Fetch current directory from server (will return home if no path specified)
@@ -833,7 +836,7 @@ function initializeToolbarControls() {
   if (openBtn) {
     openBtn.addEventListener("click", () => {
       // Check if we're in folder browser mode for GitHub clone
-      if (githubState.selectedTargetDirectory !== undefined) {
+      if (githubState.selectedTargetDirectory !== null) {
         selectFolderForCloning(currentPath);
       } else {
         switchToFolder(currentPath);
@@ -888,14 +891,14 @@ function initializeToolbarControls() {
       if (folderModal && folderModal.style.display === "flex") {
         // If folder modal is open and GitHub modal was the source, restore GitHub modal
         const githubModal = document.getElementById("github-modal");
-        if (githubState.selectedTargetDirectory !== undefined) {
+        if (githubState.selectedTargetDirectory !== null) {
           closeFolderModal();
           if (githubModal) githubModal.style.display = "flex";
         } else {
           closeFolderModal();
         }
       }
-      
+
       const githubModal = document.getElementById("github-modal");
       if (githubModal && githubModal.style.display === "flex") {
         closeGitHubModal();
@@ -1193,13 +1196,17 @@ const githubState = {
 async function openFolderBrowser() {
   const modal = document.getElementById("folder-modal");
   const githubModal = document.getElementById("github-modal");
-  
+
   // Hide GitHub modal temporarily
   if (githubModal) githubModal.style.display = "none";
-  
+
+  // Set a placeholder value to indicate we're in GitHub browse mode
+  // This will be replaced with the actual path when user selects a folder
+  githubState.selectedTargetDirectory = "";
+
   // Open folder modal in browse mode
   if (modal) modal.style.display = "flex";
-  
+
   // Start navigation from home directory
   try {
     const response = await fetch("/api/directories");

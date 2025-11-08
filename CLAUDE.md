@@ -298,3 +298,4 @@ A comprehensive code index with AST analysis and Paged.js documentation has been
 
 Use the index for efficient context gathering without loading entire files.
 - this project uses CC-BY license
+- you have to restart the server to see changes in the src/assets folder
