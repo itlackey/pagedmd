@@ -393,6 +393,16 @@
                     </svg>
                 </button>
                 <div class="toolbar-separator"></div>
+                <select class="zoom-select" id="zoom-select" title="Zoom level">
+                    <option value="0.5">50%</option>
+                    <option value="0.75">75%</option>
+                    <option value="1" selected>100%</option>
+                    <option value="1.25">125%</option>
+                    <option value="1.5">150%</option>
+                    <option value="2">200%</option>
+                    <option value="fit-width">Fit Width</option>
+                </select>
+                <div class="toolbar-separator"></div>
                 <button
                     class="toolbar-btn"
                     id="btn-debug"
@@ -414,31 +424,6 @@
                         <rect width="7" height="7" x="3" y="14" rx="1" />
                     </svg>
                 </button>
-                <div class="toolbar-separator"></div>
-                <button
-                    class="toolbar-btn"
-                    id="btn-print"
-                    title="Print (save as PDF)"
-                    aria-label="Print (disabled while rendering)"
-                >
-                    <svg
-                        width="16"
-                        height="16"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        stroke-width="2"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                    >
-                        <path
-                            d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
-                        />
-                        <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
-                        <rect x="6" y="14" width="12" height="8" rx="1" />
-                    </svg>
-                </button>
-                <div class="toolbar-separator"></div>
                 <button
                     class="toolbar-btn"
                     id="btn-bg-color"
@@ -476,15 +461,29 @@
                     title="Pick background color"
                 />
                 <div class="toolbar-separator"></div>
-                <select class="zoom-select" id="zoom-select" title="Zoom level">
-                    <option value="0.5">50%</option>
-                    <option value="0.75">75%</option>
-                    <option value="1" selected>100%</option>
-                    <option value="1.25">125%</option>
-                    <option value="1.5">150%</option>
-                    <option value="2">200%</option>
-                    <option value="fit-width">Fit Width</option>
-                </select>
+                <button
+                    class="toolbar-btn"
+                    id="btn-print"
+                    title="Print (save as PDF)"
+                    aria-label="Print (disabled while rendering)"
+                >
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path
+                            d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"
+                        />
+                        <path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6" />
+                        <rect x="6" y="14" width="12" height="8" rx="1" />
+                    </svg>
+                </button>
             </div>
         </div>
 

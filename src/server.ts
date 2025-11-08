@@ -44,6 +44,41 @@ async function generateAndWriteHtml(
 }
 
 /**
+ * Check if a port is available
+ */
+async function isPortAvailable(port: number): Promise<boolean> {
+  try {
+    const server = Bun.serve({
+      port,
+      fetch() {
+        return new Response();
+      },
+    });
+    server.stop();
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Find an available port starting from the given port
+ */
+async function findAvailablePort(startPort: number): Promise<number> {
+  let port = startPort;
+  const maxAttempts = 10;
+
+  for (let i = 0; i < maxAttempts; i++) {
+    if (await isPortAvailable(port)) {
+      return port;
+    }
+    port++;
+  }
+
+  throw new Error(`Could not find an available port after ${maxAttempts} attempts`);
+}
+
+/**
  * Start preview server with Vite as primary server
  */
 export async function startPreviewServer(
@@ -186,13 +221,19 @@ export async function startPreviewServer(
     info("Watching for file changes...");
   }
 
+  // Find an available port
+  const availablePort = await findAvailablePort(options.port);
+  if (availablePort !== options.port) {
+    info(`Port ${options.port} is in use, using port ${availablePort} instead`);
+  }
+
   // Create Vite server with API middleware
   const viteServer = await createViteServer({
     configFile: false,
     root: tempDir,
     server: {
-      port: options.port,
-      strictPort: false, // Allow Vite to select a different port if needed
+      port: availablePort,
+      strictPort: true, // Use the port we found
       host: "0.0.0.0",
       open: options.openBrowser,
       // Note: Vite automatically sets appropriate cache headers
@@ -262,18 +303,7 @@ export async function startPreviewServer(
 
   await viteServer.listen();
 
-  // Get the actual port Vite is using (may differ from requested if port was in use)
-  // Vite exposes the port through httpServer.address()
-  const address = viteServer.httpServer?.address();
-  const actualPort = typeof address === 'object' && address !== null
-    ? address.port
-    : options.port;
-  const serverUrl = `http://localhost:${actualPort}`;
-
-  if (actualPort !== options.port) {
-    info(`Requested port ${options.port} was in use`);
-  }
-
+  const serverUrl = `http://localhost:${availablePort}`;
   info(`Preview server running at ${serverUrl}`);
   info("Press Ctrl+C to stop");
 
