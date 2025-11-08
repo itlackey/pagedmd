@@ -21,10 +21,107 @@
 
 const clientState = {
   currentFolder: "", // Absolute path to input directory (for folder selector)
+  clientId: generateClientId(), // Unique ID for this browser instance
 };
 
 // Track rendering timeout to prevent race conditions
 let renderingTimeoutId = null;
+
+// Heartbeat tracking for auto-shutdown
+let heartbeatInterval = null;
+const HEARTBEAT_INTERVAL = 3000; // Send heartbeat every 3 seconds
+let isLastConnectedClient = false; // Track if this is the last client
+
+/**
+ * Generate a unique client ID for this browser instance
+ */
+function generateClientId() {
+  return `client-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+}
+
+/**
+ * Send heartbeat to server to indicate this client is still connected
+ */
+async function sendHeartbeat() {
+  try {
+    const response = await fetch("/api/heartbeat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ clientId: clientState.clientId }),
+    });
+
+    if (response.ok) {
+      const data = await response.json();
+      // Update whether this is the last connected client
+      const wasLastClient = isLastConnectedClient;
+      isLastConnectedClient = data.isLastClient || false;
+
+      // Update exit button styling if status changed
+      if (wasLastClient !== isLastConnectedClient) {
+        updateExitButtonStyle();
+      }
+    }
+  } catch (error) {
+    console.error("Failed to send heartbeat:", error);
+  }
+}
+
+/**
+ * Update exit button styling based on last client status
+ */
+function updateExitButtonStyle() {
+  const exitBtn = document.getElementById("btn-exit");
+  if (!exitBtn) return;
+
+  if (isLastConnectedClient) {
+    exitBtn.classList.add("last-client");
+    exitBtn.disabled = false;
+    exitBtn.title = "Exit and shutdown preview server";
+  } else {
+    exitBtn.classList.remove("last-client");
+    exitBtn.disabled = true;
+    exitBtn.title = "Exit (disabled - close other browser tabs first)";
+  }
+}
+
+/**
+ * Notify server that this client is disconnecting
+ */
+async function sendDisconnect() {
+  try {
+    // Use sendBeacon for reliable delivery during page unload
+    const blob = new Blob(
+      [JSON.stringify({ clientId: clientState.clientId })],
+      { type: "application/json" }
+    );
+    navigator.sendBeacon("/api/disconnect", blob);
+  } catch (error) {
+    console.error("Failed to send disconnect:", error);
+  }
+}
+
+/**
+ * Start sending heartbeats to keep the server alive
+ */
+async function startHeartbeat() {
+  // Send initial heartbeat and wait for response to set initial state
+  await sendHeartbeat();
+
+  // Start periodic heartbeat
+  heartbeatInterval = setInterval(sendHeartbeat, HEARTBEAT_INTERVAL);
+
+  console.log(`Heartbeat started for client ${clientState.clientId}`);
+}
+
+/**
+ * Stop sending heartbeats
+ */
+function stopHeartbeat() {
+  if (heartbeatInterval) {
+    clearInterval(heartbeatInterval);
+    heartbeatInterval = null;
+  }
+}
 
 // ============================================================================
 // Notification Utilities
@@ -598,12 +695,31 @@ function setupIframeEventListeners() {
  * Exit the preview server
  */
 async function exitPreviewServer() {
+  // Only allow if this is the last client
+  if (!isLastConnectedClient) {
+    showInfo("Cannot Exit", "Close other browser tabs first to shut down the server.");
+    return;
+  }
+
+  // Confirm shutdown
+  const confirmed = window.confirm(
+    "This will shut down the preview server and close this window.\n\nAre you sure you want to exit?"
+  );
+
+  if (!confirmed) {
+    return;
+  }
+
   try {
     // Show shutdown overlay immediately
     const shutdownOverlay = document.getElementById("shutdown-overlay");
     if (shutdownOverlay) {
       shutdownOverlay.classList.add("active");
     }
+
+    // Stop heartbeat and disconnect
+    stopHeartbeat();
+    sendDisconnect();
 
     // Call shutdown API
     const response = await fetch("/api/shutdown", {
@@ -616,6 +732,11 @@ async function exitPreviewServer() {
     }
 
     console.log("Server shutdown initiated");
+
+    // Close the window/tab after a brief delay to ensure shutdown message is sent
+    setTimeout(() => {
+      window.close();
+    }, 500);
   } catch (error) {
     console.error("Failed to shutdown server:", error);
     showError("Shutdown Failed", error.message);
@@ -625,6 +746,9 @@ async function exitPreviewServer() {
     if (shutdownOverlay) {
       shutdownOverlay.classList.remove("active");
     }
+
+    // Restart heartbeat if shutdown failed
+    startHeartbeat();
   }
 }
 
@@ -857,11 +981,75 @@ async function initializePreview() {
       ? window.location.pathname
       : "/home";
 
+    // Start heartbeat to keep server alive
+    startHeartbeat();
+
+    // Register page lifecycle listeners
+    registerPageLifecycleListeners();
+
     console.log("✓ Preview initialized");
   } catch (error) {
     console.error("Initialization failed:", error);
     showError("Initialization Error", error.message);
   }
+}
+
+/**
+ * Register page lifecycle event listeners for connection tracking
+ */
+function registerPageLifecycleListeners() {
+  // Handle beforeunload - show confirmation when closing last client
+  // Modern browsers only show a generic confirmation, not custom messages
+  window.addEventListener("beforeunload", (event) => {
+    // Only prompt if this is the last connected client
+    if (isLastConnectedClient) {
+      // Prevent the default behavior
+      event.preventDefault();
+
+      // Chrome requires returnValue to be set
+      event.returnValue = "";
+
+      // Some browsers use the return value
+      return "";
+    }
+  });
+
+  // Handle actual page hide - cleanup when page is definitely unloading
+  // This fires after user confirms (or if no confirmation needed)
+  window.addEventListener("pagehide", (event) => {
+    // Stop heartbeat and notify server
+    stopHeartbeat();
+    sendDisconnect();
+  });
+
+  // Handle page visibility changes (tab switching)
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) {
+      // Tab became hidden - keep heartbeat running but log it
+      console.log("Tab hidden, heartbeat continues");
+    } else {
+      // Tab became visible again
+      console.log("Tab visible again");
+      // Ensure heartbeat is still running
+      if (!heartbeatInterval) {
+        startHeartbeat();
+      }
+    }
+  });
+
+  // Handle page freeze/resume (mobile, resource constraints)
+  window.addEventListener("freeze", () => {
+    console.log("Page frozen");
+    stopHeartbeat();
+    sendDisconnect();
+  });
+
+  window.addEventListener("resume", () => {
+    console.log("Page resumed");
+    startHeartbeat();
+  });
+
+  console.log("✓ Page lifecycle listeners registered");
 }
 
 // ============================================================================

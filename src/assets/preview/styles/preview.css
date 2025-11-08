@@ -756,3 +756,37 @@
         opacity: 1;
     }
 }
+
+/* Exit button - Last client warning state */
+#btn-exit.last-client {
+    background: linear-gradient(to bottom, #b85555 0%, #a04444 100%);
+    border-color: #8a3333;
+    color: #ffffff;
+    box-shadow: 
+        0 2px 4px rgba(176, 68, 68, 0.3),
+        0 1px 0 rgba(255, 255, 255, 0.1) inset;
+}
+
+#btn-exit.last-client:hover {
+    background: linear-gradient(to bottom, #c96666 0%, #b85555 100%);
+    border-color: #a04444;
+    box-shadow: 
+        0 3px 6px rgba(176, 68, 68, 0.4),
+        0 1px 0 rgba(255, 255, 255, 0.15) inset;
+}
+
+/* Exit button - Disabled state (when not last client) */
+#btn-exit:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+    background: transparent;
+    border-color: #4a4a4a;
+    color: #6b6b6b;
+}
+
+#btn-exit:disabled:hover {
+    background: transparent;
+    border-color: #4a4a4a;
+    transform: none;
+    box-shadow: none;
+}

@@ -153,6 +153,11 @@ export async function startPreviewServer(
   let viteServer: ViteDevServer | null = null;
   let isShuttingDown = false;
 
+  // Track connected clients for auto-shutdown when last client disconnects
+  const connectedClients = new Set<string>();
+  let autoShutdownTimer: NodeJS.Timeout | null = null;
+  const AUTO_SHUTDOWN_DELAY = 5000; // 5 seconds after last client disconnects
+
   // Restart preview for folder changes
   async function restartPreview(newInputPath: string): Promise<void> {
     info(`Restarting preview for: ${newInputPath}`);
@@ -247,10 +252,41 @@ export async function startPreviewServer(
     info("Watching for file changes...");
   }
 
+  // Check if all clients have disconnected and schedule auto-shutdown
+  function checkForAutoShutdown(): void {
+    if (connectedClients.size === 0) {
+      // Clear any existing timer
+      if (autoShutdownTimer) {
+        clearTimeout(autoShutdownTimer);
+      }
+
+      // Schedule shutdown after delay
+      info(`All clients disconnected. Server will shutdown in ${AUTO_SHUTDOWN_DELAY / 1000}s...`);
+      autoShutdownTimer = setTimeout(() => {
+        if (connectedClients.size === 0) {
+          info("No clients reconnected. Shutting down...");
+          shutdown();
+        }
+      }, AUTO_SHUTDOWN_DELAY);
+    } else {
+      // Cancel auto-shutdown if there are connected clients
+      if (autoShutdownTimer) {
+        clearTimeout(autoShutdownTimer);
+        autoShutdownTimer = null;
+      }
+    }
+  }
+
   // Graceful shutdown handler
   async function shutdown(): Promise<void> {
     if (isShuttingDown) return; // Prevent multiple shutdown calls
     isShuttingDown = true;
+
+    // Clear any pending auto-shutdown timer
+    if (autoShutdownTimer) {
+      clearTimeout(autoShutdownTimer);
+      autoShutdownTimer = null;
+    }
 
     info("\nShutting down preview server...");
     if (currentWatcher) await currentWatcher.close();
@@ -288,6 +324,78 @@ export async function startPreviewServer(
         configureServer(server) {
           server.middlewares.use(async (req, res, next) => {
             const url = new URL(req.url!, `http://${req.headers.host}`);
+
+            // Handle /api/heartbeat - Client connection tracking
+            if (url.pathname === "/api/heartbeat" && req.method === "POST") {
+              let body = "";
+              req.on("data", (chunk) => {
+                body += chunk;
+              });
+
+              req.on("end", () => {
+                try {
+                  const { clientId } = JSON.parse(body);
+
+                  if (clientId) {
+                    const wasEmpty = connectedClients.size === 0;
+                    connectedClients.add(clientId);
+
+                    // Cancel auto-shutdown if this is the first client to connect
+                    if (wasEmpty && connectedClients.size === 1) {
+                      debug(`First client connected: ${clientId}`);
+                      checkForAutoShutdown();
+                    }
+
+                    // Tell client if they are the last (and only) connected client
+                    const isLastClient = connectedClients.size === 1;
+
+                    res.statusCode = 200;
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(JSON.stringify({ success: true, isLastClient }));
+                  } else {
+                    res.statusCode = 400;
+                    res.setHeader("Content-Type", "application/json");
+                    res.end(JSON.stringify({ error: "Missing clientId" }));
+                  }
+                } catch (error) {
+                  res.statusCode = 400;
+                  res.setHeader("Content-Type", "application/json");
+                  res.end(JSON.stringify({ error: "Invalid request" }));
+                }
+              });
+
+              return;
+            }
+
+            // Handle /api/disconnect - Client disconnection tracking
+            if (url.pathname === "/api/disconnect" && req.method === "POST") {
+              let body = "";
+              req.on("data", (chunk) => {
+                body += chunk;
+              });
+
+              req.on("end", () => {
+                try {
+                  const { clientId } = JSON.parse(body);
+
+                  if (clientId) {
+                    connectedClients.delete(clientId);
+                    debug(`Client disconnected: ${clientId}. Active clients: ${connectedClients.size}`);
+                    checkForAutoShutdown();
+                  }
+
+                  res.statusCode = 200;
+                  res.setHeader("Content-Type", "application/json");
+                  res.end(JSON.stringify({ success: true }));
+                } catch (error) {
+                  res.statusCode = 400;
+                  res.setHeader("Content-Type", "application/json");
+                  res.end(JSON.stringify({ error: "Invalid request" }));
+                }
+              });
+
+              return;
+            }
 
             // Handle /api/directories
             if (url.pathname === "/api/directories") {
