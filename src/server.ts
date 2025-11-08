@@ -25,12 +25,8 @@ import {
 import { info, debug, error as logError } from "./utils/logger.ts";
 import { DEBOUNCE } from "./constants.ts";
 import { injectPagedJsPolyfill } from "./build/formats/preview-format.ts";
-import {
-  handleListDirectories,
-  handleChangeFolder,
-  handleShutdown,
-} from "./preview/routes.ts";
 import { 
+  handleShutdown,
   handleListDirectories, 
   handleChangeFolder,
   handleGitHubStatus,
@@ -349,7 +345,7 @@ export async function startPreviewServer(
                     connectedClients.add(clientId);
 
                     // Cancel auto-shutdown if this is the first client to connect
-                    if (wasEmpty && connectedClients.size === 1) {
+                    if (wasEmpty) {
                       debug(`First client connected: ${clientId}`);
                       checkForAutoShutdown();
                     }
