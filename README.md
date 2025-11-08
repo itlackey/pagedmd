@@ -19,23 +19,50 @@ For easy installation on Windows 11, download and run the installation script:
 
 ```powershell
 # Download the installer
-curl -o install.ps1 https://raw.githubusercontent.com/dimm-city/pagedmd/main/install.ps1
+curl -o install.ps1 https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.ps1
 
 # Run the installer
 .\install.ps1
 ```
 
-The script will automatically install Bun and pagedmd globally.
+The script will automatically:
+- Install Bun (if not already installed)
+- Install pagedmd globally
+- Create a desktop shortcut with custom icon
+- Configure the shortcut to auto-open your browser
 
-### Mac/Linux Users
+After installation, you can double-click the **"Pagedmd Preview"** shortcut on your desktop to launch the preview server instantly!
 
-Install globally with npm or Bun:
+### Linux Users
+
+For easy installation on Linux, download and run the installation script:
 
 ```bash
-# Using npm
-npm install -g @dimm-city/pagedmd
+# Download the installer
+curl -fsSL https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.sh -o install.sh
 
-# Using Bun
+# Make it executable
+chmod +x install.sh
+
+# Run the installer
+./install.sh
+```
+
+The script will automatically:
+- Install Bun (if not already installed)
+- Install pagedmd globally
+- Create a desktop shortcut (.desktop file)
+- Configure the shortcut to auto-open your browser
+
+### macOS Users
+
+Install globally with Bun:
+
+```bash
+# Install Bun (if not already installed)
+curl -fsSL https://bun.sh/install | bash
+
+# Install pagedmd
 bun install -g @dimm-city/pagedmd
 ```
 

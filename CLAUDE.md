@@ -297,3 +297,4 @@ A comprehensive code index with AST analysis and Paged.js documentation has been
 - `.references/external-docs/` - Scraped Paged.js documentation
 
 Use the index for efficient context gathering without loading entire files.
+- this project uses CC-BY license

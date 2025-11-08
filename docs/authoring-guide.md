@@ -1076,4 +1076,3 @@ For more examples, see the `/examples` directory in the pagedmd repository.
 
 **Version:** 1.0
 **Last Updated:** 2025-11-07
-**License:** MIT

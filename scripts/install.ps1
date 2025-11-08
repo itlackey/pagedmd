@@ -114,6 +114,61 @@ function Test-Installation {
     }
 }
 
+# Create desktop shortcut
+function New-DesktopShortcut {
+    Write-Step "Creating desktop shortcut..."
+
+    try {
+        # Get desktop path
+        $desktopPath = [Environment]::GetFolderPath("Desktop")
+        $shortcutPath = Join-Path $desktopPath "Pagedmd Preview.lnk"
+
+        # Find pagedmd installation path
+        $pagedmdPath = (Get-Command pagedmd -ErrorAction Stop).Source
+        $bunPath = (Get-Command bun -ErrorAction Stop).Source
+
+        # Find icon file (should be in node_modules after global install)
+        $globalModulesPath = Split-Path (Split-Path $pagedmdPath -Parent) -Parent
+        $iconPath = Join-Path $globalModulesPath "node_modules\@dimm-city\pagedmd\dist\assets\favicon.ico"
+
+        # Fallback: try to find icon in package installation
+        if (-not (Test-Path $iconPath)) {
+            $packagePath = Split-Path $pagedmdPath -Parent
+            $iconPath = Join-Path $packagePath "assets\favicon.ico"
+        }
+
+        # Create WScript Shell object
+        $WScriptShell = New-Object -ComObject WScript.Shell
+        $shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+
+        # Set shortcut properties
+        $shortcut.TargetPath = $bunPath
+        $shortcut.Arguments = "run pagedmd preview --open true"
+        $shortcut.WorkingDirectory = [Environment]::GetFolderPath("MyDocuments")
+        $shortcut.Description = "Start Pagedmd Preview Server"
+
+        # Set icon if found
+        if (Test-Path $iconPath) {
+            $shortcut.IconLocation = $iconPath
+            Write-Info "Using icon: $iconPath"
+        } else {
+            Write-Info "Icon not found at $iconPath, using default"
+        }
+
+        # Save shortcut
+        $shortcut.Save()
+
+        Write-Success "Desktop shortcut created: $shortcutPath"
+        Write-Info "Double-click 'Pagedmd Preview' on your desktop to start the preview server"
+        return $true
+
+    } catch {
+        Write-Error "Failed to create desktop shortcut: $_"
+        Write-Info "You can manually create a shortcut to run: bun run pagedmd preview --open true"
+        return $false
+    }
+}
+
 # Main installation flow
 function Main {
     Write-Host ""
@@ -143,6 +198,9 @@ function Main {
         exit 0
     }
 
+    # Step 4: Create desktop shortcut
+    New-DesktopShortcut
+
     # Success!
     Write-Host ""
     Write-Host "========================================" -ForegroundColor Green
@@ -151,12 +209,18 @@ function Main {
     Write-Host ""
     Write-Success "pagedmd is ready to use!"
     Write-Host ""
-    Write-Info "Quick Start:"
-    Write-Host "  1. Create a folder with your markdown files" -ForegroundColor White
-    Write-Host "  2. Open PowerShell in that folder" -ForegroundColor White
-    Write-Host "  3. Run:" -ForegroundColor White
+    Write-Info "Quick Start Options:"
     Write-Host ""
-    Write-Host "     pagedmd build" -ForegroundColor Cyan
+    Write-Host "  Option 1: Use Desktop Shortcut" -ForegroundColor Yellow
+    Write-Host "    - Double-click 'Pagedmd Preview' on your desktop" -ForegroundColor White
+    Write-Host "    - This will open the preview server in your browser" -ForegroundColor White
+    Write-Host ""
+    Write-Host "  Option 2: Use Command Line" -ForegroundColor Yellow
+    Write-Host "    1. Create a folder with your markdown files" -ForegroundColor White
+    Write-Host "    2. Open PowerShell in that folder" -ForegroundColor White
+    Write-Host "    3. Run:" -ForegroundColor White
+    Write-Host ""
+    Write-Host "       pagedmd build" -ForegroundColor Cyan
     Write-Host ""
     Write-Info "This will create a PDF from your markdown files."
     Write-Host ""
