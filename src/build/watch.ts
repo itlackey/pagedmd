@@ -90,15 +90,28 @@ export async function startWatchMode(options: BuildOptions): Promise<void> {
   info(`Watching for changes in: ${inputDir}`);
   info('Press Ctrl+C to exit');
 
-  // Setup Ctrl+C handler for graceful shutdown
-  process.on('SIGINT', () => {
+  // Setup signal handlers for graceful shutdown
+  const shutdownHandler = () => {
     info('\nShutting down watch mode...');
     cleanup(context);
     process.exit(0);
-  });
+  };
 
-  // Keep process alive
-  await new Promise(() => {}); // Never resolves - keeps running until Ctrl+C
+  process.on('SIGINT', shutdownHandler);
+  process.on('SIGTERM', shutdownHandler);
+
+  // Keep process alive using setInterval instead of infinite promise
+  // This allows proper event loop cleanup and garbage collection
+  const keepAliveInterval = setInterval(() => {
+    // Check if watcher is still active, exit if not
+    if (!context.watcher) {
+      clearInterval(keepAliveInterval);
+      process.exit(0);
+    }
+  }, 5000); // Check every 5 seconds
+
+  // Prevent interval from keeping process alive on its own
+  keepAliveInterval.unref();
 }
 
 /**

@@ -54,7 +54,10 @@ async function isPortAvailable(port: number): Promise<boolean> {
         return new Response();
       },
     });
-    server.stop();
+    // Use stop(true) to forcefully close and clean up resources
+    server.stop(true);
+    // Give server time to fully release the port
+    await new Promise(resolve => setTimeout(resolve, 10));
     return true;
   } catch {
     return false;
@@ -290,7 +293,20 @@ export async function startPreviewServer(
               req.method === "POST"
             ) {
               let body = "";
-              req.on("data", (chunk) => (body += chunk));
+              let totalSize = 0;
+              const MAX_BODY_SIZE = 1024 * 1024; // 1MB limit for safety
+
+              req.on("data", (chunk) => {
+                totalSize += chunk.length;
+                if (totalSize > MAX_BODY_SIZE) {
+                  req.destroy();
+                  res.statusCode = 413;
+                  res.end(JSON.stringify({ error: "Request body too large" }));
+                  return;
+                }
+                body += chunk;
+              });
+
               req.on("end", async () => {
                 const response = await handleChangeFolder(
                   new Request(url.toString(), {
@@ -307,6 +323,12 @@ export async function startPreviewServer(
                 });
                 res.end(await response.text());
               });
+
+              req.on("error", () => {
+                // Clean up on error
+                body = "";
+              });
+
               return;
             }
 
