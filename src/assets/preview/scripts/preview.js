@@ -27,10 +27,51 @@ const clientState = {
 // Track rendering timeout to prevent race conditions
 let renderingTimeoutId = null;
 
+// ============================================================================
+// Server Shutdown & Connection Tracking
+// ============================================================================
+//
+// This preview client implements intelligent server shutdown behavior:
+//
+// **Multiple Clients:**
+// - When 2+ browser tabs are open, the server stays alive
+// - Exit button is DISABLED on all tabs (gray, not clickable)
+// - Closing any single tab has no effect on server
+//
+// **Last Client (Single Tab):**
+// - When only 1 tab remains, exit button becomes ENABLED (muted red)
+// - User has TWO ways to shutdown:
+//   1. Click Exit button → Custom confirmation → Immediate shutdown + tab close
+//   2. Close tab/browser → Browser confirmation → 5-second delay → Auto-shutdown
+//
+// **Exit Button States:**
+// - Initial load: Disabled, "Exit (checking connection status...)"
+// - Multiple tabs: Disabled, "Exit (disabled - close other browser tabs first)"
+// - Last tab: Enabled (red), "Exit and shutdown preview server"
+//
+// **Heartbeat System:**
+// - Every 3 seconds, client sends heartbeat to server
+// - Server responds with { isLastClient: true/false }
+// - Button state updates automatically based on server response
+// - When tab closes, pagehide event sends disconnect signal
+//
+// **Auto-Shutdown Flow:**
+// - Last client disconnects → Server waits 5 seconds
+// - If no clients reconnect → Server shuts down cleanly
+// - Grace period allows accidental closes to be recovered
+//
+// **Confirmation Behavior:**
+// - beforeunload: Only prompts if isLastConnectedClient === true
+// - Exit button: Shows custom confirmation before shutdown
+// - If exit button used, beforeunload is bypassed (no double confirmation)
+//
+// ============================================================================
+
 // Heartbeat tracking for auto-shutdown
 let heartbeatInterval = null;
 const HEARTBEAT_INTERVAL = 3000; // Send heartbeat every 3 seconds
 let isLastConnectedClient = false; // Track if this is the last client
+let exitButtonClicked = false; // Track if user initiated exit via button (skip beforeunload)
 
 /**
  * Generate a unique client ID for this browser instance
@@ -693,6 +734,12 @@ function setupIframeEventListeners() {
 
 /**
  * Exit the preview server
+ *
+ * This is the primary shutdown method - user explicitly clicks the exit button.
+ * Shows custom confirmation dialog, then:
+ * 1. Shuts down the server immediately
+ * 2. Closes the browser tab/window
+ * 3. Bypasses beforeunload confirmation (sets exitButtonClicked flag)
  */
 async function exitPreviewServer() {
   // Only allow if this is the last client
@@ -701,7 +748,7 @@ async function exitPreviewServer() {
     return;
   }
 
-  // Confirm shutdown
+  // Confirm shutdown with custom message
   const confirmed = window.confirm(
     "This will shut down the preview server and close this window.\n\nAre you sure you want to exit?"
   );
@@ -709,6 +756,10 @@ async function exitPreviewServer() {
   if (!confirmed) {
     return;
   }
+
+  // Set flag to bypass beforeunload confirmation
+  // We've already confirmed via the button, don't ask again when closing
+  exitButtonClicked = true;
 
   try {
     // Show shutdown overlay immediately
@@ -740,6 +791,9 @@ async function exitPreviewServer() {
   } catch (error) {
     console.error("Failed to shutdown server:", error);
     showError("Shutdown Failed", error.message);
+
+    // Reset flag on error
+    exitButtonClicked = false;
 
     // Hide shutdown overlay on error
     const shutdownOverlay = document.getElementById("shutdown-overlay");
@@ -996,11 +1050,21 @@ async function initializePreview() {
 
 /**
  * Register page lifecycle event listeners for connection tracking
+ *
+ * Handles two shutdown scenarios:
+ * 1. User clicks Exit button → exitButtonClicked = true → Skip beforeunload
+ * 2. User closes tab/browser → Show confirmation → Auto-shutdown after 5s
  */
 function registerPageLifecycleListeners() {
   // Handle beforeunload - show confirmation when closing last client
   // Modern browsers only show a generic confirmation, not custom messages
   window.addEventListener("beforeunload", (event) => {
+    // Skip confirmation if user already confirmed via exit button
+    if (exitButtonClicked) {
+      console.log("Exit button used - bypassing beforeunload confirmation");
+      return;
+    }
+
     // Only prompt if this is the last connected client
     if (isLastConnectedClient) {
       // Prevent the default behavior
