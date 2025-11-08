@@ -105,6 +105,37 @@ The preview UI provides:
 - **Zoom controls** - Fit to width or custom zoom levels
 - **Debug mode** - Visualize page breaks and layout boxes
 - **Folder switching** - Load different projects without restarting
+- **GitHub cloning** - Clone and preview repositories directly from GitHub
+
+### Clone from GitHub
+
+The preview UI includes built-in support for cloning GitHub repositories:
+
+```bash
+# Start preview (no GitHub CLI installation needed yet)
+pagedmd preview
+```
+
+In the preview UI:
+1. Click the **GitHub icon** button in the toolbar
+2. If not authenticated, click "Login to GitHub" to authenticate via browser
+3. Enter a repository URL in any format:
+   - `https://github.com/owner/repo`
+   - `git@github.com:owner/repo.git`
+   - `owner/repo` (shorthand)
+4. Click "Clone Repository"
+5. The repository is cloned to `~/.pagedmd/cloned-repos/owner/repo`
+6. Preview automatically switches to the cloned repository
+
+**Prerequisites:**
+- GitHub CLI (`gh`) must be installed: https://cli.github.com/
+- One-time authentication via `gh auth login` or use the UI's "Login to GitHub" button
+
+**Benefits:**
+- No OAuth app setup required
+- Simple browser-based authentication
+- Repositories stored locally for offline access
+- Easy sharing of markdown projects via GitHub
 
 ## Configuration
 
