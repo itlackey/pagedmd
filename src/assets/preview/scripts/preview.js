@@ -41,7 +41,7 @@ function debugLog(message, isError = false) {
 
 function showError(title, message) {
   console.error(`${title}: ${message}`);
-  debugLog(`❌ ${title}`, true);
+  debugLog(`[ERROR] ${title}`, true);
 
   // Show toast notification if available
   if (typeof window.showToast === "function") {
@@ -157,10 +157,12 @@ function createFolderItem(name, path, isParent) {
   div.setAttribute("role", "listitem");
   div.setAttribute("tabindex", "0");
 
-  const icon = isParent ? "⬆️" : "📁";
+  const iconSvg = isParent
+    ? `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m18 15-6-6-6 6"/></svg>`
+    : `<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/></svg>`;
   div.innerHTML = `
-		<span class="folder-icon">${icon}</span>
-		<span class="folder-name">${name}</span>
+		<span class="folder-item-icon">${iconSvg}</span>
+		<span class="folder-item-name">${name}</span>
 	`;
 
   // Click or Enter to navigate
