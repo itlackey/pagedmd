@@ -450,3 +450,57 @@ export interface ImportResolutionResult {
   /** Critical errors (e.g., circular imports, missing files when failOnMissing=true) */
   errors: string[];
 }
+
+/**
+ * GitHub authentication status response
+ */
+export interface GitHubAuthStatus {
+  /** Whether gh CLI is installed */
+  ghCliInstalled: boolean;
+  /** Whether user is authenticated with GitHub */
+  authenticated: boolean;
+  /** GitHub username if authenticated */
+  username?: string;
+  /** Error message if status check failed */
+  error?: string;
+}
+
+/**
+ * GitHub clone request
+ */
+export interface GitHubCloneRequest {
+  /** GitHub repository URL (https://github.com/owner/repo or owner/repo) */
+  repoUrl: string;
+}
+
+/**
+ * GitHub clone response
+ */
+export interface GitHubCloneResponse {
+  /** Whether clone was successful */
+  success: boolean;
+  /** Local path to cloned repository */
+  localPath?: string;
+  /** Error message if clone failed */
+  error?: string;
+}
+
+/**
+ * GitHub user information
+ */
+export interface GitHubUserInfo {
+  /** GitHub username */
+  username: string;
+  /** Display name */
+  name?: string;
+}
+
+/**
+ * GitHub login response
+ */
+export interface GitHubLoginResponse {
+  /** Whether login was successful */
+  success: boolean;
+  /** Error message if login failed */
+  error?: string;
+}

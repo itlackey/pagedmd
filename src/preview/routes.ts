@@ -1,13 +1,18 @@
 /**
  * API Route Handlers for Preview Server
  *
- * Provides HTTP route handlers for directory listing and folder switching.
+ * Provides HTTP route handlers for directory listing, folder switching,
+ * and GitHub repository cloning.
  * All routes enforce home directory security boundaries.
  *
  * Route handlers:
  * - handleListDirectories: GET /api/directories - List subdirectories with navigation
  * - handleChangeFolder: POST /api/change-folder - Switch working directory
  * - handleShutdown: POST /api/shutdown - Gracefully shutdown the server
+ * - handleGitHubStatus: GET /api/gh/status - Check GitHub CLI status and authentication
+ * - handleGitHubLogin: POST /api/gh/login - Initiate GitHub authentication
+ * - handleGitHubClone: POST /api/gh/clone - Clone repository and switch to it
+ * - handleGitHubUser: GET /api/gh/user - Get current GitHub user info
  */
 
 import { readdir, stat } from "fs/promises";
@@ -16,12 +21,24 @@ import type {
   DirectoryListResponse,
   FolderChangeResponse,
   DirectoryEntry,
+  GitHubAuthStatus,
+  GitHubCloneRequest,
+  GitHubCloneResponse,
+  GitHubLoginResponse,
+  GitHubUserInfo,
 } from "../types";
 import {
   isWithinHomeDirectory,
   getHomeDirectory,
 } from "../utils/path-security";
-import { error as logError } from "../utils/logger";
+import { error as logError, info } from "../utils/logger";
+import {
+  isGhCliInstalled,
+  checkGhAuthStatus,
+  loginWithGh,
+  cloneRepository,
+  getCurrentUser,
+} from "../utils/gh-cli-utils";
 
 /**
  * Helper function to check if a path is a directory
@@ -391,5 +408,255 @@ export async function handleShutdown(
       },
       500
     );
+  }
+}
+
+/**
+ * Handle GET /api/gh/status - Check GitHub CLI installation and authentication
+ * 
+ * No request parameters required.
+ * 
+ * Response includes:
+ * - ghCliInstalled: Whether gh CLI is installed
+ * - authenticated: Whether user is authenticated with GitHub
+ * - username: GitHub username if authenticated
+ * - error: Error message if status check failed
+ * 
+ * @param request - HTTP GET request
+ * @returns JSON response with GitHubAuthStatus
+ */
+export async function handleGitHubStatus(
+  request: Request
+): Promise<Response> {
+  try {
+    info("Checking GitHub CLI status...");
+    
+    // Check if gh CLI is installed
+    const ghInstalled = await isGhCliInstalled();
+    
+    if (!ghInstalled) {
+      const response: GitHubAuthStatus = {
+        ghCliInstalled: false,
+        authenticated: false,
+      };
+      return jsonResponse(response);
+    }
+    
+    // Check authentication status
+    const authStatus = await checkGhAuthStatus();
+    
+    const response: GitHubAuthStatus = {
+      ghCliInstalled: true,
+      authenticated: authStatus.authenticated,
+      username: authStatus.username,
+      error: authStatus.error,
+    };
+    
+    return jsonResponse(response);
+  } catch (error) {
+    const err = error as any;
+    const message = err?.message || String(error);
+    logError(`Error in handleGitHubStatus: ${message}`);
+    
+    const response: GitHubAuthStatus = {
+      ghCliInstalled: false,
+      authenticated: false,
+      error: `Failed to check GitHub status: ${message}`,
+    };
+    return jsonResponse(response, 500);
+  }
+}
+
+/**
+ * Handle POST /api/gh/login - Initiate GitHub authentication
+ * 
+ * No request body required. This will open the user's browser for authentication.
+ * 
+ * Response includes:
+ * - success: Whether authentication was successful
+ * - error: Error message if authentication failed
+ * 
+ * @param request - HTTP POST request
+ * @returns JSON response with GitHubLoginResponse
+ */
+export async function handleGitHubLogin(
+  request: Request
+): Promise<Response> {
+  try {
+    info("Initiating GitHub authentication...");
+    
+    const result = await loginWithGh();
+    
+    const response: GitHubLoginResponse = {
+      success: result.success,
+      error: result.error,
+    };
+    
+    return jsonResponse(response, result.success ? 200 : 500);
+  } catch (error) {
+    const err = error as any;
+    const message = err?.message || String(error);
+    logError(`Error in handleGitHubLogin: ${message}`);
+    
+    const response: GitHubLoginResponse = {
+      success: false,
+      error: `Failed to authenticate: ${message}`,
+    };
+    return jsonResponse(response, 500);
+  }
+}
+
+/**
+ * Handle POST /api/gh/clone - Clone GitHub repository and switch to it
+ * 
+ * Request body:
+ * - repoUrl: GitHub repository URL (required)
+ * 
+ * Response includes:
+ * - success: Whether clone was successful
+ * - localPath: Local path to cloned repository
+ * - error: Error message if clone failed
+ * 
+ * After successful clone, the preview will automatically switch to the cloned directory.
+ * 
+ * @param request - HTTP POST request with JSON body
+ * @param onFolderChange - Callback to restart preview with cloned directory
+ * @returns JSON response with GitHubCloneResponse
+ */
+export async function handleGitHubClone(
+  request: Request,
+  onFolderChange: (newPath: string) => Promise<void>
+): Promise<Response> {
+  try {
+    // Parse JSON body
+    let body: unknown;
+    try {
+      body = await request.json();
+    } catch (error) {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: "Invalid JSON in request body",
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    // Validate body is an object
+    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: "Request body must be an object",
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    // Extract and validate repoUrl field
+    const { repoUrl } = body as Record<string, unknown>;
+    
+    if (repoUrl === undefined || repoUrl === null) {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: "Missing required field: repoUrl",
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    if (typeof repoUrl !== "string") {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: 'Field "repoUrl" must be a string',
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    if (repoUrl.trim() === "") {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: 'Field "repoUrl" cannot be empty',
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    info(`Cloning GitHub repository: ${repoUrl}`);
+    
+    // Clone the repository
+    const cloneResult = await cloneRepository(repoUrl);
+    
+    if (!cloneResult.success || !cloneResult.localPath) {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: cloneResult.error || "Clone failed with unknown error",
+      };
+      return jsonResponse(response, 500);
+    }
+    
+    // Switch to the cloned directory
+    try {
+      await onFolderChange(cloneResult.localPath);
+    } catch (error) {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: `Repository cloned but failed to switch to it: ${(error as Error).message}`,
+        localPath: cloneResult.localPath,
+      };
+      return jsonResponse(response, 500);
+    }
+    
+    // Success response
+    const response: GitHubCloneResponse = {
+      success: true,
+      localPath: cloneResult.localPath,
+    };
+    return jsonResponse(response);
+  } catch (error) {
+    const err = error as any;
+    const message = err?.message || String(error);
+    logError(`Error in handleGitHubClone: ${message}`);
+    
+    const response: GitHubCloneResponse = {
+      success: false,
+      error: `Failed to clone repository: ${message}`,
+    };
+    return jsonResponse(response, 500);
+  }
+}
+
+/**
+ * Handle GET /api/gh/user - Get current GitHub user info
+ * 
+ * No request parameters required.
+ * 
+ * Response includes:
+ * - username: GitHub username
+ * - name: Display name
+ * 
+ * Returns 401 if not authenticated.
+ * 
+ * @param request - HTTP GET request
+ * @returns JSON response with GitHubUserInfo or error
+ */
+export async function handleGitHubUser(
+  request: Request
+): Promise<Response> {
+  try {
+    info("Fetching GitHub user info...");
+    
+    const user = await getCurrentUser();
+    
+    if (!user) {
+      return errorResponse("Not authenticated with GitHub", 401);
+    }
+    
+    const response: GitHubUserInfo = {
+      username: user.username,
+      name: user.name,
+    };
+    
+    return jsonResponse(response);
+  } catch (error) {
+    const err = error as any;
+    const message = err?.message || String(error);
+    logError(`Error in handleGitHubUser: ${message}`);
+    
+    return errorResponse(`Failed to fetch user info: ${message}`, 500);
   }
 }

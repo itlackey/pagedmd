@@ -30,6 +30,14 @@ import {
   handleChangeFolder,
   handleShutdown,
 } from "./preview/routes.ts";
+import { 
+  handleListDirectories, 
+  handleChangeFolder,
+  handleGitHubStatus,
+  handleGitHubLogin,
+  handleGitHubClone,
+  handleGitHubUser,
+} from "./preview/routes.ts";
 import type { HeadersInit } from "bun";
 
 /**
@@ -467,6 +475,80 @@ export async function startPreviewServer(
                   headers: req.headers as HeadersInit,
                 }),
                 shutdown,
+              );
+
+              res.statusCode = response.status;
+              response.headers.forEach((value, key) => {
+                res.setHeader(key, value);
+              });
+              res.end(await response.text());
+              return;
+            }
+
+            // Handle /api/gh/status
+            if (url.pathname === "/api/gh/status" && req.method === "GET") {
+              const response = await handleGitHubStatus(
+                new Request(url.toString(), {
+                  method: req.method,
+                  headers: req.headers as HeadersInit,
+                }),
+              );
+
+              res.statusCode = response.status;
+              response.headers.forEach((value, key) => {
+                res.setHeader(key, value);
+              });
+              res.end(await response.text());
+              return;
+            }
+
+            // Handle /api/gh/login
+            if (url.pathname === "/api/gh/login" && req.method === "POST") {
+              const response = await handleGitHubLogin(
+                new Request(url.toString(), {
+                  method: req.method,
+                  headers: req.headers as HeadersInit,
+                }),
+              );
+
+              res.statusCode = response.status;
+              response.headers.forEach((value, key) => {
+                res.setHeader(key, value);
+              });
+              res.end(await response.text());
+              return;
+            }
+
+            // Handle /api/gh/clone
+            if (url.pathname === "/api/gh/clone" && req.method === "POST") {
+              let body = "";
+              req.on("data", (chunk) => (body += chunk));
+              req.on("end", async () => {
+                const response = await handleGitHubClone(
+                  new Request(url.toString(), {
+                    method: "POST",
+                    headers: req.headers as HeadersInit,
+                    body,
+                  }),
+                  restartPreview,
+                );
+
+                res.statusCode = response.status;
+                response.headers.forEach((value, key) => {
+                  res.setHeader(key, value);
+                });
+                res.end(await response.text());
+              });
+              return;
+            }
+
+            // Handle /api/gh/user
+            if (url.pathname === "/api/gh/user" && req.method === "GET") {
+              const response = await handleGitHubUser(
+                new Request(url.toString(), {
+                  method: req.method,
+                  headers: req.headers as HeadersInit,
+                }),
               );
 
               res.statusCode = response.status;
