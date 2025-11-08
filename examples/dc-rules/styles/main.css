@@ -137,7 +137,6 @@ body {
     font-size: 14px;
     line-height: 1.5;
     color: var(--black);
-    background: var(--white);
     text-align: left;
     hyphens: auto;
     orphans: 4;
