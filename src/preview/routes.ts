@@ -550,7 +550,7 @@ export async function handleGitHubClone(
     }
     
     // Extract and validate repoUrl field
-    const { repoUrl } = body as Record<string, unknown>;
+    const { repoUrl, targetDirectory } = body as Record<string, unknown>;
     
     if (repoUrl === undefined || repoUrl === null) {
       const response: GitHubCloneResponse = {
@@ -576,10 +576,22 @@ export async function handleGitHubClone(
       return jsonResponse(response, 400);
     }
     
-    info(`Cloning GitHub repository: ${repoUrl}`);
+    // Validate targetDirectory if provided
+    if (targetDirectory !== undefined && targetDirectory !== null && typeof targetDirectory !== "string") {
+      const response: GitHubCloneResponse = {
+        success: false,
+        error: 'Field "targetDirectory" must be a string',
+      };
+      return jsonResponse(response, 400);
+    }
+    
+    info(`Cloning GitHub repository: ${repoUrl}${targetDirectory ? ` to ${targetDirectory}` : ''}`);
     
     // Clone the repository
-    const cloneResult = await cloneRepository(repoUrl);
+    const cloneResult = await cloneRepository(
+      repoUrl,
+      targetDirectory as string | undefined
+    );
     
     if (!cloneResult.success || !cloneResult.localPath) {
       const response: GitHubCloneResponse = {

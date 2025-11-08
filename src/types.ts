@@ -471,6 +471,8 @@ export interface GitHubAuthStatus {
 export interface GitHubCloneRequest {
   /** GitHub repository URL (https://github.com/owner/repo or owner/repo) */
   repoUrl: string;
+  /** Optional target directory for cloning (defaults to ~/.pagedmd/cloned-repos) */
+  targetDirectory?: string;
 }
 
 /**

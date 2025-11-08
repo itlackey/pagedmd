@@ -832,7 +832,12 @@ function initializeToolbarControls() {
   const openBtn = document.getElementById("btn-open-folder");
   if (openBtn) {
     openBtn.addEventListener("click", () => {
-      switchToFolder(currentPath);
+      // Check if we're in folder browser mode for GitHub clone
+      if (githubState.selectedTargetDirectory !== undefined) {
+        selectFolderForCloning(currentPath);
+      } else {
+        switchToFolder(currentPath);
+      }
     });
   }
 
@@ -860,6 +865,12 @@ function initializeToolbarControls() {
     githubCloneBtn.addEventListener("click", handleGitHubClone);
   }
 
+  // Browse folder button
+  const browseFolderBtn = document.getElementById("btn-browse-folder");
+  if (browseFolderBtn) {
+    browseFolderBtn.addEventListener("click", openFolderBrowser);
+  }
+
   // Allow Enter key in repo URL input to trigger clone
   const repoUrlInput = document.getElementById("repo-url-input");
   if (repoUrlInput) {
@@ -875,7 +886,14 @@ function initializeToolbarControls() {
     if (e.key === "Escape") {
       const folderModal = document.getElementById("folder-modal");
       if (folderModal && folderModal.style.display === "flex") {
-        closeFolderModal();
+        // If folder modal is open and GitHub modal was the source, restore GitHub modal
+        const githubModal = document.getElementById("github-modal");
+        if (githubState.selectedTargetDirectory !== undefined) {
+          closeFolderModal();
+          if (githubModal) githubModal.style.display = "flex";
+        } else {
+          closeFolderModal();
+        }
       }
       
       const githubModal = document.getElementById("github-modal");
@@ -1166,7 +1184,85 @@ const githubState = {
   isAuthenticated: false,
   username: null,
   ghCliInstalled: false,
+  selectedTargetDirectory: null,
 };
+
+/**
+ * Open folder browser for selecting clone target directory
+ */
+async function openFolderBrowser() {
+  const modal = document.getElementById("folder-modal");
+  const githubModal = document.getElementById("github-modal");
+  
+  // Hide GitHub modal temporarily
+  if (githubModal) githubModal.style.display = "none";
+  
+  // Open folder modal in browse mode
+  if (modal) modal.style.display = "flex";
+  
+  // Start navigation from home directory
+  try {
+    const response = await fetch("/api/directories");
+    const data = await response.json();
+    currentPath = data.currentPath;
+    folderHistory = [currentPath];
+    loadFolderList(currentPath);
+  } catch (error) {
+    console.error("Failed to open folder browser:", error);
+    showError("Folder Browser Error", "Could not open folder selector");
+  }
+}
+
+/**
+ * Select folder for cloning
+ */
+function selectFolderForCloning(path) {
+  githubState.selectedTargetDirectory = path;
+  
+  // Update the input field
+  const targetInput = document.getElementById("target-dir-input");
+  if (targetInput) {
+    targetInput.value = path;
+  }
+  
+  // Close folder modal and reopen GitHub modal
+  const folderModal = document.getElementById("folder-modal");
+  const githubModal = document.getElementById("github-modal");
+  
+  if (folderModal) folderModal.style.display = "none";
+  if (githubModal) githubModal.style.display = "flex";
+  
+  showInfo("Folder Selected", `Will clone to: ${path}`);
+}
+
+/**
+ * Show progress indicator
+ */
+function showProgress(message) {
+  const progressEl = document.getElementById("gh-progress");
+  const progressText = document.getElementById("gh-progress-text");
+  
+  if (progressEl) {
+    progressEl.style.display = "block";
+    progressEl.classList.add("active");
+  }
+  
+  if (progressText) {
+    progressText.textContent = message;
+  }
+}
+
+/**
+ * Hide progress indicator
+ */
+function hideProgress() {
+  const progressEl = document.getElementById("gh-progress");
+  
+  if (progressEl) {
+    progressEl.style.display = "none";
+    progressEl.classList.remove("active");
+  }
+}
 
 /**
  * Open GitHub clone modal
@@ -1182,7 +1278,13 @@ async function openGitHubModal() {
   const repoInput = document.getElementById("repo-url-input");
   if (repoInput) repoInput.value = "";
   
+  const targetInput = document.getElementById("target-dir-input");
+  if (targetInput) targetInput.value = "";
+  
+  githubState.selectedTargetDirectory = null;
+  
   hideGitHubMessage();
+  hideProgress();
 
   // Check GitHub status
   await checkGitHubStatus();
@@ -1285,7 +1387,8 @@ async function handleGitHubLogin() {
     loginBtn.textContent = "Authenticating...";
   }
 
-  showGitHubMessage("Opening browser for authentication. Please complete the authentication in your browser...", "info");
+  showProgress("Opening browser for authentication...");
+  hideGitHubMessage();
 
   try {
     const response = await fetch("/api/gh/login", {
@@ -1293,6 +1396,8 @@ async function handleGitHubLogin() {
     });
 
     const data = await response.json();
+
+    hideProgress();
 
     if (data.success) {
       showGitHubMessage("Authentication successful!", "success");
@@ -1307,6 +1412,7 @@ async function handleGitHubLogin() {
     }
   } catch (error) {
     console.error("GitHub login failed:", error);
+    hideProgress();
     showGitHubMessage(`Authentication failed: ${error.message}`, "error");
     if (loginBtn) {
       loginBtn.disabled = false;
@@ -1336,16 +1442,26 @@ async function handleGitHubClone() {
     cloneBtn.textContent = "Cloning...";
   }
 
-  showGitHubMessage("Cloning repository... This may take a moment.", "info");
+  showProgress("Cloning repository... This may take a moment.");
+  hideGitHubMessage();
 
   try {
+    const requestBody = { repoUrl };
+    
+    // Add target directory if selected
+    if (githubState.selectedTargetDirectory) {
+      requestBody.targetDirectory = githubState.selectedTargetDirectory;
+    }
+    
     const response = await fetch("/api/gh/clone", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ repoUrl }),
+      body: JSON.stringify(requestBody),
     });
 
     const data = await response.json();
+
+    hideProgress();
 
     if (data.success) {
       showGitHubMessage(`Repository cloned successfully! Opening ${data.localPath}...`, "success");
@@ -1364,6 +1480,7 @@ async function handleGitHubClone() {
     }
   } catch (error) {
     console.error("GitHub clone failed:", error);
+    hideProgress();
     showGitHubMessage(`Clone failed: ${error.message}`, "error");
     if (cloneBtn) {
       cloneBtn.disabled = false;

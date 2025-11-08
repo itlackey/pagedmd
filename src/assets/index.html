@@ -632,6 +632,46 @@
                         </div>
                     </div>
 
+                    <!-- Target Directory Input -->
+                    <div class="gh-input-section">
+                        <label for="target-dir-input" class="gh-label">
+                            Clone to Folder
+                        </label>
+                        <div class="gh-input-group">
+                            <input
+                                type="text"
+                                id="target-dir-input"
+                                class="gh-input"
+                                placeholder="Default: ~/.pagedmd/cloned-repos"
+                                aria-describedby="target-dir-hint"
+                                readonly
+                            />
+                            <button
+                                class="toolbar-btn secondary gh-browse-btn"
+                                id="btn-browse-folder"
+                                type="button"
+                                title="Browse for folder"
+                            >
+                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>
+                                </svg>
+                            </button>
+                        </div>
+                        <div class="gh-hint" id="target-dir-hint">
+                            Optional: Choose where to clone the repository
+                        </div>
+                    </div>
+
+                    <!-- Progress Indicator -->
+                    <div class="gh-progress" id="gh-progress" style="display: none">
+                        <div class="gh-progress-bar">
+                            <div class="gh-progress-fill"></div>
+                        </div>
+                        <div class="gh-progress-text" id="gh-progress-text">
+                            Processing...
+                        </div>
+                    </div>
+
                     <!-- Error/Success Messages -->
                     <div class="gh-message" id="gh-message" style="display: none"></div>
                 </div>

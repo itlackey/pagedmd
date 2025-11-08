@@ -196,9 +196,13 @@ export function parseGitHubUrl(url: string): {
 /**
  * Clone a GitHub repository using gh CLI
  * @param repoUrl - GitHub repository URL
+ * @param targetDirectory - Optional target directory path (defaults to ~/.pagedmd/cloned-repos/owner/repo)
  * @returns Object with success status, local path, and any error
  */
-export async function cloneRepository(repoUrl: string): Promise<{
+export async function cloneRepository(
+  repoUrl: string,
+  targetDirectory?: string
+): Promise<{
   success: boolean;
   localPath?: string;
   error?: string;
@@ -216,12 +220,21 @@ export async function cloneRepository(repoUrl: string): Promise<{
     const { owner, repo } = parsed;
     info(`Cloning repository: ${owner}/${repo}`);
     
-    // Ensure cloned repos directory exists
-    const clonedReposDir = getClonedReposDirectory();
-    await mkdir(clonedReposDir);
-    
-    // Create target directory path
-    const targetDir = path.join(clonedReposDir, owner, repo);
+    // Determine target directory
+    let targetDir: string;
+    if (targetDirectory) {
+      // Use provided directory
+      targetDir = path.join(targetDirectory, repo);
+    } else {
+      // Use default cloned repos directory
+      const clonedReposDir = getClonedReposDirectory();
+      await mkdir(clonedReposDir);
+      targetDir = path.join(clonedReposDir, owner, repo);
+      
+      // Ensure owner directory exists
+      const ownerDir = path.join(clonedReposDir, owner);
+      await mkdir(ownerDir);
+    }
     
     // Check if repository already exists
     if (await fileExists(targetDir)) {
@@ -232,9 +245,8 @@ export async function cloneRepository(repoUrl: string): Promise<{
       };
     }
     
-    // Ensure owner directory exists
-    const ownerDir = path.join(clonedReposDir, owner);
-    await mkdir(ownerDir);
+    // Ensure parent directory exists
+    await mkdir(path.dirname(targetDir));
     
     // Clone using gh CLI
     // Using gh repo clone ensures authentication is handled properly
