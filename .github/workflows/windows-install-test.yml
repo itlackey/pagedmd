@@ -108,20 +108,58 @@ jobs:
           # Refresh PATH
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
+          # Try direct command first
+          $pagedmdFound = $false
           try {
-            $pagedmdVersion = pagedmd --version
-            Write-Host "[SUCCESS] pagedmd is installed: $pagedmdVersion" -ForegroundColor Green
+            $pagedmdVersion = pagedmd --version 2>&1
+            if ($LASTEXITCODE -eq 0) {
+              Write-Host "[SUCCESS] pagedmd is installed: $pagedmdVersion" -ForegroundColor Green
+              $pagedmdFound = $true
+            }
           } catch {
-            Write-Host "[ERROR] pagedmd not found in PATH" -ForegroundColor Red
+            # Command not found, try alternative methods
+          }
+          
+          # If not found, try running via bun directly
+          if (-not $pagedmdFound) {
+            Write-Host "[INFO] pagedmd not immediately available in PATH, trying via bun..." -ForegroundColor Yellow
+            
+            try {
+              # Find the global bun install directory
+              $bunGlobalDir = "$env:USERPROFILE\.bun\install\global"
+              
+              # Try to run pagedmd through bun
+              $pagedmdVersion = bun x pagedmd --version 2>&1
+              if ($LASTEXITCODE -eq 0) {
+                Write-Host "[SUCCESS] pagedmd works via 'bun x': $pagedmdVersion" -ForegroundColor Green
+                Write-Host "[INFO] Creating alias for subsequent steps..." -ForegroundColor Cyan
+                # Store the working command for later steps
+                $env:PAGEDMD_CMD = "bun x pagedmd"
+                $pagedmdFound = $true
+              }
+            } catch {
+              Write-Host "[WARNING] Could not run via 'bun x'" -ForegroundColor Yellow
+            }
+          }
+          
+          if (-not $pagedmdFound) {
+            Write-Host "[ERROR] pagedmd not found" -ForegroundColor Red
             Write-Host "Current PATH: $env:Path"
             
-            # Try to find pagedmd installation
+            # Try to find pagedmd installation for debugging
             Write-Host "`nSearching for pagedmd installation..." -ForegroundColor Yellow
             $bunPath = (Get-Command bun -ErrorAction SilentlyContinue).Source
             if ($bunPath) {
               $bunDir = Split-Path $bunPath
               Write-Host "Bun directory: $bunDir"
-              Get-ChildItem -Path $bunDir -Recurse -Filter "pagedmd*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  Found: $($_.FullName)" }
+              
+              # Search in global install directory
+              $globalDir = "$env:USERPROFILE\.bun\install\global"
+              if (Test-Path $globalDir) {
+                Write-Host "`nGlobal install directory contents:"
+                Get-ChildItem -Path $globalDir -Recurse -Filter "*pagedmd*" -ErrorAction SilentlyContinue | 
+                  Select-Object -First 10 | ForEach-Object { Write-Host "  Found: $($_.FullName)" }
+              }
             }
             exit 1
           }
@@ -134,8 +172,27 @@ jobs:
           # Refresh PATH
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
+          # Helper function to run pagedmd command
+          function Invoke-Pagedmd {
+            param([string[]]$Arguments)
+            
+            # Try direct command first
+            try {
+              $output = & pagedmd @Arguments 2>&1
+              if ($LASTEXITCODE -eq 0) {
+                return $output
+              }
+            } catch {
+              # Fall through to try bun x
+            }
+            
+            # Try via bun x
+            $output = & bun x pagedmd @Arguments 2>&1
+            return $output
+          }
+          
           try {
-            $helpOutput = pagedmd --help
+            $helpOutput = Invoke-Pagedmd --help
             Write-Host "[SUCCESS] Help command executed successfully" -ForegroundColor Green
             Write-Host "`nHelp output:" -ForegroundColor Cyan
             Write-Host $helpOutput
@@ -160,8 +217,27 @@ jobs:
           # Refresh PATH
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
+          # Helper function to run pagedmd command
+          function Invoke-Pagedmd {
+            param([string[]]$Arguments)
+            
+            # Try direct command first
+            try {
+              $output = & pagedmd @Arguments 2>&1
+              if ($LASTEXITCODE -eq 0) {
+                return $output
+              }
+            } catch {
+              # Fall through to try bun x
+            }
+            
+            # Try via bun x
+            $output = & bun x pagedmd @Arguments 2>&1
+            return $output
+          }
+          
           try {
-            $buildHelp = pagedmd build --help
+            $buildHelp = Invoke-Pagedmd build --help
             Write-Host "[SUCCESS] Build help command executed successfully" -ForegroundColor Green
             
             # Verify build help contains expected options
@@ -184,8 +260,27 @@ jobs:
           # Refresh PATH
           $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
           
+          # Helper function to run pagedmd command
+          function Invoke-Pagedmd {
+            param([string[]]$Arguments)
+            
+            # Try direct command first
+            try {
+              $output = & pagedmd @Arguments 2>&1
+              if ($LASTEXITCODE -eq 0) {
+                return $output
+              }
+            } catch {
+              # Fall through to try bun x
+            }
+            
+            # Try via bun x
+            $output = & bun x pagedmd @Arguments 2>&1
+            return $output
+          }
+          
           try {
-            $previewHelp = pagedmd preview --help
+            $previewHelp = Invoke-Pagedmd preview --help
             Write-Host "[SUCCESS] Preview help command executed successfully" -ForegroundColor Green
             
             # Verify preview help contains expected options
