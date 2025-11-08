@@ -165,12 +165,16 @@ export function parseGitHubUrl(url: string): {
       }
     }
     
-    // Now we should have owner/repo format
-    const parts = cleanUrl.split("/");
+    // Remove trailing slashes
+    cleanUrl = cleanUrl.replace(/\/+$/, "");
+    
+    // Now we should have owner/repo format (possibly with extra path components)
+    // Split by / and take first two components
+    const parts = cleanUrl.split("/").filter(p => p.length > 0);
     
     if (parts.length >= 2) {
-      const owner = parts[parts.length - 2];
-      const repo = parts[parts.length - 1];
+      const owner = parts[0];
+      const repo = parts[1];
       
       // Validate owner and repo are non-empty
       if (owner && repo && owner.length > 0 && repo.length > 0) {
