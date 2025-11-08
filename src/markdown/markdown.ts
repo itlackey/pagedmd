@@ -265,13 +265,13 @@ export async function processMarkdownFiles(
 
 export async function generateHtmlFromMarkdown(
   inputPath: string,
-  config: ResolvedConfig,
+  inputConfig: ResolvedConfig,
   options?: { includePreviewAssets?: boolean },
 ) {
   // Load manifest from input directory
   info(`Generating HTML from markdown in: ${inputPath}`);
   const manifest = await loadManifest(inputPath);
-  config = { ...config, ...manifest };
+  let config = { ...inputConfig, ...manifest };
   const content = await processMarkdownFiles(inputPath, config);
 
   if (content.length === 0) {
@@ -370,8 +370,8 @@ export async function generateHtmlFromMarkdown(
         if (result.errors.length > 0) {
           const errorList = result.errors.map((e) => `  - ${e}`).join("\n");
           throw new ConfigError(
-            `Failed to resolve CSS imports in ${styleFile}:\n${errorList}`,
-            "Check that all imported CSS files exist and there are no circular imports",
+            `Failed to resolve CSS imports in ${styleFile}:\n${errorList}` +
+              "Check that all imported CSS files exist and there are no circular imports",
           );
         }
 

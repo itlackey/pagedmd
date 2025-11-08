@@ -133,7 +133,7 @@ async function sendDisconnect() {
     // Use sendBeacon for reliable delivery during page unload
     const blob = new Blob(
       [JSON.stringify({ clientId: clientState.clientId })],
-      { type: "application/json" }
+      { type: "application/json" },
     );
     navigator.sendBeacon("/api/disconnect", blob);
   } catch (error) {
@@ -452,7 +452,10 @@ function updateNavigationButtons(currentPage, totalPages) {
 function goToPage(pageNum) {
   const iframeWin = getIframeWindow();
   if (!iframeWin || !iframeWin.previewAPI) {
-    showError("Preview Not Ready", "Please wait for preview to finish loading.");
+    showError(
+      "Preview Not Ready",
+      "Please wait for preview to finish loading.",
+    );
     return;
   }
 
@@ -556,7 +559,10 @@ function setZoom(zoom) {
 function toggleDebugMode() {
   const iframeWin = getIframeWindow();
   if (!iframeWin || !iframeWin.previewAPI) {
-    showError("Preview Not Ready", "Please wait for preview to finish loading.");
+    showError(
+      "Preview Not Ready",
+      "Please wait for preview to finish loading.",
+    );
     return;
   }
 
@@ -583,7 +589,10 @@ function toggleDebugMode() {
 function printPreview() {
   const iframeWin = getIframeWindow();
   if (!iframeWin) {
-    showError("Print Failed", "Preview window is not available. Try refreshing the page.");
+    showError(
+      "Print Failed",
+      "Preview window is not available. Try refreshing the page.",
+    );
     return;
   }
 
@@ -609,7 +618,7 @@ function printPreview() {
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
     showError(
       "Print Error",
-      `Unable to open print dialog: ${errorMsg}. Try refreshing the page or check browser popup settings.`
+      `Unable to open print dialog: ${errorMsg}. Try refreshing the page or check browser popup settings.`,
     );
   }
 }
@@ -747,13 +756,16 @@ function setupIframeEventListeners() {
 async function exitPreviewServer() {
   // Only allow if this is the last client
   if (!isLastConnectedClient) {
-    showInfo("Cannot Exit", "Close other browser tabs first to shut down the server.");
+    showInfo(
+      "Cannot Exit",
+      "Close other browser tabs first to shut down the server.",
+    );
     return;
   }
 
   // Confirm shutdown with custom message
   const confirmed = window.confirm(
-    "This will shut down the preview server and close this window.\n\nAre you sure you want to exit?"
+    "This will shut down the preview server and close this window.\n\nAre you sure you want to exit?",
   );
 
   if (!confirmed) {
@@ -1060,7 +1072,10 @@ function onIframeLoad() {
   renderingTimeoutId = setTimeout(() => {
     const printBtn = document.getElementById("btn-print");
     if (printBtn && printBtn.disabled) {
-      showError("Rendering Warning", "Preview rendering did not complete. Print may be incomplete.");
+      showError(
+        "Rendering Warning",
+        "Preview rendering did not complete. Print may be incomplete.",
+      );
       printBtn.disabled = false;
     }
     renderingTimeoutId = null; // Clear ID after timeout fires
@@ -1119,6 +1134,9 @@ function registerPageLifecycleListeners() {
   // Handle beforeunload - show confirmation when closing last client
   // Modern browsers only show a generic confirmation, not custom messages
   window.addEventListener("beforeunload", (event) => {
+    //NOTE: Temporarily disable beforeunload confirmation to address bug with selecting local folder
+    return true;
+
     // Skip confirmation if user already confirmed via exit button
     if (exitButtonClicked) {
       console.log("Exit button used - bypassing beforeunload confirmation");
@@ -1225,20 +1243,20 @@ async function openFolderBrowser() {
  */
 function selectFolderForCloning(path) {
   githubState.selectedTargetDirectory = path;
-  
+
   // Update the input field
   const targetInput = document.getElementById("target-dir-input");
   if (targetInput) {
     targetInput.value = path;
   }
-  
+
   // Close folder modal and reopen GitHub modal
   const folderModal = document.getElementById("folder-modal");
   const githubModal = document.getElementById("github-modal");
-  
+
   if (folderModal) folderModal.style.display = "none";
   if (githubModal) githubModal.style.display = "flex";
-  
+
   showInfo("Folder Selected", `Will clone to: ${path}`);
 }
 
@@ -1248,12 +1266,12 @@ function selectFolderForCloning(path) {
 function showProgress(message) {
   const progressEl = document.getElementById("gh-progress");
   const progressText = document.getElementById("gh-progress-text");
-  
+
   if (progressEl) {
     progressEl.style.display = "block";
     progressEl.classList.add("active");
   }
-  
+
   if (progressText) {
     progressText.textContent = message;
   }
@@ -1264,7 +1282,7 @@ function showProgress(message) {
  */
 function hideProgress() {
   const progressEl = document.getElementById("gh-progress");
-  
+
   if (progressEl) {
     progressEl.style.display = "none";
     progressEl.classList.remove("active");
@@ -1284,12 +1302,12 @@ async function openGitHubModal() {
   // Reset input and message
   const repoInput = document.getElementById("repo-url-input");
   if (repoInput) repoInput.value = "";
-  
+
   const targetInput = document.getElementById("target-dir-input");
   if (targetInput) targetInput.value = "";
-  
+
   githubState.selectedTargetDirectory = null;
-  
+
   hideGitHubMessage();
   hideProgress();
 
@@ -1316,7 +1334,8 @@ async function checkGitHubStatus() {
   if (!statusInfo) return;
 
   // Show loading state
-  statusInfo.innerHTML = '<div class="gh-status-loading">Checking GitHub CLI status...</div>';
+  statusInfo.innerHTML =
+    '<div class="gh-status-loading">Checking GitHub CLI status...</div>';
 
   try {
     const response = await fetch("/api/gh/status");
@@ -1370,7 +1389,6 @@ async function checkGitHubStatus() {
     `;
     if (loginBtn) loginBtn.style.display = "none";
     if (cloneBtn) cloneBtn.disabled = false;
-
   } catch (error) {
     console.error("Failed to check GitHub status:", error);
     statusInfo.innerHTML = `
@@ -1388,7 +1406,7 @@ async function checkGitHubStatus() {
  */
 async function handleGitHubLogin() {
   const loginBtn = document.getElementById("btn-gh-login");
-  
+
   if (loginBtn) {
     loginBtn.disabled = true;
     loginBtn.textContent = "Authenticating...";
@@ -1454,12 +1472,12 @@ async function handleGitHubClone() {
 
   try {
     const requestBody = { repoUrl };
-    
+
     // Add target directory if selected
     if (githubState.selectedTargetDirectory) {
       requestBody.targetDirectory = githubState.selectedTargetDirectory;
     }
-    
+
     const response = await fetch("/api/gh/clone", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -1471,8 +1489,11 @@ async function handleGitHubClone() {
     hideProgress();
 
     if (data.success) {
-      showGitHubMessage(`Repository cloned successfully! Opening ${data.localPath}...`, "success");
-      
+      showGitHubMessage(
+        `Repository cloned successfully! Opening ${data.localPath}...`,
+        "success",
+      );
+
       // Close modal
       setTimeout(() => {
         closeGitHubModal();
