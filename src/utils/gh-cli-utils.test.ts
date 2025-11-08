@@ -56,6 +56,14 @@ describe("parseGitHubUrl", () => {
     const result = parseGitHubUrl("  owner/repo  ");
     expect(result).toEqual({ owner: "owner", repo: "repo" });
   });
+
+  test("rejects malicious URL with github.com in path", () => {
+    expect(parseGitHubUrl("https://evil.com/github.com/owner/repo")).toBeNull();
+  });
+
+  test("rejects URL with github.com as subdomain", () => {
+    expect(parseGitHubUrl("https://fake.github.com/owner/repo")).toBeNull();
+  });
 });
 
 describe("getClonedReposDirectory", () => {

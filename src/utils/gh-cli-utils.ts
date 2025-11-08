@@ -155,15 +155,19 @@ export function parseGitHubUrl(url: string): {
     // Handle SSH format (git@github.com:owner/repo)
     if (cleanUrl.startsWith("git@github.com:")) {
       cleanUrl = cleanUrl.replace("git@github.com:", "");
-    }
-    
-    // Handle HTTPS format (https://github.com/owner/repo)
-    if (cleanUrl.includes("github.com/")) {
-      const parts = cleanUrl.split("github.com/");
-      if (parts.length === 2) {
-        cleanUrl = parts[1];
+    } 
+    // Handle HTTPS format (https://github.com/owner/repo or http://github.com/owner/repo)
+    // Only accept github.com as the domain, not as a substring
+    else if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
+      const httpsMatch = cleanUrl.match(/^https?:\/\/github\.com\/(.+)$/);
+      if (httpsMatch) {
+        cleanUrl = httpsMatch[1];
+      } else {
+        // It's an HTTP(S) URL but not github.com - reject it
+        return null;
       }
     }
+    // Otherwise assume it's shorthand format (owner/repo)
     
     // Remove trailing slashes
     cleanUrl = cleanUrl.replace(/\/+$/, "");
@@ -176,8 +180,9 @@ export function parseGitHubUrl(url: string): {
       const owner = parts[0];
       const repo = parts[1];
       
-      // Validate owner and repo are non-empty
-      if (owner && repo && owner.length > 0 && repo.length > 0) {
+      // Validate owner and repo are non-empty and don't contain protocol markers
+      if (owner && repo && owner.length > 0 && repo.length > 0 && 
+          !owner.includes(":") && !repo.includes(":")) {
         return { owner, repo };
       }
     }
