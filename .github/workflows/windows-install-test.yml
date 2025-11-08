@@ -34,6 +34,10 @@ jobs:
     name: Test on ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     
+    # Minimal permissions for security - only needs to read code
+    permissions:
+      contents: read
+    
     strategy:
       # Don't cancel other matrix jobs if one fails
       fail-fast: false
@@ -250,6 +254,9 @@ jobs:
     runs-on: ubuntu-latest
     needs: test-windows-install
     if: always()
+    
+    # No permissions needed - only writes to step summary
+    permissions: {}
     
     steps:
       - name: Check test results
