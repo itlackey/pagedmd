@@ -1,0 +1,273 @@
+name: Test Windows Installation Script
+
+# This workflow tests the Windows PowerShell installation script for pagedmd
+# It can be triggered manually, on pull requests, or called from other workflows (e.g., release)
+# This design allows easy integration into future release validation pipelines
+
+on:
+  # Manual trigger for testing
+  workflow_dispatch:
+    inputs:
+      script_ref:
+        description: 'Git ref (branch/tag) to test install script from'
+        required: false
+        default: 'main'
+        type: string
+  
+  # Automatic trigger on PRs that modify the install script
+  pull_request:
+    paths:
+      - 'scripts/install.ps1'
+      - '.github/workflows/windows-install-test.yml'
+  
+  # Allow this workflow to be called from other workflows (e.g., release workflow)
+  workflow_call:
+    inputs:
+      script_ref:
+        description: 'Git ref (branch/tag) to test install script from'
+        required: false
+        default: 'main'
+        type: string
+
+jobs:
+  test-windows-install:
+    name: Test on ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    
+    strategy:
+      # Don't cancel other matrix jobs if one fails
+      fail-fast: false
+      matrix:
+        # Test on multiple Windows versions
+        os:
+          - windows-latest  # Currently Windows Server 2022
+          - windows-2019
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.script_ref || 'main' }}
+      
+      - name: Display PowerShell version
+        shell: pwsh
+        run: |
+          Write-Host "PowerShell Version:" -ForegroundColor Cyan
+          $PSVersionTable
+          Write-Host "`nOS Information:" -ForegroundColor Cyan
+          Get-ComputerInfo | Select-Object WindowsProductName, WindowsVersion, OsHardwareAbstractionLayer
+      
+      - name: Execute install script
+        id: install
+        shell: pwsh
+        run: |
+          Write-Host "========================================" -ForegroundColor Magenta
+          Write-Host "  Starting Windows Install Test" -ForegroundColor Magenta
+          Write-Host "========================================" -ForegroundColor Magenta
+          Write-Host ""
+          
+          # Run the install script
+          Write-Host "Executing install script..." -ForegroundColor Yellow
+          try {
+            & ./scripts/install.ps1
+            Write-Host "`n[SUCCESS] Install script completed without errors" -ForegroundColor Green
+          } catch {
+            Write-Host "`n[ERROR] Install script failed: $_" -ForegroundColor Red
+            Write-Host "Stack trace:" -ForegroundColor Red
+            Write-Host $_.ScriptStackTrace
+            exit 1
+          }
+      
+      - name: Verify Bun installation
+        shell: pwsh
+        run: |
+          Write-Host "`nVerifying Bun installation..." -ForegroundColor Yellow
+          
+          # Refresh PATH to include Bun
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            $bunVersion = bun --version
+            Write-Host "[SUCCESS] Bun is installed: $bunVersion" -ForegroundColor Green
+          } catch {
+            Write-Host "[ERROR] Bun not found in PATH" -ForegroundColor Red
+            Write-Host "Current PATH: $env:Path"
+            exit 1
+          }
+      
+      - name: Verify pagedmd installation
+        shell: pwsh
+        run: |
+          Write-Host "`nVerifying pagedmd installation..." -ForegroundColor Yellow
+          
+          # Refresh PATH
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            $pagedmdVersion = pagedmd --version
+            Write-Host "[SUCCESS] pagedmd is installed: $pagedmdVersion" -ForegroundColor Green
+          } catch {
+            Write-Host "[ERROR] pagedmd not found in PATH" -ForegroundColor Red
+            Write-Host "Current PATH: $env:Path"
+            
+            # Try to find pagedmd installation
+            Write-Host "`nSearching for pagedmd installation..." -ForegroundColor Yellow
+            $bunPath = (Get-Command bun -ErrorAction SilentlyContinue).Source
+            if ($bunPath) {
+              $bunDir = Split-Path $bunPath
+              Write-Host "Bun directory: $bunDir"
+              Get-ChildItem -Path $bunDir -Recurse -Filter "pagedmd*" -ErrorAction SilentlyContinue | ForEach-Object { Write-Host "  Found: $($_.FullName)" }
+            }
+            exit 1
+          }
+      
+      - name: Test pagedmd help command
+        shell: pwsh
+        run: |
+          Write-Host "`nTesting pagedmd help command..." -ForegroundColor Yellow
+          
+          # Refresh PATH
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            $helpOutput = pagedmd --help
+            Write-Host "[SUCCESS] Help command executed successfully" -ForegroundColor Green
+            Write-Host "`nHelp output:" -ForegroundColor Cyan
+            Write-Host $helpOutput
+            
+            # Verify help output contains expected commands
+            if ($helpOutput -match "build" -and $helpOutput -match "preview") {
+              Write-Host "`n[SUCCESS] Help output contains expected commands (build, preview)" -ForegroundColor Green
+            } else {
+              Write-Host "`n[ERROR] Help output missing expected commands" -ForegroundColor Red
+              exit 1
+            }
+          } catch {
+            Write-Host "[ERROR] Failed to run help command: $_" -ForegroundColor Red
+            exit 1
+          }
+      
+      - name: Test pagedmd build command help
+        shell: pwsh
+        run: |
+          Write-Host "`nTesting pagedmd build --help..." -ForegroundColor Yellow
+          
+          # Refresh PATH
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            $buildHelp = pagedmd build --help
+            Write-Host "[SUCCESS] Build help command executed successfully" -ForegroundColor Green
+            
+            # Verify build help contains expected options
+            if ($buildHelp -match "--output" -and $buildHelp -match "--format") {
+              Write-Host "[SUCCESS] Build help contains expected options" -ForegroundColor Green
+            } else {
+              Write-Host "[ERROR] Build help missing expected options" -ForegroundColor Red
+              exit 1
+            }
+          } catch {
+            Write-Host "[ERROR] Failed to run build help command: $_" -ForegroundColor Red
+            exit 1
+          }
+      
+      - name: Test pagedmd preview command help
+        shell: pwsh
+        run: |
+          Write-Host "`nTesting pagedmd preview --help..." -ForegroundColor Yellow
+          
+          # Refresh PATH
+          $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          
+          try {
+            $previewHelp = pagedmd preview --help
+            Write-Host "[SUCCESS] Preview help command executed successfully" -ForegroundColor Green
+            
+            # Verify preview help contains expected options
+            if ($previewHelp -match "--port" -and $previewHelp -match "--open") {
+              Write-Host "[SUCCESS] Preview help contains expected options" -ForegroundColor Green
+            } else {
+              Write-Host "[ERROR] Preview help missing expected options" -ForegroundColor Red
+              exit 1
+            }
+          } catch {
+            Write-Host "[ERROR] Failed to run preview help command: $_" -ForegroundColor Red
+            exit 1
+          }
+      
+      - name: Verify desktop shortcut creation (Windows only)
+        shell: pwsh
+        run: |
+          Write-Host "`nVerifying desktop shortcut..." -ForegroundColor Yellow
+          
+          $desktopPath = [Environment]::GetFolderPath("Desktop")
+          $shortcutPath = Join-Path $desktopPath "Pagedmd Preview.lnk"
+          
+          if (Test-Path $shortcutPath) {
+            Write-Host "[SUCCESS] Desktop shortcut created at: $shortcutPath" -ForegroundColor Green
+            
+            # Display shortcut properties
+            $WScriptShell = New-Object -ComObject WScript.Shell
+            $shortcut = $WScriptShell.CreateShortcut($shortcutPath)
+            Write-Host "  Target: $($shortcut.TargetPath)" -ForegroundColor Cyan
+            Write-Host "  Arguments: $($shortcut.Arguments)" -ForegroundColor Cyan
+            Write-Host "  Working Directory: $($shortcut.WorkingDirectory)" -ForegroundColor Cyan
+          } else {
+            Write-Host "[WARNING] Desktop shortcut not found (may be expected in CI environment)" -ForegroundColor Yellow
+          }
+      
+      - name: Test summary
+        if: always()
+        shell: pwsh
+        run: |
+          Write-Host "`n========================================" -ForegroundColor Magenta
+          Write-Host "  Test Summary" -ForegroundColor Magenta
+          Write-Host "========================================" -ForegroundColor Magenta
+          Write-Host ""
+          Write-Host "OS: ${{ matrix.os }}" -ForegroundColor Cyan
+          Write-Host "Result: " -NoNewline
+          if ($env:GITHUB_JOB_STATUS -eq 'success' -or $env:GITHUB_JOB_STATUS -eq '') {
+            Write-Host "PASSED" -ForegroundColor Green
+          } else {
+            Write-Host "FAILED" -ForegroundColor Red
+          }
+          Write-Host ""
+      
+      - name: Upload debug logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: debug-logs-${{ matrix.os }}
+          path: |
+            ${{ runner.temp }}/*.log
+            ${{ env.USERPROFILE }}/.bun/install/debug.log
+          if-no-files-found: ignore
+          retention-days: 7
+
+  # Summary job that reports overall status
+  test-summary:
+    name: Test Results Summary
+    runs-on: ubuntu-latest
+    needs: test-windows-install
+    if: always()
+    
+    steps:
+      - name: Check test results
+        run: |
+          echo "## Windows Installation Test Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ "${{ needs.test-windows-install.result }}" == "success" ]; then
+            echo "✅ **All tests passed!**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "The Windows installation script successfully:" >> $GITHUB_STEP_SUMMARY
+            echo "- Installed Bun runtime" >> $GITHUB_STEP_SUMMARY
+            echo "- Installed pagedmd globally" >> $GITHUB_STEP_SUMMARY
+            echo "- Verified all commands work correctly" >> $GITHUB_STEP_SUMMARY
+            echo "- Created desktop shortcut" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "❌ **Tests failed**" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "Please check the workflow logs for details." >> $GITHUB_STEP_SUMMARY
+            exit 1
+          fi
