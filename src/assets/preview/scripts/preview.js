@@ -595,9 +595,49 @@ function setupIframeEventListeners() {
 // ============================================================================
 
 /**
+ * Exit the preview server
+ */
+async function exitPreviewServer() {
+  try {
+    // Show shutdown overlay immediately
+    const shutdownOverlay = document.getElementById("shutdown-overlay");
+    if (shutdownOverlay) {
+      shutdownOverlay.classList.add("active");
+    }
+
+    // Call shutdown API
+    const response = await fetch("/api/shutdown", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Shutdown failed: ${response.status}`);
+    }
+
+    console.log("Server shutdown initiated");
+  } catch (error) {
+    console.error("Failed to shutdown server:", error);
+    showError("Shutdown Failed", error.message);
+
+    // Hide shutdown overlay on error
+    const shutdownOverlay = document.getElementById("shutdown-overlay");
+    if (shutdownOverlay) {
+      shutdownOverlay.classList.remove("active");
+    }
+  }
+}
+
+/**
  * Initialize toolbar button event listeners
  */
 function initializeToolbarControls() {
+  // Exit button
+  const exitBtn = document.getElementById("btn-exit");
+  if (exitBtn) {
+    exitBtn.addEventListener("click", exitPreviewServer);
+  }
+
   // Folder selection button
   const folderBtn = document.getElementById("btn-folder");
   if (folderBtn) {

@@ -7,6 +7,7 @@
  * Route handlers:
  * - handleListDirectories: GET /api/directories - List subdirectories with navigation
  * - handleChangeFolder: POST /api/change-folder - Switch working directory
+ * - handleShutdown: POST /api/shutdown - Gracefully shutdown the server
  */
 
 import { readdir, stat } from "fs/promises";
@@ -340,5 +341,55 @@ export async function handleChangeFolder(
       error: `Failed to change folder: ${message}`,
     };
     return jsonResponse(response, 500);
+  }
+}
+
+/**
+ * Handle POST /api/shutdown - Gracefully shutdown the server
+ *
+ * Triggers server cleanup and exit. This is called when the user clicks
+ * the exit button in the preview UI.
+ *
+ * Callback:
+ * - Calls onShutdown() to trigger graceful shutdown
+ *
+ * Success response:
+ * - success: true
+ * - message: "Server shutting down"
+ *
+ * @param request - HTTP POST request
+ * @param onShutdown - Callback to trigger server shutdown
+ * @returns JSON response confirming shutdown
+ */
+export async function handleShutdown(
+  request: Request,
+  onShutdown: () => Promise<void>
+): Promise<Response> {
+  try {
+    // Trigger shutdown asynchronously (don't await - let response send first)
+    setTimeout(async () => {
+      try {
+        await onShutdown();
+      } catch (error) {
+        logError(`Error during shutdown: ${(error as Error).message}`);
+      }
+    }, 100); // Small delay to ensure response is sent
+
+    // Return success response immediately
+    return jsonResponse({
+      success: true,
+      message: "Server shutting down",
+    });
+  } catch (error) {
+    const err = error as any;
+    const message = err?.message || String(error);
+    logError(`Error in handleShutdown: ${message}`);
+    return jsonResponse(
+      {
+        success: false,
+        error: `Failed to shutdown: ${message}`,
+      },
+      500
+    );
   }
 }

@@ -25,7 +25,11 @@ import {
 import { info, debug, error as logError } from "./utils/logger.ts";
 import { DEBOUNCE } from "./constants.ts";
 import { injectPagedJsPolyfill } from "./build/formats/preview-format.ts";
-import { handleListDirectories, handleChangeFolder } from "./preview/routes.ts";
+import {
+  handleListDirectories,
+  handleChangeFolder,
+  handleShutdown,
+} from "./preview/routes.ts";
 import type { HeadersInit } from "bun";
 
 /**
@@ -142,10 +146,12 @@ export async function startPreviewServer(
   // Generate initial HTML
   await generateAndWriteHtml(inputPath, tempDir, config);
 
-  // Track state for folder changes
+  // Track state for folder changes and server lifecycle
   let currentInputPath = inputPath;
   let currentWatcher: ReturnType<typeof watch> | null = null;
   let isRebuilding = false;
+  let viteServer: ViteDevServer | null = null;
+  let isShuttingDown = false;
 
   // Restart preview for folder changes
   async function restartPreview(newInputPath: string): Promise<void> {
@@ -241,6 +247,19 @@ export async function startPreviewServer(
     info("Watching for file changes...");
   }
 
+  // Graceful shutdown handler
+  async function shutdown(): Promise<void> {
+    if (isShuttingDown) return; // Prevent multiple shutdown calls
+    isShuttingDown = true;
+
+    info("\nShutting down preview server...");
+    if (currentWatcher) await currentWatcher.close();
+    if (viteServer) await viteServer.close();
+    await remove(tempDir);
+    info("Server stopped. You can close this browser window.");
+    process.exit(0);
+  }
+
   // Find an available port
   const availablePort = await findAvailablePort(options.port);
   if (availablePort !== options.port) {
@@ -248,7 +267,7 @@ export async function startPreviewServer(
   }
 
   // Create Vite server with API middleware
-  const viteServer = await createViteServer({
+  viteServer = await createViteServer({
     configFile: false,
     root: tempDir,
     server: {
@@ -332,6 +351,24 @@ export async function startPreviewServer(
               return;
             }
 
+            // Handle /api/shutdown
+            if (url.pathname === "/api/shutdown" && req.method === "POST") {
+              const response = await handleShutdown(
+                new Request(url.toString(), {
+                  method: "POST",
+                  headers: req.headers as HeadersInit,
+                }),
+                shutdown,
+              );
+
+              res.statusCode = response.status;
+              response.headers.forEach((value, key) => {
+                res.setHeader(key, value);
+              });
+              res.end(await response.text());
+              return;
+            }
+
             // Let Vite handle everything else
             next();
           });
@@ -351,15 +388,7 @@ export async function startPreviewServer(
     startFileWatcher();
   }
 
-  // Graceful shutdown
-  const cleanup = async () => {
-    info("\nShutting down preview server...");
-    if (currentWatcher) await currentWatcher.close();
-    await viteServer.close();
-    await remove(tempDir);
-    process.exit(0);
-  };
-
-  process.on("SIGINT", cleanup);
-  process.on("SIGTERM", cleanup);
+  // Register signal handlers for Ctrl+C and SIGTERM
+  process.on("SIGINT", shutdown);
+  process.on("SIGTERM", shutdown);
 }

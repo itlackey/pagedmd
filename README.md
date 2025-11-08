@@ -13,60 +13,60 @@ A powerful CLI tool and live preview UI for creating professional print-ready PD
 
 ## Installation
 
-### Windows Users
+### Recommended: One-Line Install
 
-For easy installation on Windows 11, download and run the installation script:
+The easiest way to install pagedmd is using our installation scripts, which handle all dependencies automatically:
 
+**Windows (PowerShell):**
 ```powershell
-# Download the installer
-curl -o install.ps1 https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.ps1
-
-# Run the installer
-.\install.ps1
+curl -o install.ps1 https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.ps1; .\install.ps1
 ```
 
-The script will automatically:
-- Install Bun (if not already installed)
-- Install pagedmd globally
-- Create a desktop shortcut with custom icon
-- Configure the shortcut to auto-open your browser
-
-After installation, you can double-click the **"Pagedmd Preview"** shortcut on your desktop to launch the preview server instantly!
-
-### Linux Users
-
-For easy installation on Linux, download and run the installation script:
-
+**Linux/macOS:**
 ```bash
-# Download the installer
-curl -fsSL https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.sh -o install.sh
-
-# Make it executable
-chmod +x install.sh
-
-# Run the installer
-./install.sh
+curl -fsSL https://raw.githubusercontent.com/dimm-city/pagedmd/main/scripts/install.sh | bash
 ```
 
-The script will automatically:
-- Install Bun (if not already installed)
+The installation script will:
+- Install Bun runtime (if not already installed)
 - Install pagedmd globally
-- Create a desktop shortcut (.desktop file)
-- Configure the shortcut to auto-open your browser
+- Create a desktop shortcut (Windows/Linux) with custom icon
+- Configure auto-browser opening for preview mode
 
-### macOS Users
+**Windows users:** After installation, double-click the **"Pagedmd Preview"** shortcut on your desktop to launch instantly!
 
-Install globally with Bun:
+**Linux users:** Find the "Pagedmd Preview" shortcut in your applications menu or desktop.
+
+### Alternative: Package Manager Installation
+
+If you prefer manual installation or already have Bun installed:
 
 ```bash
-# Install Bun (if not already installed)
+# Install Bun first (if needed)
 curl -fsSL https://bun.sh/install | bash
 
-# Install pagedmd
+# Install pagedmd globally
 bun install -g @dimm-city/pagedmd
+
+# Or with npm
+npm install -g @dimm-city/pagedmd
 ```
 
 Once installed, the `pagedmd` command will be available globally.
+
+## Documentation
+
+For comprehensive guides and references, see the [/docs](./docs) directory:
+
+- **[Getting Started](./docs/getting-started.md)** - Project setup and basic workflow
+- **[Core Directives](./docs/core-directives.md)** - Page control and layout directives
+- **[Typography](./docs/typography.md)** - Text formatting and styling
+- **[Callouts](./docs/callouts.md)** - Professional admonition boxes
+- **[Images](./docs/images.md)** - Image handling and print optimization
+- **[TTRPG Extensions](./docs/ttrpg-extensions.md)** - Tabletop RPG features
+- **[Styling & Theming](./docs/styling-theming.md)** - Customization and CSS
+- **[Best Practices](./docs/best-practices.md)** - Professional print guidelines
+- **[Complete Guide](./docs/authoring-guide.md)** - All-in-one reference
 
 ## Quick Start
 

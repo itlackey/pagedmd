@@ -355,6 +355,27 @@
             <!-- Right section: View controls -->
             <div class="toolbar-section">
                 <button
+                    class="toolbar-btn secondary"
+                    id="btn-exit"
+                    title="Exit preview server"
+                >
+                    <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-width="2"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                    >
+                        <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" />
+                        <polyline points="16 17 21 12 16 7" />
+                        <line x1="21" x2="9" y1="12" y2="12" />
+                    </svg>
+                </button>
+                <div class="toolbar-separator"></div>
+                <button
                     class="toolbar-btn"
                     id="btn-single"
                     title="Single page view"
@@ -565,6 +586,33 @@
                 <span class="visually-hidden"
                     >Loading preview, please wait...</span
                 >
+            </div>
+        </div>
+
+        <!-- Shutdown overlay -->
+        <div class="shutdown-overlay" id="shutdown-overlay">
+            <div class="shutdown-content">
+                <svg
+                    class="shutdown-icon"
+                    width="64"
+                    height="64"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    stroke-width="2"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                >
+                    <path d="M18.36 6.64A9 9 0 0 1 20.77 15" />
+                    <path d="M6.16 6.16a9 9 0 1 0 12.68 12.68" />
+                    <path d="M12 2v4" />
+                    <path d="m2 2 20 20" />
+                </svg>
+                <h2 class="shutdown-title">Preview Server Stopped</h2>
+                <p class="shutdown-message">
+                    The preview server has been shut down.<br />
+                    You can close this browser window.
+                </p>
             </div>
         </div>
 

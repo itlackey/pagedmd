@@ -687,3 +687,72 @@
          display: none !important;
      }
  }
+
+/* Shutdown overlay - Full-screen modal indicating server has stopped */
+.shutdown-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.95);
+    backdrop-filter: blur(8px);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 100000; /* Above everything else */
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.shutdown-overlay.active {
+    display: flex;
+}
+
+.shutdown-content {
+    text-align: center;
+    color: #ffffff;
+    max-width: 500px;
+    padding: 48px;
+    animation: slideUp 0.4s ease-out;
+}
+
+.shutdown-icon {
+    color: #9ca3af;
+    margin-bottom: 24px;
+    opacity: 0.8;
+}
+
+.shutdown-title {
+    font-size: 28px;
+    font-weight: 600;
+    margin: 0 0 16px 0;
+    color: #ffffff;
+    letter-spacing: -0.01em;
+}
+
+.shutdown-message {
+    font-size: 16px;
+    line-height: 1.6;
+    color: #d1d5db;
+    margin: 0;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+@keyframes slideUp {
+    from {
+        transform: translateY(20px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
