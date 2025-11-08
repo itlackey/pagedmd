@@ -27,21 +27,11 @@ const clientState = {
 let renderingTimeoutId = null;
 
 // ============================================================================
-// Debug and Notification Utilities
+// Notification Utilities
 // ============================================================================
-
-function debugLog(message, isError = false) {
-  console.log(message);
-  const debugEl = document.getElementById("debug-console");
-  if (debugEl) {
-    debugEl.textContent = message;
-    debugEl.className = isError ? "error" : "";
-  }
-}
 
 function showError(title, message) {
   console.error(`${title}: ${message}`);
-  debugLog(`[ERROR] ${title}`, true);
 
   // Show toast notification if available
   if (typeof window.showToast === "function") {
@@ -51,10 +41,24 @@ function showError(title, message) {
 
 function showSuccess(title, message) {
   console.log(`${title}: ${message}`);
-  debugLog(`✓ ${title}`);
 
   if (typeof window.showToast === "function") {
     window.showToast(title, message, "success");
+  }
+}
+
+function showInfo(title, message) {
+  console.log(`${title}: ${message}`);
+
+  if (typeof window.showToast === "function") {
+    window.showToast(title, message, "info");
+  }
+}
+
+function updateLoadingMessage(message) {
+  const loadingEl = document.getElementById("loading-message");
+  if (loadingEl) {
+    loadingEl.textContent = message;
   }
 }
 
@@ -181,7 +185,7 @@ function createFolderItem(name, path, isParent) {
  */
 async function switchToFolder(path) {
   try {
-    debugLog(`Switching to folder: ${path}`);
+    console.log(`Switching to folder: ${path}`);
 
     const response = await fetch("/api/change-folder", {
       method: "POST",
@@ -220,11 +224,9 @@ async function switchToFolder(path) {
     // Reload iframe to show new folder content
     const iframe = document.getElementById("preview-iframe");
     if (iframe) {
-      debugLog("Reloading iframe with new content...");
+      updateLoadingMessage("Loading new folder content...");
       iframe.src = iframe.src; // Trigger reload
     }
-
-    debugLog(`✓ Switched to: ${path}`);
   } catch (error) {
     console.error("Failed to switch folder:", error);
     showError("Folder Switch Failed", error.message);
@@ -309,7 +311,7 @@ function updateNavigationButtons(currentPage, totalPages) {
 function goToPage(pageNum) {
   const iframeWin = getIframeWindow();
   if (!iframeWin || !iframeWin.previewAPI) {
-    debugLog("Preview API not ready", true);
+    showError("Preview Not Ready", "Please wait for preview to finish loading.");
     return;
   }
 
@@ -413,7 +415,7 @@ function setZoom(zoom) {
 function toggleDebugMode() {
   const iframeWin = getIframeWindow();
   if (!iframeWin || !iframeWin.previewAPI) {
-    debugLog("Preview API not ready", true);
+    showError("Preview Not Ready", "Please wait for preview to finish loading.");
     return;
   }
 
@@ -430,7 +432,7 @@ function toggleDebugMode() {
     }
   }
 
-  debugLog(`Debug mode ${isDebug ? "enabled" : "disabled"}`);
+  showInfo("Debug Mode", `Debug mode ${isDebug ? "enabled" : "disabled"}`);
 }
 
 /**
@@ -440,7 +442,6 @@ function toggleDebugMode() {
 function printPreview() {
   const iframeWin = getIframeWindow();
   if (!iframeWin) {
-    debugLog("Cannot print - iframe not accessible", true);
     showError("Print Failed", "Preview window is not available. Try refreshing the page.");
     return;
   }
@@ -448,7 +449,6 @@ function printPreview() {
   // Check if print button is disabled (belt-and-suspenders with keyboard shortcut check)
   const printBtn = document.getElementById("btn-print");
   if (printBtn && printBtn.disabled) {
-    debugLog("Print blocked - rendering still in progress", true);
     showError("Print Not Ready", "Please wait for rendering to complete.");
     return;
   }
@@ -460,10 +460,9 @@ function printPreview() {
     }
 
     iframeWin.print();
-    debugLog("Print dialog opened");
+    console.log("Print dialog opened");
   } catch (error) {
     console.error("Print failed:", error);
-    debugLog("Print failed", true);
 
     // Provide specific, actionable error message
     const errorMsg = error instanceof Error ? error.message : "Unknown error";
@@ -480,7 +479,6 @@ function printPreview() {
 function changeBackgroundColor(color) {
   const iframeWin = getIframeWindow();
   if (!iframeWin) {
-    debugLog("Cannot change background - iframe not accessible", true);
     return;
   }
 
@@ -488,11 +486,10 @@ function changeBackgroundColor(color) {
     // Update the body background color
     if (iframeWin.document && iframeWin.document.body) {
       iframeWin.document.body.style.backgroundColor = color;
-      debugLog(`Background color changed to ${color}`);
+      console.log(`Background color changed to ${color}`);
     }
   } catch (error) {
     console.error("Failed to change background color:", error);
-    debugLog("Background color change failed", true);
   }
 }
 
@@ -510,17 +507,11 @@ function updateDocumentTitle() {
   try {
     if (iframeWin && iframeWin.document && iframeWin.document.title) {
       const docTitle = iframeWin.document.title;
-      // Preserve the reload indicator span
-      const reloadIndicator = titleElement.querySelector('.reload-indicator');
       titleElement.textContent = docTitle;
-      if (reloadIndicator) {
-        titleElement.appendChild(reloadIndicator);
-      }
-      debugLog(`Document title set to: ${docTitle}`);
+      console.log(`Document title set to: ${docTitle}`);
     }
   } catch (error) {
     console.error("Failed to update document title:", error);
-    debugLog("Document title update failed", true);
   }
 }
 
@@ -533,7 +524,7 @@ function updateDocumentTitle() {
  */
 function onPageChanged(event) {
   const { currentPage, totalPages } = event.detail;
-  debugLog(`Page changed: ${currentPage}/${totalPages}`);
+  console.log(`Page changed: ${currentPage}/${totalPages}`);
   updatePageDisplay();
 }
 
@@ -543,7 +534,7 @@ function onPageChanged(event) {
  */
 function onRenderingComplete(event) {
   const { totalPages } = event.detail;
-  debugLog(`✓ Rendering complete: ${totalPages} pages`);
+  console.log(`✓ Rendering complete: ${totalPages} pages`);
 
   // Hide loading overlay now that rendering is complete
   const overlay = document.getElementById("loading-overlay");
@@ -576,7 +567,8 @@ function onRenderingComplete(event) {
     printBtn.setAttribute("aria-label", "Print preview (save as PDF)");
   }
 
-  debugLog("✓ Preview initialized and ready");
+  console.log("✓ Preview initialized and ready");
+  showSuccess("Preview Ready", `${totalPages} pages loaded successfully`);
 }
 
 /**
@@ -585,7 +577,7 @@ function onRenderingComplete(event) {
 function setupIframeEventListeners() {
   const iframeWin = getIframeWindow();
   if (!iframeWin) {
-    debugLog("Cannot setup iframe listeners - window not accessible", true);
+    console.error("Cannot setup iframe listeners - window not accessible");
     return;
   }
 
@@ -595,7 +587,7 @@ function setupIframeEventListeners() {
   // Listen for rendering complete events
   iframeWin.addEventListener("renderingComplete", onRenderingComplete);
 
-  debugLog("✓ Iframe event listeners registered");
+  console.log("✓ Iframe event listeners registered");
 }
 
 // ============================================================================
@@ -742,7 +734,6 @@ function initializeToolbarControls() {
 
       const printBtn = document.getElementById("btn-print");
       if (printBtn && printBtn.disabled) {
-        debugLog("Print blocked - rendering still in progress", true);
         showError("Print Not Ready", "Please wait for rendering to complete.");
         return;
       }
@@ -769,7 +760,8 @@ function onIframeLoad() {
     renderingTimeoutId = null;
   }
 
-  debugLog("Iframe loaded, setting up event listeners...");
+  console.log("Iframe loaded, setting up event listeners...");
+  updateLoadingMessage("Rendering pages...");
 
   // Show loading overlay while Paged.js renders
   const overlay = document.getElementById("loading-overlay");
@@ -790,14 +782,13 @@ function onIframeLoad() {
   renderingTimeoutId = setTimeout(() => {
     const printBtn = document.getElementById("btn-print");
     if (printBtn && printBtn.disabled) {
-      debugLog("Rendering timeout - enabling print button anyway", true);
       showError("Rendering Warning", "Preview rendering did not complete. Print may be incomplete.");
       printBtn.disabled = false;
     }
     renderingTimeoutId = null; // Clear ID after timeout fires
   }, 30000);
 
-  debugLog("✓ Waiting for renderingComplete event from iframe...");
+  console.log("✓ Waiting for renderingComplete event from iframe...");
 }
 
 // ============================================================================
@@ -809,7 +800,8 @@ function onIframeLoad() {
  */
 async function initializePreview() {
   try {
-    debugLog("Initializing preview...");
+    console.log("Initializing preview...");
+    updateLoadingMessage("Initializing preview...");
 
     // Show loading overlay while Paged.js is rendering
     const overlay = document.getElementById("loading-overlay");
@@ -825,7 +817,7 @@ async function initializePreview() {
       ? window.location.pathname
       : "/home";
 
-    debugLog("✓ Preview initialized");
+    console.log("✓ Preview initialized");
   } catch (error) {
     console.error("Initialization failed:", error);
     showError("Initialization Error", error.message);
