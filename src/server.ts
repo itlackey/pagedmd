@@ -192,9 +192,14 @@ export async function startPreviewServer(
     root: tempDir,
     server: {
       port: options.port,
-      strictPort: true,
+      strictPort: false, // Allow Vite to select a different port if needed
       host: "0.0.0.0",
       open: options.openBrowser,
+      // Note: Vite automatically sets appropriate cache headers
+      // - HTML: no-cache for instant updates
+      // - JS/CSS with ?v= hash: long-term cache with immutable
+      // - Other assets: short-term cache with revalidation
+      // We don't override headers here to let Vite handle it optimally
     },
     clearScreen: false,
     plugins: [
@@ -257,7 +262,18 @@ export async function startPreviewServer(
 
   await viteServer.listen();
 
-  const serverUrl = `http://localhost:${options.port}`;
+  // Get the actual port Vite is using (may differ from requested if port was in use)
+  // Vite exposes the port through httpServer.address()
+  const address = viteServer.httpServer?.address();
+  const actualPort = typeof address === 'object' && address !== null
+    ? address.port
+    : options.port;
+  const serverUrl = `http://localhost:${actualPort}`;
+
+  if (actualPort !== options.port) {
+    info(`Requested port ${options.port} was in use`);
+  }
+
   info(`Preview server running at ${serverUrl}`);
   info("Press Ctrl+C to stop");
 

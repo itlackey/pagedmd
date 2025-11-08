@@ -545,6 +545,18 @@ function onRenderingComplete(event) {
   const { totalPages } = event.detail;
   debugLog(`✓ Rendering complete: ${totalPages} pages`);
 
+  // Hide loading overlay now that rendering is complete
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) {
+    overlay.classList.remove("active");
+  }
+
+  // Fade in the iframe now that content is ready
+  const iframe = document.getElementById("preview-iframe");
+  if (iframe) {
+    iframe.classList.add("ready");
+  }
+
   // Update document title from iframe
   updateDocumentTitle();
 
@@ -759,6 +771,18 @@ function onIframeLoad() {
 
   debugLog("Iframe loaded, setting up event listeners...");
 
+  // Show loading overlay while Paged.js renders
+  const overlay = document.getElementById("loading-overlay");
+  if (overlay) {
+    overlay.classList.add("active");
+  }
+
+  // Hide iframe until rendering completes (will be shown by onRenderingComplete)
+  const iframe = document.getElementById("preview-iframe");
+  if (iframe) {
+    iframe.classList.remove("ready");
+  }
+
   // Setup event listeners - iframe will signal when ready via 'renderingComplete' event
   setupIframeEventListeners();
 
@@ -787,10 +811,10 @@ async function initializePreview() {
   try {
     debugLog("Initializing preview...");
 
-    // Hide loading overlay (iframe handles its own loading state)
+    // Show loading overlay while Paged.js is rendering
     const overlay = document.getElementById("loading-overlay");
     if (overlay) {
-      overlay.style.display = "none";
+      overlay.classList.add("active");
     }
 
     // Initialize toolbar controls
