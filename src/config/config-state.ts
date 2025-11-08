@@ -5,11 +5,11 @@
  * This is a personal tool - no complex validation, just basic merging.
  */
 
-import path from 'path';
-import { BuildOptions, Manifest, OutputFormat } from '../types.ts';
-import { loadManifest } from '../utils/config.ts';
-import { isDirectory } from '../utils/file-utils.ts';
-import { DEFAULTS } from '../constants.ts';
+import path from "path";
+import { type BuildOptions, type Manifest, OutputFormat } from "../types.ts";
+import { loadManifest } from "../utils/config.ts";
+import { isDirectory } from "../utils/file-utils.ts";
+import { DEFAULTS } from "../constants.ts";
 
 /**
  * Resolved configuration combining BuildOptions with Manifest properties
@@ -33,7 +33,7 @@ export class ConfigurationManager {
    */
   constructor(
     inputPath: string = process.cwd(),
-    private cliOptions: Partial<BuildOptions> = {}
+    private cliOptions: Partial<BuildOptions> = {},
   ) {
     // Store input directory for later use
     this.inputDir = inputPath;
@@ -135,7 +135,7 @@ export class ConfigurationManager {
  */
 export async function createConfigManager(
   inputPath: string = process.cwd(),
-  cliOptions: Partial<BuildOptions> = {}
+  cliOptions: Partial<BuildOptions> = {},
 ): Promise<ConfigurationManager> {
   const manager = new ConfigurationManager(inputPath, cliOptions);
   await manager.initialize();
