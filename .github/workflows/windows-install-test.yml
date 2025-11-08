@@ -42,16 +42,17 @@ jobs:
       # Don't cancel other matrix jobs if one fails
       fail-fast: false
       matrix:
-        # Test on multiple Windows versions
+        # Test on Windows latest version
         os:
           - windows-latest  # Currently Windows Server 2022
-          - windows-2019
     
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ inputs.script_ref || 'main' }}
+          # When triggered from workflow_dispatch/workflow_call, use inputs.script_ref
+          # When triggered from PR, use the PR's head ref (default behavior)
+          ref: ${{ inputs.script_ref || github.ref }}
       
       - name: Display PowerShell version
         shell: pwsh

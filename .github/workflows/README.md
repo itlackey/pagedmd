@@ -23,7 +23,6 @@ Tests the Windows PowerShell installation script to ensure end users can success
 
 **Test Matrix:**
 - Windows Server 2022 (windows-latest)
-- Windows Server 2019 (windows-2019)
 
 **What It Tests:**
 1. ✅ PowerShell script execution without errors
