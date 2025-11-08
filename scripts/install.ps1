@@ -4,7 +4,7 @@
 $ErrorActionPreference = "Stop"
 
 # Configuration
-$PAGEDMD_REPO = "https://github.com/dimm-city/pagedmd.git"
+$PAGEDMD_REPO = "https://github.com/itlackey/pagedmd.git"
 $PAGEDMD_PACKAGE = "@dimm-city/pagedmd"
 
 # Color output functions
