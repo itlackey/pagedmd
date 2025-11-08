@@ -7,7 +7,7 @@
      --color-pageBox: transparent;
      --pagedjs-mark-cross-display: none;
      --pagedjs-mark-crop-display: none;
-     /*--color-paper: white; */
+     --color-paper: white;
      --color-marginBox: transparent;
      --preview-container-bg: #c4c4c4;
  }
@@ -34,7 +34,7 @@
      }
 
      .pagedjs_page {
-         background-color: var(--color-paper);
+         background-color: white !important;
          box-shadow: 0 0 0 1px var(--color-pageSheet);
          margin: 0;
          flex-shrink: 0;
@@ -114,7 +114,7 @@
     .pagedjs_page {
         margin: 0 auto;
         margin-top: 10mm;
-    } 
+    }
 
     .pagedjs_left_page{
         width: calc(var(--pagedjs-bleed-left) + var(--pagedjs-pagebox-width) + var(--pagedjs-bleed-left))!important;
@@ -126,11 +126,11 @@
 
     .pagedjs_left_page .pagedjs_bleed-right .pagedjs_marks-middle{
         width: var(--pagedjs-cross-size)!important;
-    } 
+    }
 
     .pagedjs_right_page{
-        left: 0; 
-    } 
+        left: 0;
+    }
     */
 
 
@@ -421,34 +421,40 @@
      border: 0;
  }
 
- /* Folder Selection Modal */
+ /* Folder Selection Modal - Unified with toolbar design system */
  .folder-modal {
      position: fixed;
      top: 0;
      left: 0;
      width: 100%;
      height: 100%;
-     background: rgba(0, 0, 0, 0.7);
+     background: rgba(0, 0, 0, 0.75);
+     backdrop-filter: blur(4px);
      display: flex;
      align-items: center;
      justify-content: center;
      z-index: 10000;
+     /* Match toolbar font family for consistency */
+     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Arial, sans-serif;
  }
 
  .folder-modal-content {
-     background: #2b2b2b;
+     background: #1e1e1e;
+     background: linear-gradient(to bottom, #252525 0%, #1e1e1e 100%);
      border-radius: 8px;
+     border: 1px solid #3a3a3a;
      width: 90%;
      max-width: 600px;
      max-height: 80vh;
      display: flex;
      flex-direction: column;
-     box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
+     box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6),
+         0 1px 0 rgba(255, 255, 255, 0.05) inset;
  }
 
  .folder-modal-header {
-     padding: 16px 20px;
-     border-bottom: 1px solid #444;
+     padding: 20px 24px;
+     border-bottom: 1px solid #3a3a3a;
      display: flex;
      justify-content: space-between;
      align-items: center;
@@ -456,40 +462,49 @@
 
  .folder-modal-header h3 {
      margin: 0;
-     font-size: 18px;
-     color: #fff;
+     font-size: 15px;
+     font-weight: 600;
+     color: #ffffff;
+     letter-spacing: 0.01em;
+     text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
  }
 
  .folder-modal-close {
-     background: none;
-     border: none;
-     color: #999;
-     font-size: 28px;
+     background: transparent;
+     border: 1px solid #4a4a4a;
+     border-radius: 6px;
+     color: #b0b0b0;
+     font-size: 20px;
      cursor: pointer;
      padding: 0;
-     width: 30px;
-     height: 30px;
+     width: 32px;
+     height: 32px;
      display: flex;
      align-items: center;
      justify-content: center;
-     transition: color 0.2s;
+     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+     line-height: 1;
  }
 
  .folder-modal-close:hover {
-     color: #fff;
+     background: rgba(255, 255, 255, 0.05);
+     border-color: #5a5a5a;
+     color: #e0e0e0;
  }
 
  .folder-modal-body {
-     padding: 20px;
+     padding: 24px;
      overflow-y: auto;
+     flex: 1;
  }
 
  .folder-current-path {
      margin-bottom: 16px;
      padding: 12px 16px;
      background: #0f1419;
+     border: 1px solid #2a2a2a;
      border-radius: 6px;
-     font-family: monospace;
+     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
      font-size: 13px;
      color: #d1d5db; /* Gray-300 - WCAG AA compliant (7.1:1 contrast ratio) */
      word-break: break-all;
@@ -502,78 +517,106 @@
  }
 
  .folder-loading {
-     padding: 20px;
+     padding: 32px 20px;
      text-align: center;
-     color: #999;
+     color: #9ca3af;
+     font-size: 14px;
+     font-weight: 500;
  }
 
  .folder-item {
      display: flex;
      align-items: center;
      padding: 12px 16px;
-     background: #1e1e1e;
-     border: 1px solid #444;
-     border-radius: 4px;
+     background: #2a2a2a;
+     border: 1px solid #3a3a3a;
+     border-radius: 6px;
      cursor: pointer;
-     transition: all 0.2s;
+     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+     font-size: 14px;
  }
 
  .folder-item:hover {
-     background: #333;
-     border-color: #666;
+     background: #333333;
+     border-color: #4a4a4a;
+     transform: translateY(-1px);
+     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
  }
 
  .folder-item.parent {
-     background: #252525;
+     background: #2d2d2d;
+     border-color: #4a4a4a;
+ }
+
+ .folder-item.parent:hover {
+     background: #363636;
  }
 
  .folder-item-icon {
      margin-right: 12px;
-     color: #999;
+     color: #9ca3af;
      width: 20px;
      height: 20px;
      display: flex;
      align-items: center;
      justify-content: center;
+     font-size: 18px;
+     flex-shrink: 0;
  }
 
  .folder-item-name {
      flex: 1;
-     color: #fff;
+     color: #e0e0e0;
      font-size: 14px;
+     font-weight: 500;
  }
 
  .folder-item-path {
      font-size: 12px;
      color: #9ca3af; /* Gray-400 - WCAG AA compliant (4.8:1 contrast ratio) */
-     font-family: monospace;
+     font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
  }
 
  .folder-modal-footer {
-     padding: 16px 20px;
-     border-top: 1px solid #444;
+     padding: 20px 24px;
+     border-top: 1px solid #3a3a3a;
      display: flex;
      justify-content: flex-end;
-     gap: 10px;
+     gap: 12px;
+     background: rgba(0, 0, 0, 0.2);
  }
 
  .folder-item.selected {
-     background: #0066cc;
-     border-color: #0077dd;
+     background: linear-gradient(to bottom, #0077dd 0%, #0066cc 100%);
+     border-color: #0055aa;
+     box-shadow: 0 2px 4px rgba(0, 102, 204, 0.3),
+         0 1px 0 rgba(255, 255, 255, 0.1) inset;
+ }
+
+ .folder-item.selected .folder-item-name {
+     color: #ffffff;
+     font-weight: 600;
+ }
+
+ .folder-item.selected .folder-item-icon {
+     color: #ffffff;
  }
 
  .folder-item.selected:hover {
-     background: #0077dd;
+     background: linear-gradient(to bottom, #0088ee 0%, #0077dd 100%);
+     border-color: #0066cc;
+     box-shadow: 0 3px 6px rgba(0, 102, 204, 0.4),
+         0 1px 0 rgba(255, 255, 255, 0.15) inset;
  }
 
  /* Focus styles for modal elements */
  .folder-modal-close:focus {
-     outline: 2px solid #3b82f6;
+     outline: 2px solid #0066cc;
      outline-offset: 2px;
  }
 
  .folder-item:focus {
-     outline: 2px solid #3b82f6;
+     outline: 2px solid #0066cc;
      outline-offset: -2px;
      background: #3a3a3a;
  }
