@@ -1,11 +1,44 @@
 {
-  "name": "pagedmd",
+  "name": "@dimm-city/pagedmd",
+  "version": "0.1.0",
+  "description": "Markdown-to-PDF converter using Paged.js for professional print layout",
+  "author": "itlackey",
+  "license": "CC-BY-4.0",
+  "keywords": [
+    "markdown",
+    "pdf",
+    "print",
+    "paged.js",
+    "book",
+    "publishing",
+    "ttrpg"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/dimm-city/pagedmd.git"
+  },
+  "homepage": "https://github.com/dimm-city/pagedmd#readme",
+  "bugs": {
+    "url": "https://github.com/dimm-city/pagedmd/issues"
+  },
   "module": "src/index.ts",
   "type": "module",
-  "private": true,
+  "bin": {
+    "pagedmd": "dist/cli.js"
+  },
+  "files": [
+    "dist",
+    "src/assets",
+    "README.md",
+    "LICENSE"
+  ],
   "scripts": {
-    "build": "bun build src/index.ts src/cli.ts --target bun --external vite --outdir=dist/",
-    "preview": "bun run src/cli.ts examples/dc-rules --verbose --debug"
+    "build": "bun build src/cli.ts --target bun --external vite --outdir=dist/ && cp -r src/assets dist/",
+    "preview": "bun run src/cli.ts examples/dc-rules --verbose --debug",
+    "prepublishOnly": "bun run build"
+  },
+  "engines": {
+    "bun": ">=1.0.0"
   },
   "devDependencies": {
     "@types/bun": "latest"

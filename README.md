@@ -13,11 +13,17 @@ A powerful CLI tool and live preview UI for creating professional print-ready PD
 
 ## Installation
 
+Install globally with npm or Bun:
+
 ```bash
-bun install
+# Using npm
+npm install -g @dimm-city/pagedmd
+
+# Using Bun
+bun install -g @dimm-city/pagedmd
 ```
 
-Requires [Bun](https://bun.com) runtime v1.3.1 or later.
+Once installed, the `pagedmd` command will be available globally.
 
 ## Quick Start
 
@@ -25,29 +31,29 @@ Requires [Bun](https://bun.com) runtime v1.3.1 or later.
 
 ```bash
 # Build from current directory
-bun src/cli.ts build
+pagedmd build
 
 # Build from specific directory
-bun src/cli.ts build ./my-book
+pagedmd build ./my-book
 
 # Build with custom output
-bun src/cli.ts build --output my-book.pdf
+pagedmd build --output my-book.pdf
 
 # Watch mode (auto-rebuild on changes)
-bun src/cli.ts build --watch
+pagedmd build --watch
 ```
 
 ### Live Preview
 
 ```bash
 # Start preview server with live reload
-bun src/cli.ts preview
+pagedmd preview
 
 # Custom port
-bun src/cli.ts preview --port 5000
+pagedmd preview --port 5000
 
 # Don't auto-open browser
-bun src/cli.ts preview --open false
+pagedmd preview --open false
 ```
 
 The preview UI provides:
@@ -173,7 +179,7 @@ h1 {
 ### Build Command
 
 ```bash
-bun src/cli.ts build [input] [options]
+pagedmd build [input] [options]
 ```
 
 **Options:**
@@ -185,22 +191,22 @@ bun src/cli.ts build [input] [options]
 
 ```bash
 # Build PDF with custom output
-bun src/cli.ts build ./book --output book.pdf
+pagedmd build ./book --output book.pdf
 
 # Build standalone HTML
-bun src/cli.ts build --format html --output book.html
+pagedmd build --format html --output book.html
 
 # Build preview bundle (offline Paged.js viewer)
-bun src/cli.ts build --format preview
+pagedmd build --format preview
 
 # Watch mode
-bun src/cli.ts build --watch
+pagedmd build --watch
 ```
 
 ### Preview Command
 
 ```bash
-bun src/cli.ts preview [input] [options]
+pagedmd preview [input] [options]
 ```
 
 **Options:**
@@ -212,16 +218,16 @@ bun src/cli.ts preview [input] [options]
 
 ```bash
 # Start preview on default port (3000)
-bun src/cli.ts preview
+pagedmd preview
 
 # Custom port
-bun src/cli.ts preview --port 8080
+pagedmd preview --port 8080
 
 # Don't open browser automatically
-bun src/cli.ts preview --open false
+pagedmd preview --open false
 
 # Preview without file watching
-bun src/cli.ts preview --no-watch
+pagedmd preview --no-watch
 ```
 
 ## Architecture
@@ -266,18 +272,44 @@ pagedmd/
 └── README.md
 ```
 
-## Contributing
+## Development
+
+### Prerequisites
+
+This project uses [Bun](https://bun.com) runtime v1.3.1 or later.
+
+### Setup
+
+```bash
+# Clone the repository
+git clone https://github.com/dimm-city/pagedmd.git
+cd pagedmd
+
+# Install dependencies
+bun install
+
+# Run from source
+bun src/cli.ts build
+bun src/cli.ts preview
+
+# Build the CLI
+bun run build
+
+# Run tests
+bun test
+```
+
+### Contributing
 
 This project uses:
 - [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
 - [Paged.js](https://pagedjs.org) - CSS Paged Media polyfill
 - [markdown-it](https://github.com/markdown-it/markdown-it) - Markdown parser
 
-Run tests:
-```bash
-bun test
-```
+Contributions are welcome! Please feel free to submit a Pull Request.
 
 ## License
 
-[Add your license here]
+This project is licensed under the [Creative Commons Attribution 4.0 International License (CC BY 4.0)](http://creativecommons.org/licenses/by/4.0/).
+
+You are free to share and adapt this work for any purpose, even commercially, as long as you provide appropriate attribution.

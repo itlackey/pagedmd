@@ -79,6 +79,26 @@ async function findAvailablePort(startPort: number): Promise<number> {
 }
 
 /**
+ * Resolve assets directory path
+ *
+ * Supports two scenarios:
+ * 1. Dev: Running from src/server.ts → assets at src/assets
+ * 2. Prod: Running from dist/cli.js → assets at dist/assets
+ */
+function resolveAssetsDir(): string {
+  const thisFileDir = path.dirname(new URL(import.meta.url).pathname);
+
+  // When running from dist/cli.js, assets are in dist/assets
+  const distAssets = path.join(thisFileDir, "assets");
+
+  // When running from src/server.ts, assets are in src/assets
+  const srcAssets = path.join(thisFileDir, "assets");
+
+  // Both paths should be the same pattern: {current-dir}/assets
+  return distAssets;
+}
+
+/**
  * Start preview server with Vite as primary server
  */
 export async function startPreviewServer(
@@ -103,10 +123,7 @@ export async function startPreviewServer(
   debug(`Copied input files to ${tempDir}`);
 
   // Copy preview assets to temp
-  const assetsSourceDir = path.join(
-    path.dirname(new URL(import.meta.url).pathname),
-    "assets",
-  );
+  const assetsSourceDir = resolveAssetsDir();
   await copyDirectory(assetsSourceDir, tempDir);
   debug(`Copied preview assets to ${tempDir}`);
 
