@@ -152,35 +152,42 @@ jobs:
             }
           }
           
-          # Method 3: Try unscoped package name via bun x
+          # Method 3: Try direct source file execution via bun run (GitHub installs don't have built dist/)
           if (-not $pagedmdFound) {
-            Write-Host "`n[Method 3] Trying 'bun x pagedmd'..." -ForegroundColor Cyan
-            try {
-              $output = bun x pagedmd --version 2>&1
-              $exitCode = $LASTEXITCODE
-              Write-Host "Exit code: $exitCode"
-              Write-Host "Output: $output"
-              
-              if ($exitCode -eq 0) {
-                Write-Host "[SUCCESS] Unscoped package via bun x works!" -ForegroundColor Green
-                $pagedmdFound = $true
-                $workingCommand = "bun x pagedmd"
-              } else {
-                Write-Host "[FAILED] bun x with unscoped name exit code: $exitCode" -ForegroundColor Yellow
+            Write-Host "`n[Method 3] Trying direct source file execution (src/cli.ts)..." -ForegroundColor Cyan
+            $globalDir = "$env:USERPROFILE\.bun\install\global"
+            $srcCliPath = Join-Path $globalDir "node_modules\@dimm-city\pagedmd\src\cli.ts"
+            
+            if (Test-Path $srcCliPath) {
+              Write-Host "Found source CLI at: $srcCliPath"
+              try {
+                $output = bun run $srcCliPath --version 2>&1
+                $exitCode = $LASTEXITCODE
+                Write-Host "Exit code: $exitCode"
+                Write-Host "Output: $output"
+                
+                if ($exitCode -eq 0) {
+                  Write-Host "[SUCCESS] Direct source execution works!" -ForegroundColor Green
+                  $pagedmdFound = $true
+                  $workingCommand = "bun run `"$srcCliPath`""
+                } else {
+                  Write-Host "[FAILED] Direct source execution exit code: $exitCode" -ForegroundColor Yellow
+                }
+              } catch {
+                Write-Host "[FAILED] Direct source execution threw exception: $_" -ForegroundColor Yellow
               }
-            } catch {
-              Write-Host "[FAILED] bun x with unscoped name threw exception: $_" -ForegroundColor Yellow
+            } else {
+              Write-Host "[FAILED] Source CLI file not found at: $srcCliPath" -ForegroundColor Yellow
             }
           }
           
-          # Method 4: Try direct execution via bun run
+          # Method 4: Try built dist file execution
           if (-not $pagedmdFound) {
-            Write-Host "`n[Method 4] Trying direct file execution..." -ForegroundColor Cyan
-            $globalDir = "$env:USERPROFILE\.bun\install\global"
+            Write-Host "`n[Method 4] Trying built dist file execution..." -ForegroundColor Cyan
             $cliPath = Join-Path $globalDir "node_modules\@dimm-city\pagedmd\dist\cli.js"
             
             if (Test-Path $cliPath) {
-              Write-Host "Found CLI at: $cliPath"
+              Write-Host "Found built CLI at: $cliPath"
               try {
                 $output = bun run $cliPath --version 2>&1
                 $exitCode = $LASTEXITCODE
@@ -188,17 +195,18 @@ jobs:
                 Write-Host "Output: $output"
                 
                 if ($exitCode -eq 0) {
-                  Write-Host "[SUCCESS] Direct file execution works!" -ForegroundColor Green
+                  Write-Host "[SUCCESS] Built dist execution works!" -ForegroundColor Green
                   $pagedmdFound = $true
-                  $workingCommand = "bun run $cliPath"
+                  $workingCommand = "bun run `"$cliPath`""
                 } else {
-                  Write-Host "[FAILED] Direct execution exit code: $exitCode" -ForegroundColor Yellow
+                  Write-Host "[FAILED] Built dist execution exit code: $exitCode" -ForegroundColor Yellow
                 }
               } catch {
-                Write-Host "[FAILED] Direct execution threw exception: $_" -ForegroundColor Yellow
+                Write-Host "[FAILED] Built dist execution threw exception: $_" -ForegroundColor Yellow
               }
             } else {
-              Write-Host "[FAILED] CLI file not found at: $cliPath" -ForegroundColor Yellow
+              Write-Host "[FAILED] Built CLI file not found at: $cliPath" -ForegroundColor Yellow
+              Write-Host "[INFO] Package installed from GitHub doesn't include built files" -ForegroundColor Cyan
             }
           }
           
