@@ -474,6 +474,56 @@ function printPreview() {
   }
 }
 
+/**
+ * Change the background color of the iframe body
+ */
+function changeBackgroundColor(color) {
+  const iframeWin = getIframeWindow();
+  if (!iframeWin) {
+    debugLog("Cannot change background - iframe not accessible", true);
+    return;
+  }
+
+  try {
+    // Update the body background color
+    if (iframeWin.document && iframeWin.document.body) {
+      iframeWin.document.body.style.backgroundColor = color;
+      debugLog(`Background color changed to ${color}`);
+    }
+  } catch (error) {
+    console.error("Failed to change background color:", error);
+    debugLog("Background color change failed", true);
+  }
+}
+
+/**
+ * Update the toolbar title with the document title from iframe
+ */
+function updateDocumentTitle() {
+  const iframeWin = getIframeWindow();
+  const titleElement = document.getElementById("document-title");
+
+  if (!titleElement) {
+    return;
+  }
+
+  try {
+    if (iframeWin && iframeWin.document && iframeWin.document.title) {
+      const docTitle = iframeWin.document.title;
+      // Preserve the reload indicator span
+      const reloadIndicator = titleElement.querySelector('.reload-indicator');
+      titleElement.textContent = docTitle;
+      if (reloadIndicator) {
+        titleElement.appendChild(reloadIndicator);
+      }
+      debugLog(`Document title set to: ${docTitle}`);
+    }
+  } catch (error) {
+    console.error("Failed to update document title:", error);
+    debugLog("Document title update failed", true);
+  }
+}
+
 // ============================================================================
 // Iframe Event Listeners
 // ============================================================================
@@ -494,6 +544,9 @@ function onPageChanged(event) {
 function onRenderingComplete(event) {
   const { totalPages } = event.detail;
   debugLog(`✓ Rendering complete: ${totalPages} pages`);
+
+  // Update document title from iframe
+  updateDocumentTitle();
 
   // Update UI with initial page state
   updatePageDisplay();
@@ -652,6 +705,22 @@ function initializeToolbarControls() {
     printBtn.addEventListener("click", printPreview);
     // Start disabled - will be enabled when rendering completes
     printBtn.disabled = true;
+  }
+
+  // Background color button and picker
+  const bgColorBtn = document.getElementById("btn-bg-color");
+  const bgColorPicker = document.getElementById("bg-color-picker");
+
+  if (bgColorBtn && bgColorPicker) {
+    // When button is clicked, trigger the color picker
+    bgColorBtn.addEventListener("click", () => {
+      bgColorPicker.click();
+    });
+
+    // When color changes, update the iframe background
+    bgColorPicker.addEventListener("input", (e) => {
+      changeBackgroundColor(e.target.value);
+    });
   }
 
   // Keyboard shortcut for print (Ctrl/Cmd+P)
