@@ -6,11 +6,11 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
-import { mkdir, writeFile, remove } from '../src/utils/file-utils.ts';
-import { processMarkdownFiles, generateHtmlFromMarkdown } from '../src/markdown/markdown.ts';
-import type { ResolvedConfig } from '../src/config/config-state.ts';
+import { mkdir, writeFile, remove } from '../../src/utils/file-utils.ts';
+import { processMarkdownFiles, generateHtmlFromMarkdown } from '../../src/markdown/markdown.ts';
+import type { ResolvedConfig } from '../../src/config/config-state.ts';
 import YAML from 'js-yaml';
-import type { Manifest } from '../src/types.ts';
+import type { Manifest } from '../../src/types.ts';
 
 describe('Markdown Processing Integration Tests', () => {
   let testDir: string;

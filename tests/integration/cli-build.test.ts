@@ -6,10 +6,10 @@
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
-import { mkdir, writeFile, remove, fileExists } from '../src/utils/file-utils.ts';
-import { executeBuildProcess } from '../src/cli.ts';
+import { mkdir, writeFile, remove, fileExists } from '../../src/utils/file-utils.ts';
+import { executeBuildProcess } from '../../src/cli.ts';
 import YAML from 'js-yaml';
-import type { Manifest } from '../src/types.ts';
+import type { Manifest } from '../../src/types.ts';
 
 describe('CLI Build Command Integration Tests', () => {
   let testDir: string;
