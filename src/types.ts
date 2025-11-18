@@ -1,5 +1,5 @@
 /**
- * Shared TypeScript interfaces for dc-book CLI
+ * Shared TypeScript interfaces for pagedmd CLI
  *
  * These types define the core data structures used throughout the application
  * for configuration, build options, and preview settings.

@@ -1,7 +1,7 @@
 #!/usr/bin/env bun
 
 /**
- * Simplified CLI for dc-book
+ * Simplified CLI for pagedmd
  *
  * Implements build and preview commands using commander.js
  * Directly calls simplified build and preview functions
@@ -80,11 +80,11 @@ program
  * Preview command - Start live preview server with file watching
  *
  * Two modes:
- * 1. With input path: dc-book preview ./my-book
+ * 1. With input path: pagedmd preview ./my-book
  *    - Immediately starts watching specified directory
  *    - Legacy behavior (backward compatible)
  *
- * 2. Without input path: dc-book preview
+ * 2. Without input path: pagedmd preview
  *    - Starts server with folder selector UI
  *    - No watching until user selects folder through UI
  *    - Prevents watching unwanted directories (test fixtures, etc.)
@@ -140,21 +140,21 @@ program
  * Version and help
  */
 program
-  .name('dc-book')
+  .name('pagedmd')
   .description('CLI tool for converting markdown to print-ready PDFs with TTRPG-specific features')
   .version(packageJson.version ?? '0.0.0')
   .addHelpText(
     'after',
     `
 Examples:
-  $ dc-book                                 # Preview current directory (default)
-  $ dc-book preview                         # Preview current directory (explicit)
-  $ dc-book preview ./my-book               # Preview specific directory
-  $ dc-book preview --port 3579             # Preview with custom port
-  $ dc-book build                           # Build from current directory
-  $ dc-book build ./my-book                 # Build from specific directory
-  $ dc-book build chapter.md                # Build single file
-  $ dc-book build --output my-book.pdf      # Custom output path
+  $ pagedmd                                 # Preview current directory (default)
+  $ pagedmd preview                         # Preview current directory (explicit)
+  $ pagedmd preview ./my-book               # Preview specific directory
+  $ pagedmd preview --port 3579             # Preview with custom port
+  $ pagedmd build                           # Build from current directory
+  $ pagedmd build ./my-book                 # Build from specific directory
+  $ pagedmd build chapter.md                # Build single file
+  $ pagedmd build --output my-book.pdf      # Custom output path
 
 Custom CSS Configuration:
   Create manifest.yaml in your project directory:
