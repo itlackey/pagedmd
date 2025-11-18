@@ -28,7 +28,7 @@ export function getLogLevel(): LogLevel {
  * @param message Message to log
  * @param args Additional arguments to log
  */
-export function log(level: LogLevel, message: string, ...args: any[]): void {
+export function log(level: LogLevel, message: string, ...args: unknown[]): void {
     const levels: Record<LogLevel, number> = {
         DEBUG: 0,
         INFO: 1,
@@ -60,28 +60,28 @@ export function log(level: LogLevel, message: string, ...args: any[]): void {
 /**
  * Log a debug message (only shown when log level is DEBUG)
  */
-export function debug(message: string, ...args: any[]): void {
+export function debug(message: string, ...args: unknown[]): void {
     log('DEBUG', message, ...args);
 }
 
 /**
  * Log an info message (shown at INFO level and above)
  */
-export function info(message: string, ...args: any[]): void {
+export function info(message: string, ...args: unknown[]): void {
     log('INFO', message, ...args);
 }
 
 /**
  * Log a warning message (shown at WARN level and above)
  */
-export function warn(message: string, ...args: any[]): void {
+export function warn(message: string, ...args: unknown[]): void {
     log('WARN', message, ...args);
 }
 
 /**
  * Log an error message (always shown)
  */
-export function error(message: string, ...args: any[]): void {
+export function error(message: string, ...args: unknown[]): void {
     log('ERROR', message, ...args);
 }
 
