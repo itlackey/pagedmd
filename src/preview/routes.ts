@@ -32,6 +32,7 @@ import {
   getHomeDirectory,
 } from "../utils/path-security";
 import { error as logError, info } from "../utils/logger";
+import { isErrorWithCode } from "../utils/errors";
 import {
   isGhCliInstalled,
   checkGhAuthStatus,
@@ -200,19 +201,19 @@ export async function handleListDirectories(
 
     return jsonResponse(response);
   } catch (error) {
-    // Handle specific error codes with null-safe access
-    const err = error as any; // Use any for safe property access
+    // Handle specific error codes with type-safe access
+    if (isErrorWithCode(error)) {
+      if (error.code === "ENOENT") {
+        return errorResponse("Directory does not exist", 404);
+      }
 
-    if (err?.code === "ENOENT") {
-      return errorResponse("Directory does not exist", 404);
-    }
-
-    if (err?.code === "EACCES") {
-      return errorResponse("Permission denied", 403);
+      if (error.code === "EACCES") {
+        return errorResponse("Permission denied", 403);
+      }
     }
 
     // Generic error
-    const message = err?.message || String(error);
+    const message = error instanceof Error ? error.message : String(error);
     return errorResponse(`Failed to list directories: ${message}`, 500);
   }
 }
@@ -349,9 +350,8 @@ export async function handleChangeFolder(
     };
     return jsonResponse(response);
   } catch (error) {
-    // Generic error handler with null-safe access
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Generic error handler with type-safe access
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleChangeFolder: ${message}`);
     const response: FolderChangeResponse = {
       success: false,
@@ -398,8 +398,8 @@ export async function handleShutdown(
       message: "Server shutting down",
     });
   } catch (error) {
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Type-safe error handling
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleShutdown: ${message}`);
     return jsonResponse(
       {
@@ -454,8 +454,8 @@ export async function handleGitHubStatus(
     
     return jsonResponse(response);
   } catch (error) {
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Type-safe error handling
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleGitHubStatus: ${message}`);
     
     const response: GitHubAuthStatus = {
@@ -494,8 +494,8 @@ export async function handleGitHubLogin(
     
     return jsonResponse(response, result.success ? 200 : 500);
   } catch (error) {
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Type-safe error handling
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleGitHubLogin: ${message}`);
     
     const response: GitHubLoginResponse = {
@@ -620,8 +620,8 @@ export async function handleGitHubClone(
     };
     return jsonResponse(response);
   } catch (error) {
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Type-safe error handling
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleGitHubClone: ${message}`);
     
     const response: GitHubCloneResponse = {
@@ -665,8 +665,8 @@ export async function handleGitHubUser(
     
     return jsonResponse(response);
   } catch (error) {
-    const err = error as any;
-    const message = err?.message || String(error);
+    // Type-safe error handling
+    const message = error instanceof Error ? error.message : String(error);
     logError(`Error in handleGitHubUser: ${message}`);
     
     return errorResponse(`Failed to fetch user info: ${message}`, 500);

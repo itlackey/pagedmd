@@ -411,20 +411,35 @@ function resolvePath(filePath: string): string {
 }
 
 /**
+ * Valid output format types
+ */
+type ValidFormat = 'html' | 'pdf' | 'preview';
+
+/**
+ * Type guard to check if a string is a valid format
+ * @param value String to check
+ * @returns True if value is a valid format
+ */
+function isValidFormat(value: string): value is ValidFormat {
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
+  return validFormats.includes(value as ValidFormat);
+}
+
+/**
  * Validate format option value
  * @param format Format string to validate
  * @returns Lowercase format string if valid
  * @throws Error if format is invalid
  */
-export function validateFormatOption(format: string): 'html' | 'pdf' | 'preview' {
-  const validFormats = ['html', 'pdf', 'preview'] as const;
+export function validateFormatOption(format: string): ValidFormat {
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
   const normalized = format.toLowerCase();
 
-  if (!validFormats.includes(normalized as any)) {
+  if (!isValidFormat(normalized)) {
     throw new Error(
       `Invalid format '${format}'. Valid formats: ${validFormats.join(', ')}`
     );
   }
 
-  return normalized as 'html' | 'pdf' | 'preview';
+  return normalized;
 }
