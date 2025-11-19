@@ -15,6 +15,8 @@ import { PdfFormatStrategy } from './formats/pdf-format.ts';
 import { HtmlFormatStrategy } from './formats/html-format.ts';
 import { PreviewFormatStrategy } from './formats/preview-format.ts';
 import { validateInputExists } from './build-validator.ts';
+import { PerformanceMonitor, isSlow } from '../utils/performance.ts';
+import { MemoryMonitor } from '../utils/memory.ts';
 import type { BuildOptions, PDFGenerationResult, FormatStrategy, OutputFormat } from '../types.ts';
 
 /**
@@ -50,7 +52,12 @@ function getFormatStrategy(format: OutputFormat): FormatStrategy {
  * @throws BuildError if build fails
  */
 export async function build(options: BuildOptions): Promise<PDFGenerationResult> {
-  const startTime = Date.now();
+  // Initialize performance and memory monitoring
+  const perf = new PerformanceMonitor(options.profile || options.verbose);
+  const memory = new MemoryMonitor(options.profile || options.verbose);
+
+  perf.mark('build-start');
+  memory.snapshot('build-start');
 
   // STAGE 1: Resolve input path (defaults to cwd)
   options.input ??= process.cwd();
@@ -69,13 +76,18 @@ export async function build(options: BuildOptions): Promise<PDFGenerationResult>
   info(`Building ${formatName} from: ${options.input}`);
 
   // STAGE 2: Initialize Configuration Manager
-  // This provides unified configuration with CLI > Manifest > Defaults precedence
+  perf.mark('config-start');
   const configManager = new ConfigurationManager(options.input, options);
   await configManager.initialize(); // Load manifest asynchronously
   const config = configManager.getConfig();
+  perf.measure('Configuration Loading', 'config-start');
+  memory.snapshot('config-loaded');
 
   // STAGE 3: Process Markdown Files to HTML
+  perf.mark('markdown-start');
   const html = await generateHtmlFromMarkdown(options.input, config);
+  perf.measure('Markdown Processing', 'markdown-start');
+  memory.snapshot('markdown-processed');
 
   // Save HTML output if requested (debugging)
   if (options.htmlOutput) {
@@ -99,12 +111,38 @@ export async function build(options: BuildOptions): Promise<PDFGenerationResult>
   }
 
   // STAGE 6: Execute format-specific build
+  perf.mark('strategy-start');
   const outputPath = await strategy.build(options, html);
+  perf.measure(`${formatName} Generation`, 'strategy-start');
+  memory.snapshot('build-complete');
 
   // STAGE 7: Cleanup temporary files
   await strategy.cleanup(options);
 
-  const totalDuration = Date.now() - startTime;
+  const totalDuration = perf.measure('Total Build Time', 'build-start');
+
+  // Display performance metrics if profiling or verbose
+  if (options.profile || options.verbose) {
+    info(`\nPerformance Metrics:`);
+    info(perf.report());
+    info(`\nMemory Usage:`);
+    info(memory.report());
+
+    // Warn about slow operations
+    const slowOps = perf.getSlowOperations(5000);
+    if (slowOps.length > 0) {
+      warn(`\nSlow operations detected (>5s):`);
+      slowOps.forEach((op) => {
+        warn(`  ${op.name}: ${(op.duration / 1000).toFixed(2)}s`);
+      });
+    }
+  }
+
+  // Always warn if total build is slow
+  if (isSlow(totalDuration)) {
+    warn(`Build took ${(totalDuration / 1000).toFixed(2)}s. Consider optimizing.`);
+  }
+
   info(`Build complete in ${totalDuration}ms → ${outputPath}`);
 
   return {

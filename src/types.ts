@@ -56,6 +56,8 @@ export interface BuildOptions {
   watch?: boolean;
   /** Force overwrite existing output without validation */
   force?: boolean;
+  /** Enable detailed performance profiling */
+  profile?: boolean;
 }
 
 /**

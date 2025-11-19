@@ -38,6 +38,7 @@ interface BuildCommandOptions {
   format?: string;
   watch?: boolean;
   force?: boolean;
+  profile?: boolean;
 }
 
 interface PreviewCommandOptions {
@@ -72,6 +73,7 @@ program
   .option('--timeout <ms>', 'Timeout for PDF generation in milliseconds', String(DEFAULTS.TIMEOUT))
   .option('--verbose', 'Enable verbose output', false)
   .option('--debug', 'Debug mode (preserve temporary files)', false)
+  .option('--profile', 'Enable detailed performance profiling', false)
   .action(async (input: string | undefined, opts: BuildCommandOptions) => {
     await executeBuildProcess(opts, input);
   });
@@ -224,6 +226,7 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
     buildOptions.format = OutputFormat[validatedFormat.toUpperCase() as keyof typeof OutputFormat];
     buildOptions.watch = opts.watch || false;
     buildOptions.force = opts.force || false;
+    buildOptions.profile = opts.profile || false;
 
     const inputPath = buildOptions.input || process.cwd();
 
