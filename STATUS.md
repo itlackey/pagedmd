@@ -172,7 +172,8 @@ This document tracks the implementation status of all items identified in the co
   - `60bde68` - test: fix failing integration test and add coverage script
   - `f8a2fc1` - test: add comprehensive HTML format strategy tests
   - `3345b44` - test: add comprehensive Preview format strategy tests
-- **Current Coverage:** ~65% (200 tests: 170 unit + 30 integration)
+  - `617c622` - test: add comprehensive markdown edge case tests
+- **Current Coverage:** ~70% (226 tests: 196 unit + 30 integration)
 - **Target Coverage:** 80%+
 - **Completed:**
   - ✅ Week 1: Tooling Setup
@@ -183,10 +184,9 @@ This document tracks the implementation status of all items identified in the co
   - ✅ Week 2: Core Module Tests (In Progress)
     - HTML Format Strategy: 12 tests (commit f8a2fc1)
     - Preview Format Strategy: 18 tests (commit 3345b44)
+    - Markdown Edge Cases: 26 tests (commit 617c622)
 
 - **Remaining Work:**
-  - [ ] Add build pipeline error handling tests
-  - [ ] Add markdown processing edge case tests
   - [ ] Add configuration validation tests
   - [ ] Add preview server API endpoint tests
   - [ ] Add file watcher scenario tests
@@ -218,8 +218,7 @@ This document tracks the implementation status of all items identified in the co
 2. **Week 2: Core Module Tests** (IN PROGRESS)
    - ✅ HTML Format Strategy - 12 tests (commit f8a2fc1)
    - ✅ Preview Format Strategy - 18 tests (commit 3345b44)
-   - [ ] PDF Format Strategy and error handling - 10 tests
-   - [ ] Markdown processing edge cases - 15 tests
+   - ✅ Markdown processing edge cases - 26 tests (commit 617c622)
    - [ ] Configuration validation - 10 tests
 
 3. **Week 3: Integration Tests**
