@@ -48,6 +48,9 @@
   "engines": {
     "bun": ">=1.0.0"
   },
+  "config": {
+    "puppeteer_skip_download": "true"
+  },
   "devDependencies": {
     "@types/bun": "latest",
     "@typescript-eslint/eslint-plugin": "^7.0.0",

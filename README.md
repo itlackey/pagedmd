@@ -372,6 +372,48 @@ bun run build
 bun test
 ```
 
+### Troubleshooting
+
+#### Puppeteer Installation Errors
+
+If you encounter 403 errors or Chrome download failures during `bun install`, this is caused by the `pagedjs-cli` dependency trying to download Chromium. To fix this:
+
+1. **Set environment variables before installing:**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+
+   # Or manually export (Linux/macOS)
+   export PUPPETEER_SKIP_DOWNLOAD=true
+   export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+   # Or set permanently (Windows PowerShell)
+   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_DOWNLOAD', 'true', 'User')
+   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_CHROMIUM_DOWNLOAD', 'true', 'User')
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   bun install
+   ```
+
+3. **Install Chrome manually (for PDF generation):**
+   - **Linux**: `sudo apt install google-chrome-stable`
+   - **macOS**: Download from https://www.google.com/chrome/
+   - **Windows**: Download from https://www.google.com/chrome/
+
+4. **Point Puppeteer to your Chrome installation** (optional):
+   ```bash
+   # Add to .env file:
+   PUPPETEER_EXECUTABLE_PATH=/usr/bin/google-chrome-stable  # Linux
+   # Or:
+   PUPPETEER_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"  # macOS
+   # Or:
+   PUPPETEER_EXECUTABLE_PATH="C:\Program Files\Google\Chrome\Application\chrome.exe"  # Windows
+   ```
+
+**Note**: The project's `package.json` already includes `config.puppeteer_skip_download=true`, so you may only need to install Chrome manually for PDF generation to work.
+
 ### Contributing
 
 This project uses:
