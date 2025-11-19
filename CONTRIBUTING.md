@@ -314,8 +314,9 @@ The project uses automated tools to monitor and update dependencies securely:
 7. **Reporting Vulnerabilities**
 
    If you discover a security vulnerability:
-   - **Do not** create a public GitHub issue
-   - Email maintainers directly (see SECURITY.md when available)
+   - **Do not** create a public GitHub issue for critical vulnerabilities
+   - Follow the process outlined in [SECURITY.md](./SECURITY.md)
+   - Email maintainers directly for critical issues
    - Provide detailed reproduction steps
    - Allow reasonable time for fix before disclosure
 
