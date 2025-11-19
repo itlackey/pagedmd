@@ -32,6 +32,11 @@ import {
   getHomeDirectory,
 } from "../utils/path-security";
 import { error as logError, info } from "../utils/logger";
+import {
+  FolderChangeRequestSchema,
+  GitHubCloneRequestSchema,
+  formatApiErrors
+} from "../schemas/api.schema.ts";
 import { isErrorWithCode } from "../utils/errors";
 import {
   isGhCliInstalled,
@@ -254,7 +259,7 @@ export async function handleChangeFolder(
   onFolderChange: (newPath: string) => Promise<void>
 ): Promise<Response> {
   try {
-    // Parse JSON body
+    // Parse and validate request body using Zod schema
     let body: unknown;
     try {
       body = await request.json();
@@ -266,54 +271,20 @@ export async function handleChangeFolder(
       return jsonResponse(response, 400);
     }
 
-    // Validate body is an object
-    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+    // Validate request body with Zod schema
+    const validationResult = FolderChangeRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errorDetails = formatApiErrors(validationResult.error);
       const response: FolderChangeResponse = {
         success: false,
-        error: "Request body must be an object",
+        error: errorDetails.error,
       };
       return jsonResponse(response, 400);
     }
 
-    // Extract and validate path field
-    const { path: newPath } = body as Record<string, unknown>;
-
-    // Check if path field exists
-    if (newPath === undefined || newPath === null) {
-      const response: FolderChangeResponse = {
-        success: false,
-        error: "Missing required field: path",
-      };
-      return jsonResponse(response, 400);
-    }
-
-    // Check if path is a string
-    if (typeof newPath !== "string") {
-      const response: FolderChangeResponse = {
-        success: false,
-        error: 'Field "path" must be a string',
-      };
-      return jsonResponse(response, 400);
-    }
-
-    // Check if path is non-empty
-    if (newPath.trim() === "") {
-      const response: FolderChangeResponse = {
-        success: false,
-        error: "Field \"path\" cannot be empty or whitespace-only",
-      };
-      return jsonResponse(response, 400);
-    }
-
-    // Security check: validate path is within home directory
-    const homeDir = getHomeDirectory();
-    if (!isWithinHomeDirectory(newPath, homeDir)) {
-      const response: FolderChangeResponse = {
-        success: false,
-        error: "Path is outside home directory",
-      };
-      return jsonResponse(response, 403);
-    }
+    // Extract validated path (type-safe)
+    const { path: newPath } = validationResult.data;
 
     // Validate path exists and is a directory
     if (!(await fileExists(newPath))) {
@@ -528,7 +499,7 @@ export async function handleGitHubClone(
   onFolderChange: (newPath: string) => Promise<void>
 ): Promise<Response> {
   try {
-    // Parse JSON body
+    // Parse and validate request body using Zod schema
     let body: unknown;
     try {
       body = await request.json();
@@ -539,58 +510,28 @@ export async function handleGitHubClone(
       };
       return jsonResponse(response, 400);
     }
-    
-    // Validate body is an object
-    if (typeof body !== "object" || body === null || Array.isArray(body)) {
+
+    // Validate request body with Zod schema
+    const validationResult = GitHubCloneRequestSchema.safeParse(body);
+
+    if (!validationResult.success) {
+      const errorDetails = formatApiErrors(validationResult.error);
       const response: GitHubCloneResponse = {
         success: false,
-        error: "Request body must be an object",
+        error: errorDetails.error,
       };
       return jsonResponse(response, 400);
     }
-    
-    // Extract and validate repoUrl field
-    const { repoUrl, targetDirectory } = body as Record<string, unknown>;
-    
-    if (repoUrl === undefined || repoUrl === null) {
-      const response: GitHubCloneResponse = {
-        success: false,
-        error: "Missing required field: repoUrl",
-      };
-      return jsonResponse(response, 400);
-    }
-    
-    if (typeof repoUrl !== "string") {
-      const response: GitHubCloneResponse = {
-        success: false,
-        error: 'Field "repoUrl" must be a string',
-      };
-      return jsonResponse(response, 400);
-    }
-    
-    if (repoUrl.trim() === "") {
-      const response: GitHubCloneResponse = {
-        success: false,
-        error: 'Field "repoUrl" cannot be empty',
-      };
-      return jsonResponse(response, 400);
-    }
-    
-    // Validate targetDirectory if provided
-    if (targetDirectory !== undefined && targetDirectory !== null && typeof targetDirectory !== "string") {
-      const response: GitHubCloneResponse = {
-        success: false,
-        error: 'Field "targetDirectory" must be a string',
-      };
-      return jsonResponse(response, 400);
-    }
-    
+
+    // Extract validated data (type-safe)
+    const { url: repoUrl, targetDir: targetDirectory } = validationResult.data;
+
     info(`Cloning GitHub repository: ${repoUrl}${targetDirectory ? ` to ${targetDirectory}` : ''}`);
-    
+
     // Clone the repository
     const cloneResult = await cloneRepository(
       repoUrl,
-      targetDirectory as string | undefined
+      targetDirectory
     );
     
     if (!cloneResult.success || !cloneResult.localPath) {
