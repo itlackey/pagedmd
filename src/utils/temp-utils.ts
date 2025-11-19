@@ -11,14 +11,14 @@ import { rm, mkdir } from 'fs/promises';
 
 /**
  * Generate a unique temporary directory name
- * Pattern: /tmp/dc-book-preview-{timestamp}-{random}/
+ * Pattern: /tmp/pagedmd-preview-{timestamp}-{random}/
  *
  * @returns Absolute path to unique temp directory (not yet created)
  */
 export function generateTempDirName(): string {
   const timestamp = Date.now();
   const randomId = randomBytes(8).toString('hex'); // Increased from 3 to 8 bytes for better collision resistance
-  return path.join(tmpdir(), `dc-book-preview-${timestamp}-${randomId}`);
+  return path.join(tmpdir(), `pagedmd-preview-${timestamp}-${randomId}`);
 }
 
 /**

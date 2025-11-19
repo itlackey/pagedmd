@@ -24,3 +24,32 @@ export class ConfigError extends Error {
     this.name = 'ConfigError';
   }
 }
+
+/**
+ * Type guard to check if an error has a code property (NodeJS.ErrnoException)
+ * @param error Unknown error object
+ * @returns True if error has a code property
+ */
+export function isErrorWithCode(error: unknown): error is Error & { code: string } {
+  return (
+    error instanceof Error &&
+    typeof (error as Error & { code?: unknown }).code === 'string'
+  );
+}
+
+/**
+ * Type guard to check if an error has specific properties
+ * @param error Unknown error object
+ * @param properties Property names to check for
+ * @returns True if error has all specified properties
+ */
+export function hasErrorProperties<T extends string>(
+  error: unknown,
+  ...properties: T[]
+): error is Error & Record<T, unknown> {
+  if (!(error instanceof Error)) {
+    return false;
+  }
+
+  return properties.every(prop => prop in error);
+}

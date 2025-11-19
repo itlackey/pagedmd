@@ -14,12 +14,22 @@ The build pipeline uses a strategy pattern for different output formats:
 
 1. **Markdown Processing** (`src/markdown/markdown.ts`)
    - Converts markdown to HTML using markdown-it
-   - Supports extensible plugin system:
-     - **Core Directives** (`core/core-directives-plugin.ts`) - Auto-rules and directives (@page, @break, @spread, @columns)
+   - **Runtime Plugin System** (`src/markdown/plugin-loader.ts`):
+     - **PluginLoader** class for dynamic plugin loading
+     - Supports 4 plugin types: local, package, builtin, remote (future)
+     - Plugin priority-based loading order (higher priority = earlier)
+     - Automatic CSS collection and injection from plugins
+     - Security validation for file paths (no path traversal)
+     - Plugin caching for performance
+   - **Built-in Plugins**:
+     - **Core Directives** (`core/core-directives-plugin.ts`) - @page, @break, @spread, @columns
      - **TTRPG Directives** (`plugins/ttrpg-directives-plugin.ts`) - Stat blocks, dice notation, cross-references
      - **Dimm City Extensions** (`plugins/dimm-city-plugin.ts`) - District badges, roll prompts
-   - Extension configuration via `manifest.yaml` extensions array
-   - CSS cascade: default styles → themes → custom user styles
+   - **Plugin Configuration** (`manifest.yaml` plugins array):
+     - String shorthand: `"ttrpg"` or `"./plugins/my-plugin.js"`
+     - Object config: `{ path: "...", options: {...}, priority: 200 }`
+     - Legacy `extensions` array supported for backward compatibility
+   - **CSS Cascade**: default styles → plugin CSS → theme styles → custom user styles
    - Resolves all @import statements and inlines CSS at build time
 
 2. **Format Strategy Pattern** (`src/build/formats/`)
@@ -124,13 +134,21 @@ bun src/cli.ts preview [input] --port [number] --open [boolean] --no-watch
 
 ### Key Modules
 
-- `src/types.ts` - TypeScript interfaces for all data structures (BuildOptions, FormatStrategy, ResolvedConfig, etc.)
+**Core Systems:**
+- `src/types.ts` - TypeScript interfaces for all data structures (BuildOptions, FormatStrategy, ResolvedConfig, Manifest, etc.)
 - `src/constants.ts` - Application constants (DEFAULT_PORT: 3000, DEBOUNCE: 500, temp directory patterns)
 - `src/utils/config.ts` - Configuration loading (`loadManifest`, `validateManifest`)
 - `src/utils/file-utils.ts` - Bun-native file operations (fileExists, readFile, writeFile, copyDirectory)
 - `src/utils/css-utils.ts` - CSS @import resolution and inlining
 - `src/utils/logger.ts` - Logging with levels (debug, info, warn, error)
 - `src/utils/errors.ts` - Custom error classes (BuildError, ConfigError, ValidationError)
+- `src/utils/path-security.ts` - Path validation and security (`validateStaticPath`, home directory enforcement)
+
+**Plugin System:**
+- `src/types/plugin-types.ts` - Plugin type definitions (PluginConfig, LoadedPlugin, PluginMetadata, PluginError)
+- `src/markdown/plugin-loader.ts` - PluginLoader class for dynamic plugin loading
+- `src/markdown/markdown.ts` - Plugin integration (`loadPluginsFromConfig`, `createMarkdownEngineWithPlugins`)
+- `src/schemas/manifest.schema.ts` - Zod schema validation including plugins field
 
 ### Assets Directory
 
@@ -192,6 +210,212 @@ bun test src/utils/file-utils.test.ts
 bun test --watch
 ```
 
+## Plugin System Architecture
+
+The plugin system allows runtime extension of markdown-it functionality through a flexible, secure, and performant architecture.
+
+### Plugin Types
+
+Four plugin types are supported:
+
+1. **Local** - JavaScript/TypeScript files relative to project directory
+   - Path must be relative (no `../` or absolute paths)
+   - Security validated via `validateStaticPath`
+   - Dynamic import using `pathToFileURL`
+   - Example: `./plugins/my-plugin.js`
+
+2. **Package** - npm packages installed in `node_modules`
+   - Resolves from `node_modules/{package-name}`
+   - Reads `package.json` for metadata and entry point
+   - Supports version constraints (`^1.0.0`, `~2.1.0`)
+   - Example: `markdown-it-footnote`
+
+3. **Builtin** - Pre-registered plugins shipped with pagedmd
+   - Registered in `PluginLoader` constructor
+   - Current built-ins: `ttrpg`, `dimmCity`
+   - Loaded from `src/markdown/plugins/`
+   - Example: `ttrpg`
+
+4. **Remote** - URL-based plugins (future feature)
+   - Currently throws "not yet supported"
+   - Will require SRI (Subresource Integrity) hashes
+   - Example: `https://example.com/plugin.js`
+
+### Plugin Structure
+
+A plugin must export:
+
+```typescript
+// Required: Plugin function matching markdown-it signature
+export default function myPlugin(md: MarkdownIt, options?: any): void {
+  // Modify md instance
+}
+
+// Optional: Plugin metadata
+export const metadata = {
+  name: 'my-plugin',
+  version: '1.0.0',
+  description: 'What the plugin does',
+  author: 'Author Name'
+};
+
+// Optional: Plugin CSS (automatically injected)
+export const css = `
+.my-class { color: blue; }
+`;
+```
+
+### PluginLoader Class
+
+**Location:** `src/markdown/plugin-loader.ts`
+
+**Key Methods:**
+- `loadPlugin(config: PluginConfig): Promise<LoadedPlugin | null>` - Load single plugin
+- `loadPlugins(configs: PluginConfig[]): Promise<LoadedPlugin[]>` - Load multiple plugins
+- `getBuiltinPlugins(): string[]` - List available built-in plugins
+- `clearCache(): void` - Clear plugin cache
+
+**Features:**
+- **Caching**: Loaded plugins cached by configuration key (default: enabled)
+- **Priority Sorting**: Plugins sorted by priority (higher = earlier) before applying
+- **Error Handling**: Strict mode throws, non-strict mode warns and continues
+- **Verbose Logging**: Optional detailed logging for debugging
+- **Type Detection**: Automatically detects plugin type from configuration
+
+**Configuration Normalization:**
+```typescript
+// String shorthand
+"ttrpg" → { name: "ttrpg", enabled: true, priority: 100 }
+
+// Object with auto-detection
+{ path: "./plugin.js" } → { path: "./plugin.js", type: "local", enabled: true, priority: 100 }
+```
+
+### Integration into Markdown Pipeline
+
+**File:** `src/markdown/markdown.ts`
+
+**Process Flow:**
+1. `processMarkdownFiles()` checks for `config.plugins` or `config.extensions`
+2. If `plugins` configured:
+   - Call `loadPluginsFromConfig()` to load plugins
+   - Call `createMarkdownEngineWithPlugins()` to create MarkdownIt instance
+   - Collect CSS from loaded plugins
+3. If `extensions` configured (legacy):
+   - Convert to plugin configs via `extensionsToPlugins()`
+   - Use same plugin loading flow
+4. Apply plugins to MarkdownIt in priority order
+5. Inject plugin CSS into HTML output (Layer 2, after default styles)
+
+**CSS Cascade with Plugins:**
+```
+1. Default Styles (optional)
+2. Plugin CSS (collected from loaded plugins)
+3. Theme Styles (manifest.styles array)
+4. Custom CSS (@import resolved)
+```
+
+### Security
+
+**Path Validation:**
+- All local plugin paths validated via `validateStaticPath()`
+- Prevents path traversal (`../`, absolute paths)
+- Symlink resolution and validation
+- Must be within project directory
+
+**Package Plugin Security:**
+- Only loads from `node_modules/`
+- Cannot specify arbitrary filesystem paths
+- Reads `package.json` to validate structure
+
+**Future Remote Plugin Security:**
+- Will require SRI integrity hashes
+- HTTPS-only URLs
+- Content validation before execution
+
+### Testing
+
+**File:** `src/markdown/plugin-loader.test.ts`
+
+**Coverage:**
+- 35 tests covering all plugin types
+- Security validation (path traversal, absolute paths)
+- Plugin caching behavior
+- Priority ordering
+- Error handling (strict vs non-strict modes)
+- Configuration normalization
+- CSS collection
+- Metadata extraction
+
+**Example Tests:**
+```typescript
+// Built-in plugin loading
+test('loads ttrpg plugin', async () => {
+  const loader = createPluginLoader(TEST_DIR);
+  const result = await loader.loadPlugin('ttrpg');
+  expect(result?.metadata.name).toBe('ttrpg');
+});
+
+// Security validation
+test('rejects path traversal attempts', async () => {
+  const config = { path: '../../../etc/passwd', type: 'local' };
+  await expect(loader.loadPlugin(config)).rejects.toThrow(/outside allowed directory/);
+});
+
+// Priority sorting
+test('sorts plugins by priority', async () => {
+  const configs = [
+    { name: 'ttrpg', priority: 100 },
+    { name: 'dimmCity', priority: 200 },
+  ];
+  const results = await loader.loadPlugins(configs);
+  expect(results[0].priority).toBe(200); // Higher priority first
+});
+```
+
+### Examples
+
+**Location:** `examples/plugins/` and `examples/with-custom-plugin/`
+
+**Files:**
+- `examples/plugins/callouts-plugin.js` - Full-featured admonition/callout plugin (185 lines)
+- `examples/plugins/README.md` - Complete plugin development guide (550 lines)
+- `examples/with-custom-plugin/` - Working example project using custom plugin
+
+**Callouts Plugin Features:**
+- Custom blockquote syntax: `> [!note] Title`
+- 5 callout types: note, tip, warning, danger, info
+- Automatic CSS injection with color-coded variants
+- Configurable via options (types, className)
+- Print-friendly styles
+
+### Backward Compatibility
+
+**Legacy `extensions` Array:**
+```yaml
+# Old approach (still works)
+extensions:
+  - ttrpg
+  - dimmCity
+
+# New approach (recommended)
+plugins:
+  - ttrpg
+  - dimmCity
+```
+
+**Conversion Function:**
+```typescript
+extensionsToPlugins(['ttrpg', 'dimmCity'])
+// Returns:
+[
+  { name: 'ttrpg', type: 'builtin', enabled: true },
+  { name: 'dimmCity', type: 'builtin', enabled: true }
+]
+```
+
+Both approaches use the same plugin loading pipeline internally.
+
 ## Development Workflow
 
 ### Testing
@@ -210,6 +434,7 @@ Existing tests in:
 - `src/utils/file-utils.test.ts` - File system operations
 - `src/utils/css-utils.test.ts` - CSS import resolution
 - `src/utils/manifest-writer.test.ts` - Manifest generation
+- `src/markdown/plugin-loader.test.ts` - Plugin system (35 tests, all plugin types)
 
 ### Adding New Markdown Extensions
 

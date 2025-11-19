@@ -2,11 +2,36 @@
  * Path validation utilities for output path conflict detection
  *
  * Validates output paths against format requirements to prevent accidental data loss
+ * and path traversal attacks
  */
 
 import { existsSync, statSync } from 'fs';
 import path from 'path';
 import type { OutputFormat, OutputValidation } from '../types.ts';
+
+/**
+ * Validate that a path is safe and doesn't contain directory traversal
+ *
+ * @param targetPath Path to validate
+ * @param basePath Base directory that the path should be contained within
+ * @returns True if path is safe, false if it attempts directory traversal
+ * @throws Error if path contains directory traversal attempt
+ */
+export function validateSafePath(targetPath: string, basePath: string): boolean {
+  const normalizedTarget = path.normalize(targetPath);
+  const normalizedBase = path.normalize(basePath);
+  const resolvedTarget = path.resolve(normalizedBase, normalizedTarget);
+  const resolvedBase = path.resolve(normalizedBase);
+
+  // Check if the resolved target path is within the base directory
+  if (!resolvedTarget.startsWith(resolvedBase + path.sep) && resolvedTarget !== resolvedBase) {
+    throw new Error(
+      `Path traversal attempt detected: "${targetPath}" attempts to access outside "${basePath}"`
+    );
+  }
+
+  return true;
+}
 
 /**
  * Validate output path for a specific format

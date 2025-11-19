@@ -19,6 +19,8 @@ import { type ResolvedConfig } from "../config/config-state.ts";
 import { resolveImports } from "../utils/css-utils.ts";
 import { defaultStyles } from "./core/assets.ts";
 import { loadManifest } from "../utils/config.ts";
+import { createPluginLoader } from "./plugin-loader.ts";
+import type { PluginConfig, LoadedPlugin } from "../types/plugin-types.ts";
 
 /**
  * Extension configuration options for markdown engine
@@ -52,6 +54,104 @@ export function parseExtensionOptions(
 }
 
 /**
+ * Load plugins from manifest configuration
+ *
+ * @param inputPath - Input file or directory path (used as baseDir for plugin resolution)
+ * @param pluginConfigs - Array of plugin configurations from manifest
+ * @param verbose - Enable verbose logging
+ * @returns Array of loaded plugins with their CSS
+ */
+export async function loadPluginsFromConfig(
+  inputPath: string,
+  pluginConfigs: PluginConfig[] | undefined,
+  verbose: boolean = false,
+): Promise<LoadedPlugin[]> {
+  if (!pluginConfigs || pluginConfigs.length === 0) {
+    return [];
+  }
+
+  // Get base directory for plugin resolution
+  const baseDir = (await isDirectory(inputPath))
+    ? inputPath
+    : path.dirname(inputPath);
+
+  // Create plugin loader
+  const loader = createPluginLoader(baseDir, {
+    baseDir,
+    strict: false, // Don't fail build on plugin errors, just warn
+    verbose,
+    cache: true,
+  });
+
+  // Load all plugins
+  const loadedPlugins = await loader.loadPlugins(pluginConfigs);
+
+  debug(
+    `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`,
+  );
+
+  return loadedPlugins;
+}
+
+/**
+ * Convert legacy extensions config to plugins config
+ *
+ * This provides backward compatibility for manifest.extensions array.
+ *
+ * @param extensions - Legacy extensions array (e.g., ['ttrpg', 'dimmCity'])
+ * @returns Plugin configurations for built-in plugins
+ */
+export function extensionsToPlugins(
+  extensions: string[] | undefined,
+): PluginConfig[] {
+  if (!extensions || extensions.length === 0) {
+    return [];
+  }
+
+  return extensions.map((ext) => ({
+    name: ext,
+    type: 'builtin' as const,
+    enabled: true,
+  }));
+}
+
+/**
+ * Create MarkdownIt instance with loaded plugins
+ *
+ * This is the new plugin-based approach that supports dynamic plugin loading.
+ * Use this when manifest.plugins is configured.
+ *
+ * @param loadedPlugins - Array of loaded plugins to apply
+ * @returns Configured MarkdownIt instance
+ */
+export function createMarkdownEngineWithPlugins(
+  loadedPlugins: LoadedPlugin[],
+): MarkdownIt {
+  const options: Options = {
+    html: true,
+  };
+
+  // Start with base markdown instance
+  let md = new MarkdownIt(options)
+    .use(imgSize)
+    .use(anchors)
+    .use(coreDirectivesPlugin);
+
+  // Apply loaded plugins in priority order (already sorted by PluginLoader)
+  for (const loadedPlugin of loadedPlugins) {
+    debug(
+      `Applying plugin: ${loadedPlugin.metadata.name} (priority: ${loadedPlugin.priority})`,
+    );
+    md.use(loadedPlugin.plugin, loadedPlugin.metadata.options || {});
+  }
+
+  // Attributes plugin MUST run last to avoid consuming stat block syntax
+  md.use(attrs);
+
+  return md;
+}
+
+/**
  * Create configured MarkdownIt instance for Dimm City TTRPG content
  *
  * This engine includes:
@@ -63,6 +163,7 @@ export function parseExtensionOptions(
  * By default, all extensions are enabled.
  *
  * @param extensions - Optional configuration to enable/disable specific extensions
+ * @deprecated Use createMarkdownEngineWithPlugins() with manifest.plugins instead
  */
 export function createPagedMarkdownEngine(
   extensions?: MarkdownExtensionOptions,
@@ -182,20 +283,69 @@ function configureMarkdownRules(
  *
  * @param inputPath - Input file or directory path
  * @param config - Resolved configuration object
+ * @returns Array of processed content with slug and HTML, plus collected plugin CSS
  */
 export async function processMarkdownFiles(
   inputPath: string,
   config: ResolvedConfig,
-): Promise<Array<{ slug: string; html: string }>> {
-  // Get global markdown engine (created once, reused forever)
-  const md = getGlobalMarkdownEngine();
+): Promise<{
+  content: Array<{ slug: string; html: string }>;
+  pluginCSS: string[];
+}> {
+  let md: MarkdownIt;
+  let pluginCSS: string[] = [];
 
-  // Configure rules based on manifest extensions using enable/disable API
-  const extensionOptions = parseExtensionOptions(config.extensions);
-  configureMarkdownRules(md, extensionOptions);
+  // Check if plugins are configured (new approach)
+  if (config.plugins && config.plugins.length > 0) {
+    info(`Loading ${config.plugins.length} plugin(s)...`);
 
-  if (config.extensions && config.extensions.length > 0) {
-    debug(`Extensions enabled: ${config.extensions.join(", ")}`);
+    // Load plugins from configuration
+    const loadedPlugins = await loadPluginsFromConfig(
+      inputPath,
+      config.plugins,
+      config.verbose,
+    );
+
+    // Create markdown engine with loaded plugins
+    md = createMarkdownEngineWithPlugins(loadedPlugins);
+
+    // Collect CSS from plugins
+    pluginCSS = loadedPlugins
+      .filter((p) => p.css)
+      .map((p) => `/* Plugin: ${p.metadata.name} v${p.metadata.version} */\n${p.css}`);
+
+    info(
+      `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`,
+    );
+  }
+  // Backward compatibility: use extensions (legacy approach)
+  else if (config.extensions) {
+    // Convert extensions to plugins for consistency
+    const pluginConfigs = extensionsToPlugins(config.extensions);
+
+    if (pluginConfigs.length > 0) {
+      const loadedPlugins = await loadPluginsFromConfig(
+        inputPath,
+        pluginConfigs,
+        config.verbose,
+      );
+
+      md = createMarkdownEngineWithPlugins(loadedPlugins);
+
+      // Collect CSS from plugins
+      pluginCSS = loadedPlugins
+        .filter((p) => p.css)
+        .map((p) => `/* Plugin: ${p.metadata.name} v${p.metadata.version} */\n${p.css}`);
+
+      debug(`Extensions enabled: ${config.extensions.join(", ")}`);
+    } else {
+      // No extensions configured, use default engine
+      md = getGlobalMarkdownEngine();
+    }
+  }
+  // No plugins or extensions configured, use default engine
+  else {
+    md = getGlobalMarkdownEngine();
   }
 
   const content: Array<{ slug: string; html: string }> = [];
@@ -260,7 +410,7 @@ export async function processMarkdownFiles(
     }
   }
 
-  return content;
+  return { content, pluginCSS };
 }
 
 export async function generateHtmlFromMarkdown(
@@ -272,7 +422,7 @@ export async function generateHtmlFromMarkdown(
   info(`Generating HTML from markdown in: ${inputPath}`);
   const manifest = await loadManifest(inputPath);
   let config = { ...inputConfig, ...manifest };
-  const content = await processMarkdownFiles(inputPath, config);
+  const { content, pluginCSS } = await processMarkdownFiles(inputPath, config);
 
   if (content.length === 0) {
     throw new BuildError("No markdown files found in input path");
@@ -315,8 +465,16 @@ export async function generateHtmlFromMarkdown(
     headContent += `<style>\n${defaultStyles}\n    </style>`;
   }
 
-  // Layer 2: Theme styles, migrated to styles
-  // Layer 3: Custom CSS from manifest (inlined with resolved @imports)
+  // Layer 2: Plugin CSS (from loaded markdown-it plugins)
+  if (pluginCSS.length > 0) {
+    for (const css of pluginCSS) {
+      headContent += `\n    <style>\n${css}\n    </style>`;
+    }
+    debug(`Included CSS from ${pluginCSS.length} plugin(s)`);
+  }
+
+  // Layer 3: Theme styles, migrated to styles
+  // Layer 4: Custom CSS from manifest (inlined with resolved @imports)
   // Two-tier resolution: bundled styles (themes/, plugins/) -> user custom styles
   // This matches preview mode behavior - all @imports are resolved and inlined
   if (config.styles && config.styles.length > 0) {
