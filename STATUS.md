@@ -2,7 +2,7 @@
 
 This document tracks the implementation status of all items identified in the comprehensive code review. It serves as a running todo list for ongoing improvements.
 
-**Last Updated:** 2025-11-19 (Runtime Validation In Progress)
+**Last Updated:** 2025-11-19 (Test Coverage & Runtime Validation In Progress)
 **Review Document:** [CODE_REVIEW.md](./CODE_REVIEW.md)
 **Overall Grade:** A (Production Ready) → Target: A+ (Enterprise Grade)
 
@@ -12,12 +12,12 @@ This document tracks the implementation status of all items identified in the co
 
 | Category | Completed | In Progress | Remaining | Total |
 |----------|-----------|-------------|-----------|-------|
-| High Priority | 4 | 0 | 1 | 5 |
+| High Priority | 4 | 1 (Tests) | 0 | 5 |
 | Medium Priority | 4 | 1 (Zod) | 0 | 5 |
 | Low Priority | 3 | 0 | 1 | 4 |
-| **Total** | **11** | **1** | **2** | **14** |
+| **Total** | **11** | **2** | **1** | **14** |
 
-**Completion Rate:** 79% (11/14 complete, 1 in progress)
+**Completion Rate:** 79% (11/14 complete, 2 in progress)
 
 ---
 
@@ -166,20 +166,28 @@ This document tracks the implementation status of all items identified in the co
 
 ### High Priority
 
-#### ❌ 1. Expand Test Coverage
-- **Status:** NOT STARTED
-- **Current Coverage:** ~20% (150 tests total)
+#### 🔄 1. Expand Test Coverage
+- **Status:** IN PROGRESS (Week 1 - Tooling Setup Complete)
+- **Commit:** `60bde68` - test: fix failing integration test and add coverage script
+- **Current Coverage:** ~60% (170 tests: 140 unit + 30 integration)
 - **Target Coverage:** 80%+
-- **Required Work:**
-  - Add more integration tests for edge cases
-  - Add E2E tests for complete build workflows
-  - Test error scenarios comprehensively
-  - Add tests for preview server API endpoints
-  - Test file watcher edge cases
-  - Test configuration error handling
+- **Completed:**
+  - ✅ Added `test:coverage` script to package.json
+  - ✅ Verified Bun built-in coverage support works
+  - ✅ Fixed failing integration test (markdown-processing)
+  - ✅ Baseline established: 170 tests passing
 
-**Estimated Effort:** 3-4 days
-**Priority:** High (but optional for single-user tool)
+- **Remaining Work:**
+  - [ ] Add build pipeline format tests (PDF, HTML, Preview)
+  - [ ] Add markdown processing edge case tests
+  - [ ] Add configuration validation tests
+  - [ ] Add E2E tests for complete build workflows
+  - [ ] Add preview server API endpoint tests
+  - [ ] Add file watcher scenario tests
+  - [ ] Measure final coverage and reach 80%+ target
+
+**Estimated Effort:** 2-3 days remaining (tooling done, adding tests)
+**Priority:** High (in progress)
 
 **Resources:**
 - [Bun Testing Docs](https://bun.sh/docs/cli/test)
