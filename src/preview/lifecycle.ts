@@ -15,11 +15,25 @@ import type { ServerState, ClientTracker } from './server-context.ts';
 import { generateAndWriteHtml, stopFileWatcher, startFileWatcher } from './file-watcher.ts';
 
 /**
- * Initialize preview directories and files
+ * Initialize preview directories and copy source files
  *
- * @param inputPath Input directory path
- * @param assetsSourceDir Assets directory path
- * @returns Temporary directory path
+ * Creates a unique temporary directory and copies both the input directory
+ * and preview assets to it. This isolation ensures the original files remain
+ * untouched during preview operations.
+ *
+ * @param inputPath - Absolute path to the user's input directory containing markdown files
+ * @param assetsSourceDir - Absolute path to the preview assets directory (scripts, styles)
+ * @returns Promise resolving to the absolute path of the created temporary directory
+ * @throws {Error} If directory creation or file copying fails
+ *
+ * @example
+ * ```typescript
+ * const tempDir = await initializePreviewDirectories(
+ *   '/home/user/my-book',
+ *   '/app/src/assets/preview'
+ * );
+ * // tempDir: /tmp/pagedmd-preview/a1b2c3d4e5f6g7h8
+ * ```
  */
 export async function initializePreviewDirectories(
   inputPath: string,
@@ -44,11 +58,23 @@ export async function initializePreviewDirectories(
 }
 
 /**
- * Resolve assets directory path
+ * Resolve the preview assets directory path
+ *
+ * Dynamically determines the correct assets directory based on the current
+ * execution context (development vs production build).
  *
  * Supports two scenarios:
- * 1. Dev: Running from src/server.ts → assets at src/assets
- * 2. Prod: Running from dist/cli.js → assets at dist/assets
+ * - Development: Running from `src/server.ts` → assets at `src/assets`
+ * - Production: Running from `dist/cli.js` → assets at `dist/assets`
+ *
+ * @returns Absolute path to the assets directory
+ *
+ * @example
+ * ```typescript
+ * const assetsDir = resolveAssetsDir();
+ * // Development: /app/src/assets
+ * // Production: /app/dist/assets
+ * ```
  */
 export function resolveAssetsDir(): string {
   const thisFileDir = path.dirname(new URL(import.meta.url).pathname);
@@ -56,7 +82,17 @@ export function resolveAssetsDir(): string {
 }
 
 /**
- * Validate input path exists
+ * Validate that the input path exists on the filesystem
+ *
+ * @param inputPath - Path to validate (file or directory)
+ * @returns Promise that resolves if path exists
+ * @throws {Error} If the input path does not exist
+ *
+ * @example
+ * ```typescript
+ * await validateInputPath('/home/user/my-book');
+ * // Succeeds if path exists, throws Error otherwise
+ * ```
  */
 export async function validateInputPath(inputPath: string): Promise<void> {
   if (!(await fileExists(inputPath))) {
@@ -65,7 +101,24 @@ export async function validateInputPath(inputPath: string): Promise<void> {
 }
 
 /**
- * Initialize configuration manager
+ * Initialize and load the configuration manager
+ *
+ * Creates a ConfigurationManager instance with the input path and preview
+ * server options, then loads the manifest.yaml and resolves all configuration.
+ *
+ * @param inputPath - Absolute path to the input directory
+ * @param options - Preview server options (verbose, debug flags)
+ * @returns Promise resolving to an initialized ConfigurationManager instance
+ * @throws {Error} If manifest.yaml is invalid or configuration fails to load
+ *
+ * @example
+ * ```typescript
+ * const configManager = await initializeConfiguration(
+ *   '/home/user/my-book',
+ *   { verbose: true, debug: false }
+ * );
+ * const config = configManager.getConfig();
+ * ```
  */
 export async function initializeConfiguration(
   inputPath: string,
@@ -81,10 +134,29 @@ export async function initializeConfiguration(
 }
 
 /**
- * Restart preview for folder changes
+ * Restart the preview server with a new input directory
  *
- * @param newInputPath New input directory
- * @param state Server state
+ * Handles the complete workflow for switching the preview to a different folder:
+ * 1. Stops the file watcher
+ * 2. Updates the server state with new input path
+ * 3. Clears and recreates the temporary directory
+ * 4. Copies new input files and assets
+ * 5. Reinitializes configuration
+ * 6. Regenerates HTML from markdown
+ * 7. Restarts the file watcher
+ *
+ * This function is typically called when the user switches folders via the UI.
+ *
+ * @param newInputPath - Absolute path to the new input directory
+ * @param state - Server state object containing current configuration and references
+ * @returns Promise that resolves when the restart is complete
+ * @throws {Error} If the new input path is invalid or restart operations fail
+ *
+ * @example
+ * ```typescript
+ * await restartPreview('/home/user/different-book', serverState);
+ * // Preview now shows content from /home/user/different-book
+ * ```
  */
 export async function restartPreview(newInputPath: string, state: ServerState): Promise<void> {
   info(`Restarting preview for: ${newInputPath}`);
@@ -117,7 +189,26 @@ export async function restartPreview(newInputPath: string, state: ServerState): 
 }
 
 /**
- * Check if all clients have disconnected and schedule auto-shutdown
+ * Check client connections and schedule automatic server shutdown if needed
+ *
+ * Implements graceful server shutdown after all clients disconnect. When the
+ * last client disconnects, schedules a shutdown after a delay (default 5s).
+ * If a client reconnects before the delay expires, the shutdown is cancelled.
+ *
+ * This prevents the server from staying running unnecessarily while allowing
+ * reconnection without restarting (e.g., browser refresh).
+ *
+ * @param clientTracker - Client tracking object with connected clients set and shutdown timer
+ * @param shutdownFn - Async function to call for server shutdown
+ *
+ * @example
+ * ```typescript
+ * checkForAutoShutdown(clientTracker, async () => {
+ *   await shutdownServer(state, clientTracker);
+ * });
+ * // If no clients: "All clients disconnected. Server will shutdown in 5s..."
+ * // If client reconnects: Shutdown cancelled
+ * ```
  */
 export function checkForAutoShutdown(
   clientTracker: ClientTracker,
@@ -149,9 +240,32 @@ export function checkForAutoShutdown(
 }
 
 /**
- * Graceful shutdown handler
+ * Perform graceful server shutdown and cleanup
  *
- * Stops watcher, closes Vite server, cleans up temp files
+ * Coordinates a clean shutdown of all server components:
+ * 1. Prevents multiple simultaneous shutdown calls
+ * 2. Cancels any pending auto-shutdown timers
+ * 3. Stops the file watcher
+ * 4. Closes the Vite development server
+ * 5. Removes temporary directory and files
+ * 6. Exits the process
+ *
+ * This function is called when:
+ * - User closes the browser window (via disconnect + auto-shutdown)
+ * - User explicitly requests shutdown via API
+ * - Fatal error occurs during server operation
+ *
+ * @param state - Server state containing references to watcher, Vite server, etc.
+ * @param clientTracker - Client tracking object with auto-shutdown timer
+ * @returns Promise that resolves when shutdown is complete (process exits)
+ *
+ * @example
+ * ```typescript
+ * await shutdownServer(serverState, clientTracker);
+ * // Logs: "Shutting down preview server..."
+ * // Logs: "Server stopped. You can close this browser window."
+ * // Process exits with code 0
+ * ```
  */
 export async function shutdownServer(state: ServerState, clientTracker: ClientTracker): Promise<void> {
   if (state.isShuttingDown) return; // Prevent multiple shutdown calls
