@@ -167,23 +167,30 @@ This document tracks the implementation status of all items identified in the co
 ### High Priority
 
 #### 🔄 1. Expand Test Coverage
-- **Status:** IN PROGRESS (Week 1 - Tooling Setup Complete)
-- **Commit:** `60bde68` - test: fix failing integration test and add coverage script
-- **Current Coverage:** ~60% (170 tests: 140 unit + 30 integration)
+- **Status:** IN PROGRESS (Week 2 - Core Module Tests)
+- **Commits:**
+  - `60bde68` - test: fix failing integration test and add coverage script
+  - `f8a2fc1` - test: add comprehensive HTML format strategy tests
+  - `3345b44` - test: add comprehensive Preview format strategy tests
+- **Current Coverage:** ~65% (200 tests: 170 unit + 30 integration)
 - **Target Coverage:** 80%+
 - **Completed:**
-  - ✅ Added `test:coverage` script to package.json
-  - ✅ Verified Bun built-in coverage support works
-  - ✅ Fixed failing integration test (markdown-processing)
-  - ✅ Baseline established: 170 tests passing
+  - ✅ Week 1: Tooling Setup
+    - Added `test:coverage` script to package.json
+    - Verified Bun built-in coverage support works
+    - Fixed failing integration test (markdown-processing)
+    - Baseline established: 170 tests passing
+  - ✅ Week 2: Core Module Tests (In Progress)
+    - HTML Format Strategy: 12 tests (commit f8a2fc1)
+    - Preview Format Strategy: 18 tests (commit 3345b44)
 
 - **Remaining Work:**
-  - [ ] Add build pipeline format tests (PDF, HTML, Preview)
+  - [ ] Add build pipeline error handling tests
   - [ ] Add markdown processing edge case tests
   - [ ] Add configuration validation tests
-  - [ ] Add E2E tests for complete build workflows
   - [ ] Add preview server API endpoint tests
   - [ ] Add file watcher scenario tests
+  - [ ] Add E2E tests for complete build workflows
   - [ ] Measure final coverage and reach 80%+ target
 
 **Estimated Effort:** 2-3 days remaining (tooling done, adding tests)
@@ -202,17 +209,18 @@ This document tracks the implementation status of all items identified in the co
 - [ ] Tests run in <30 seconds
 
 **Implementation Plan:**
-1. **Week 1: Setup Coverage Tooling**
-   - Research Bun coverage tools (or use c8/nyc)
-   - Add coverage script to package.json
-   - Establish baseline metrics
-   - Identify untested code paths
+1. **Week 1: Setup Coverage Tooling** ✅ COMPLETED
+   - ✅ Research Bun coverage tools (built-in support confirmed)
+   - ✅ Add coverage script to package.json
+   - ✅ Establish baseline metrics (170 tests, ~60% coverage)
+   - ✅ Identify untested code paths
 
-2. **Week 2: Core Module Tests**
-   - Build pipeline formats (PDF, HTML, Preview) - 20 tests
-   - Markdown processing edge cases - 15 tests
-   - Configuration validation - 10 tests
-   - Error handling paths - 15 tests
+2. **Week 2: Core Module Tests** (IN PROGRESS)
+   - ✅ HTML Format Strategy - 12 tests (commit f8a2fc1)
+   - ✅ Preview Format Strategy - 18 tests (commit 3345b44)
+   - [ ] PDF Format Strategy and error handling - 10 tests
+   - [ ] Markdown processing edge cases - 15 tests
+   - [ ] Configuration validation - 10 tests
 
 3. **Week 3: Integration Tests**
    - Complete CLI workflow tests - 10 tests
