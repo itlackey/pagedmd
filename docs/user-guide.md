@@ -786,6 +786,202 @@ Format as ability block.
 :::
 ```
 
+### Plugin System
+
+pagedmd's plugin system allows you to extend markdown syntax with custom features. Plugins can add new markdown syntax, modify rendering, and inject CSS styles automatically.
+
+#### Using Built-in Plugins
+
+Enable built-in plugins in your manifest:
+
+```yaml
+# manifest.yaml
+plugins:
+  - ttrpg      # TTRPG features (stat blocks, dice notation, cross-refs)
+  - dimmCity   # Dimm City game syntax (district badges, roll prompts)
+```
+
+**Note:** The `extensions` array is deprecated. Use `plugins` instead for all new projects.
+
+#### Creating Local Plugins
+
+Create custom plugins as JavaScript files in your project:
+
+**Step 1:** Create a plugin file (`plugins/my-plugin.js`):
+
+```javascript
+/**
+ * My custom plugin
+ */
+export default function myPlugin(md, options = {}) {
+  const { enabled = true } = options;
+
+  if (!enabled) return;
+
+  // Example: Add custom renderer for blockquotes
+  md.renderer.rules.blockquote_open = function(tokens, idx) {
+    return '<blockquote class="custom-quote">\n';
+  };
+}
+
+// Plugin metadata (optional but recommended)
+export const metadata = {
+  name: 'my-plugin',
+  version: '1.0.0',
+  description: 'Custom blockquote styling',
+  author: 'Your Name'
+};
+
+// Plugin CSS (automatically injected)
+export const css = `
+.custom-quote {
+  border-left: 4px solid #3b82f6;
+  padding-left: 1em;
+  color: #1e40af;
+}
+`;
+```
+
+**Step 2:** Enable your plugin in manifest.yaml:
+
+```yaml
+# manifest.yaml
+plugins:
+  - ./plugins/my-plugin.js
+```
+
+**Step 3:** Use it in your markdown:
+
+```markdown
+> This blockquote will be styled with your custom CSS
+```
+
+#### Plugin Configuration
+
+Plugins support options and priority control:
+
+```yaml
+plugins:
+  # Simple usage
+  - ttrpg
+
+  # With options
+  - path: ./plugins/callouts.js
+    options:
+      types: ["note", "warning", "tip"]
+      className: "callout"
+
+  # With priority (higher = loads first)
+  - path: ./plugins/preprocessor.js
+    priority: 500  # Runs before other plugins
+
+  - path: ./plugins/postprocessor.js
+    priority: 50   # Runs after other plugins
+```
+
+#### Using npm Package Plugins
+
+Install plugins from npm:
+
+```bash
+npm install markdown-it-footnote
+```
+
+```yaml
+# manifest.yaml
+plugins:
+  - name: markdown-it-footnote
+    version: "^3.0.0"
+    options:
+      footnoteMarker: true
+```
+
+Then use footnote syntax in your markdown:
+
+```markdown
+Here is a footnote reference[^1].
+
+[^1]: This is the footnote text.
+```
+
+#### Plugin Examples
+
+**Example 1: Callouts/Admonitions**
+
+See `examples/plugins/callouts-plugin.js` for a full-featured callout plugin that adds:
+
+```markdown
+> [!note] Important Information
+> This is a note callout with custom styling.
+
+> [!warning] Be Careful
+> This could cause issues if not handled properly.
+
+> [!tip] Pro Tip
+> Here's a helpful suggestion.
+```
+
+**Example 2: Custom Inline Syntax**
+
+```javascript
+// plugins/hashtag-plugin.js
+export default function hashtagPlugin(md) {
+  md.inline.ruler.push('hashtag', function(state, silent) {
+    const start = state.pos;
+    const max = state.posMax;
+
+    if (state.src.charCodeAt(start) !== 0x23) return false; // #
+
+    let pos = start + 1;
+    while (pos < max && /\w/.test(state.src[pos])) {
+      pos++;
+    }
+
+    if (pos === start + 1) return false;
+
+    if (!silent) {
+      const token = state.push('hashtag', 'span', 0);
+      token.content = state.src.slice(start + 1, pos);
+    }
+
+    state.pos = pos;
+    return true;
+  });
+
+  md.renderer.rules.hashtag = function(tokens, idx) {
+    const tag = tokens[idx].content;
+    return `<span class="hashtag">#${md.utils.escapeHtml(tag)}</span>`;
+  };
+}
+
+export const css = `
+.hashtag {
+  color: #1d4ed8;
+  font-weight: 600;
+}
+`;
+```
+
+Usage:
+
+```markdown
+This project uses #javascript and #markdown-it
+```
+
+#### Plugin Development Guide
+
+For comprehensive plugin development documentation, see:
+- **[examples/plugins/README.md](../examples/plugins/README.md)** - Complete plugin development guide
+- **[examples/with-custom-plugin/](../examples/with-custom-plugin/)** - Working example project
+- **[markdown-it documentation](https://markdown-it.github.io/)** - markdown-it API reference
+
+#### Security
+
+Plugins are subject to security restrictions:
+- Local plugins must use relative paths (no `../` or absolute paths)
+- All plugin files are validated before loading
+- Remote plugins (future feature) will require integrity hashes
+
 ### Multi-File Projects
 
 Organize large projects:

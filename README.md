@@ -165,7 +165,17 @@ files:  # Optional - control file order
   - chapter-02.md
   - chapter-03.md
 
-extensions:  # Enable markdown plugins
+# Plugin system (new approach - recommended)
+plugins:
+  - ttrpg                      # Built-in TTRPG plugin
+  - ./plugins/my-plugin.js     # Local custom plugin
+  - name: pagedmd-plugin-name  # npm package plugin
+    version: "^1.0.0"
+    options:
+      customOption: true
+
+# Legacy extensions (deprecated - use plugins instead)
+extensions:
   - ttrpg      # Stat blocks, dice notation
   - dimmCity   # Custom game syntax
 ```
@@ -205,6 +215,86 @@ This content flows in two columns.
 
 Back to single column.
 ```
+
+## Plugin System
+
+pagedmd supports a powerful plugin system that lets you extend markdown syntax with custom features. Plugins can add new markdown syntax, modify rendering, and inject CSS styles.
+
+### Built-in Plugins
+
+```yaml
+plugins:
+  - ttrpg      # TTRPG features (stat blocks, dice notation, cross-refs)
+  - dimmCity   # Dimm City game syntax (district badges, roll prompts)
+```
+
+### Local Plugins
+
+Create your own plugins as JavaScript files:
+
+```yaml
+plugins:
+  - ./plugins/my-plugin.js     # Local plugin file
+  - path: ./plugins/callouts.js
+    priority: 200               # Higher priority = loads first
+    options:
+      types: ["note", "warning"]
+```
+
+**Example plugin** (`plugins/my-plugin.js`):
+
+```javascript
+// Plugin function
+export default function myPlugin(md, options) {
+  // Extend markdown-it functionality
+  md.renderer.rules.heading_open = function(tokens, idx) {
+    return `<h${tokens[idx].tag.slice(1)} class="custom">`;
+  };
+}
+
+// Plugin metadata
+export const metadata = {
+  name: 'my-plugin',
+  version: '1.0.0',
+  description: 'Custom heading styles'
+};
+
+// Plugin CSS (automatically injected)
+export const css = `
+.custom { color: blue; }
+`;
+```
+
+### npm Package Plugins
+
+Install and use plugins from npm:
+
+```bash
+npm install markdown-it-footnote
+```
+
+```yaml
+plugins:
+  - name: markdown-it-footnote
+    version: "^3.0.0"
+    options:
+      footnoteMarker: true
+```
+
+### Plugin Priority
+
+Control load order with priority (higher = earlier):
+
+```yaml
+plugins:
+  - path: ./plugins/preprocessor.js
+    priority: 500  # Runs first
+  - ttrpg          # Default priority (100)
+  - path: ./plugins/postprocessor.js
+    priority: 50   # Runs last
+```
+
+**Learn more:** See [examples/plugins/README.md](./examples/plugins/README.md) for a complete plugin development guide and working examples.
 
 ## Styling
 
