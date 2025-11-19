@@ -33,6 +33,85 @@ const ExtensionSchema = z.enum(['ttrpg', 'dimmCity', 'containers'], {
 });
 
 /**
+ * Plugin type enum
+ */
+const PluginTypeSchema = z.enum(['local', 'package', 'builtin', 'remote'], {
+  errorMap: () => ({
+    message: "Plugin type must be one of: 'local', 'package', 'builtin', 'remote'",
+  }),
+});
+
+/**
+ * Plugin configuration object schema
+ */
+const PluginConfigObjectSchema = z.object({
+  type: PluginTypeSchema.optional().describe('Plugin type (auto-detected if omitted)'),
+
+  path: z
+    .string()
+    .min(1, 'Plugin path cannot be empty')
+    .refine((p) => !path.isAbsolute(p), {
+      message: 'Plugin paths must be relative, not absolute',
+    })
+    .refine((p) => !path.normalize(p).startsWith('..'), {
+      message: 'Plugin paths cannot reference parent directories (..)',
+    })
+    .optional()
+    .describe('Path to local plugin file (for local plugins)'),
+
+  name: z
+    .string()
+    .min(1, 'Plugin name cannot be empty')
+    .optional()
+    .describe('Plugin name (for package/builtin plugins)'),
+
+  version: z
+    .string()
+    .optional()
+    .describe('Plugin version constraint (for package plugins)'),
+
+  url: z
+    .string()
+    .url('Plugin URL must be a valid URL')
+    .optional()
+    .describe('Plugin URL (for remote plugins)'),
+
+  integrity: z
+    .string()
+    .optional()
+    .describe('Subresource integrity hash (for remote plugins)'),
+
+  enabled: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether plugin is enabled'),
+
+  options: z
+    .record(z.any())
+    .optional()
+    .default({})
+    .describe('Plugin-specific options'),
+
+  priority: z
+    .number()
+    .int()
+    .min(0)
+    .max(1000)
+    .optional()
+    .default(100)
+    .describe('Plugin load priority (higher = earlier)'),
+});
+
+/**
+ * Plugin configuration schema (string shorthand or object)
+ */
+const PluginConfigSchema = z.union([
+  z.string().min(1, 'Plugin path/name cannot be empty'),
+  PluginConfigObjectSchema,
+]);
+
+/**
  * Complete manifest schema
  *
  * Validates the entire manifest.yaml structure with runtime type checking
@@ -79,7 +158,12 @@ export const ManifestSchema = z.object({
   extensions: z
     .array(ExtensionSchema)
     .optional()
-    .describe('Markdown extensions to enable'),
+    .describe('Markdown extensions to enable (deprecated - use plugins instead)'),
+
+  plugins: z
+    .array(PluginConfigSchema)
+    .optional()
+    .describe('Markdown-it plugins to load (local files, npm packages, or built-in)'),
 
   disableDefaultStyles: z
     .boolean()

@@ -122,7 +122,7 @@
     },
     "extensions": {
       "type": "array",
-      "description": "Markdown extensions to enable (empty array = all enabled)",
+      "description": "Markdown extensions to enable (deprecated - use plugins instead)",
       "items": {
         "type": "string",
         "enum": ["ttrpg", "dimmCity", "containers"]
@@ -131,6 +131,101 @@
         ["ttrpg"],
         ["dimmCity"],
         ["ttrpg", "dimmCity"]
+      ]
+    },
+    "plugins": {
+      "type": "array",
+      "description": "Markdown-it plugins to load (local files, npm packages, or built-in)",
+      "items": {
+        "oneOf": [
+          {
+            "type": "string",
+            "minLength": 1,
+            "description": "Plugin path/name (shorthand syntax)",
+            "examples": [
+              "./plugins/my-plugin.js",
+              "ttrpg",
+              "pagedmd-plugin-callouts"
+            ]
+          },
+          {
+            "type": "object",
+            "description": "Plugin configuration object",
+            "properties": {
+              "type": {
+                "type": "string",
+                "enum": ["local", "package", "builtin", "remote"],
+                "description": "Plugin type (auto-detected if omitted)"
+              },
+              "path": {
+                "type": "string",
+                "minLength": 1,
+                "pattern": "^(?!\\.\\.).+\\.(m?js|ts)$",
+                "description": "Path to local plugin file (cannot start with ../)"
+              },
+              "name": {
+                "type": "string",
+                "minLength": 1,
+                "description": "Plugin name (for package/builtin plugins)"
+              },
+              "version": {
+                "type": "string",
+                "description": "Plugin version constraint (for package plugins)",
+                "examples": ["^1.0.0", "~2.1.0", "1.2.3"]
+              },
+              "url": {
+                "type": "string",
+                "format": "uri",
+                "description": "Plugin URL (for remote plugins)"
+              },
+              "integrity": {
+                "type": "string",
+                "description": "Subresource integrity hash (for remote plugins)",
+                "pattern": "^(sha256|sha384|sha512)-[A-Za-z0-9+/=]+$"
+              },
+              "enabled": {
+                "type": "boolean",
+                "default": true,
+                "description": "Whether plugin is enabled"
+              },
+              "options": {
+                "type": "object",
+                "description": "Plugin-specific options",
+                "additionalProperties": true
+              },
+              "priority": {
+                "type": "integer",
+                "minimum": 0,
+                "maximum": 1000,
+                "default": 100,
+                "description": "Plugin load priority (higher = earlier)"
+              }
+            }
+          }
+        ]
+      },
+      "examples": [
+        ["ttrpg", "./plugins/my-plugin.js"],
+        [
+          {
+            "name": "pagedmd-plugin-callouts",
+            "version": "^1.0.0",
+            "options": {
+              "types": ["note", "warning"]
+            }
+          }
+        ],
+        [
+          "ttrpg",
+          {
+            "type": "local",
+            "path": "./plugins/custom-syntax.js",
+            "priority": 200,
+            "options": {
+              "strict": true
+            }
+          }
+        ]
       ]
     },
     "disableDefaultStyles": {

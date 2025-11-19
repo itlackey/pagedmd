@@ -99,8 +99,21 @@ export interface Manifest {
   /** Disable default styles (advanced use case) */
   disableDefaultStyles?: boolean;
 
-  /** Markdown extensions to enable (e.g., ['ttrpg', 'dimm-city']). If not specified, all extensions are enabled. */
+  /** Markdown extensions to enable (e.g., ['ttrpg', 'dimm-city']). If not specified, all extensions are enabled. @deprecated Use plugins instead. */
   extensions?: string[];
+
+  /** Markdown-it plugins to load (local files, npm packages, or built-in). */
+  plugins?: Array<string | {
+    type?: 'local' | 'package' | 'builtin' | 'remote';
+    path?: string;
+    name?: string;
+    version?: string;
+    url?: string;
+    integrity?: string;
+    enabled?: boolean;
+    options?: Record<string, any>;
+    priority?: number;
+  }>;
 
   /** Ordered list of markdown files to include (paths relative to manifest.yaml). If not specified, all .md files are included in alphabetical order. */
   files?: string[];
