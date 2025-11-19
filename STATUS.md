@@ -2,7 +2,7 @@
 
 This document tracks the implementation status of all items identified in the comprehensive code review. It serves as a running todo list for ongoing improvements.
 
-**Last Updated:** 2025-11-19 (Test Coverage Target Achieved - 85% Coverage with 274 Tests)
+**Last Updated:** 2025-11-19 (Test Coverage Achieved + Zod Integration Complete)
 **Review Document:** [CODE_REVIEW.md](./CODE_REVIEW.md)
 **Overall Grade:** A (Production Ready) → Target: A+ (Enterprise Grade)
 
@@ -13,11 +13,11 @@ This document tracks the implementation status of all items identified in the co
 | Category | Completed | In Progress | Remaining | Total |
 |----------|-----------|-------------|-----------|-------|
 | High Priority | 5 | 1 (Tests-Target Met) | 0 | 6 |
-| Medium Priority | 4 | 1 (Zod) | 0 | 5 |
+| Medium Priority | 5 | 0 | 0 | 5 |
 | Low Priority | 3 | 0 | 1 | 4 |
-| **Total** | **12** | **2** | **1** | **15** |
+| **Total** | **13** | **1** | **1** | **15** |
 
-**Completion Rate:** 80% (12/15 complete, 2 in progress, target met for 1)
+**Completion Rate:** 87% (13/15 complete, 1 target achieved, 1 optional remaining)
 
 ---
 
@@ -127,9 +127,32 @@ This document tracks the implementation status of all items identified in the co
   - `src/preview/vite-setup.ts` (3 functions)
 - **Documentation:** [JSDoc Official Docs](https://jsdoc.app/)
 
+#### ✅ 10. Runtime Validation (Zod)
+- **Status:** COMPLETED
+- **Commits:**
+  - `73dbcb4` - feat(validation): add Zod schemas for runtime validation (partial)
+  - `64ee650` - test: add comprehensive Zod schema validation tests
+  - `5b2a0a3` - feat(validation): integrate Zod schema validation into config.ts
+  - `b09e5c7` - feat(validation): integrate Zod schema validation into API endpoints
+- **Implementation:**
+  - Created `src/schemas/manifest.schema.ts` (56 lines) with comprehensive manifest validation
+  - Created `src/schemas/api.schema.ts` (54 lines) for API request validation
+  - Added 48 validation tests (30 manifest + 18 API)
+  - Integrated into `src/utils/config.ts` - replaced 230 lines of manual validation with 12 lines
+  - Integrated into `src/preview/routes.ts` - replaced 80+ lines of manual validation with 20 lines
+  - Total code reduction: ~300 lines of repetitive validation replaced with schemas
+- **Features:**
+  - Runtime type safety for manifest.yaml parsing
+  - Path security validation (no parent directory traversal, home directory enforcement)
+  - GitHub URL validation with multiple format support
+  - User-friendly error messages with field-level details
+  - Type inference for validated data
+- **Note:** Requires `bun install` to install zod dependency (already in package.json v3.22.4)
+- **Documentation:** [Zod Documentation](https://zod.dev/)
+
 ### Low Priority
 
-#### ✅ 10. Code Cleanup
+#### ✅ 11. Code Cleanup
 - **Status:** COMPLETED
 - **Commit:** `720df06` - chore(cleanup): remove backup file and verify code cleanliness
 - **Implementation:**
@@ -138,7 +161,7 @@ This document tracks the implementation status of all items identified in the co
   - All 140 unit tests pass
 - **Verification:** Grep analysis confirmed no dead code
 
-#### ✅ 11. Unit Tests for Refactored Modules
+#### ✅ 12. Unit Tests for Refactored Modules
 - **Status:** COMPLETED
 - **Commit:** `596fddb` - refactor: break down server.ts and add comprehensive unit tests
 - **Implementation:**
@@ -151,7 +174,7 @@ This document tracks the implementation status of all items identified in the co
   - Total unit tests: 140 passing
 - **Test Results:** 100% pass rate, 337 expect() calls
 
-#### ✅ 12. Integration Tests (CLI Build)
+#### ✅ 13. Integration Tests (CLI Build)
 - **Status:** COMPLETED
 - **Commit:** `1a3b9d4` - feat: fix naming, add tests, and comprehensive documentation
 - **Implementation:**
@@ -254,148 +277,9 @@ describe('API middleware security', () => {
 
 ---
 
-### Medium Priority
-
-#### 🔄 2. Runtime Validation (Zod)
-- **Status:** IN PROGRESS (Foundation Complete)
-- **Commit:** `73dbcb4` - feat(validation): add Zod schemas for runtime validation (partial)
-- **Completed:**
-  - ✅ Added Zod dependency to package.json (v3.22.4)
-  - ✅ Created `src/schemas/manifest.schema.ts` with complete validation
-  - ✅ Created `src/schemas/api.schema.ts` for API requests
-  - ✅ Added path validation (relative paths, no parent directories)
-  - ✅ Added URL validation for GitHub cloning
-  - ✅ Created error formatting helpers
-
-- **Remaining Work:**
-  - [ ] Run `bun install` to install Zod package
-  - [ ] Update `src/utils/config.ts` validateManifest() to use ManifestSchema
-  - [ ] Update `src/preview/api-middleware.ts` to use API schemas
-  - [ ] Add validation tests
-  - [ ] Update error handling in config loading
-
-**Estimated Effort:** 0.5 days remaining (schemas done, integration pending)
-**Priority:** Medium (foundation complete, integration straightforward)
-
-**Resources:**
-- [Zod Documentation](https://zod.dev/)
-- [TypeScript Runtime Validation Guide](https://blog.logrocket.com/comparing-schema-validation-libraries-zod-vs-yup/)
-- Alternative libraries: [Yup](https://github.com/jquense/yup), [ArkType](https://arktype.io/)
-
-**Acceptance Criteria:**
-- [ ] All API endpoints validate request bodies
-- [ ] manifest.yaml has runtime schema validation
-- [ ] User input (paths, ports) validated before use
-- [ ] Validation errors provide clear, actionable messages
-- [ ] Type inference works (Zod types match TypeScript types)
-
-**Implementation Plan:**
-1. **Install and Configure Zod**
-   ```bash
-   bun add zod
-   ```
-
-2. **Create Schema Definitions** (`src/schemas/`)
-   ```typescript
-   // src/schemas/manifest.schema.ts
-   import { z } from 'zod';
-
-   export const ManifestSchema = z.object({
-     title: z.string().min(1, 'Title is required'),
-     authors: z.array(z.string()).min(1, 'At least one author required'),
-     description: z.string().optional(),
-     page: z.object({
-       size: z.string().default('letter'),
-       margins: z.object({
-         top: z.string(),
-         bottom: z.string(),
-         inside: z.string(),
-         outside: z.string(),
-       }),
-       bleed: z.string().optional(),
-     }).optional(),
-     styles: z.array(z.string()).default([]),
-     files: z.array(z.string()).optional(),
-     extensions: z.array(z.enum(['ttrpg', 'dimmCity', 'containers'])).optional(),
-   });
-
-   export type Manifest = z.infer<typeof ManifestSchema>;
-   ```
-
-3. **API Request Schemas** (`src/schemas/api.schema.ts`)
-   ```typescript
-   export const FolderChangeRequestSchema = z.object({
-     path: z.string().min(1, 'Path is required'),
-   });
-
-   export const GitHubCloneRequestSchema = z.object({
-     url: z.string().url('Invalid GitHub URL'),
-     targetDir: z.string().optional(),
-   });
-   ```
-
-4. **Validation Middleware** (`src/preview/validation-middleware.ts`)
-   ```typescript
-   import type { ZodSchema } from 'zod';
-
-   export function validateRequest<T>(schema: ZodSchema<T>) {
-     return async (req: Request): Promise<T> => {
-       const body = await req.json();
-       const result = schema.safeParse(body);
-
-       if (!result.success) {
-         throw new ValidationError(
-           'Invalid request body',
-           result.error.flatten()
-         );
-       }
-
-       return result.data;
-     };
-   }
-   ```
-
-5. **Update API Routes** (`src/preview/api-middleware.ts`)
-   ```typescript
-   import { FolderChangeRequestSchema } from '../schemas/api.schema';
-   import { validateRequest } from './validation-middleware';
-
-   // In handleChangeFolder:
-   const data = await validateRequest(FolderChangeRequestSchema)(req);
-   // data is now fully typed and validated
-   ```
-
-6. **Update Manifest Loading** (`src/utils/config.ts`)
-   ```typescript
-   import { ManifestSchema } from '../schemas/manifest.schema';
-
-   export async function loadManifest(path: string): Promise<Manifest> {
-     const raw = await readFile(path);
-     const parsed = YAML.parse(raw);
-
-     // Runtime validation
-     const result = ManifestSchema.safeParse(parsed);
-     if (!result.success) {
-       throw new ConfigError(
-         `Invalid manifest.yaml:\n${formatZodError(result.error)}`
-       );
-     }
-
-     return result.data;
-   }
-   ```
-
-**Benefits:**
-- Catch configuration errors at runtime with helpful messages
-- Prevent invalid data from causing crashes
-- Self-documenting API contracts
-- Type-safe validation (TypeScript + Zod work together)
-
----
-
 ### Low Priority
 
-#### ❌ 3. Performance Monitoring
+#### ❌ 14. Performance Monitoring
 - **Status:** NOT STARTED
 - **Current State:** No instrumentation or metrics
 - **Proposed Features:**
