@@ -235,7 +235,8 @@ This document tracks the implementation status of all items identified in the co
   - `617c622` - test: add comprehensive markdown edge case tests
   - `64ee650` - test: add comprehensive Zod schema validation tests
   - `c393eb4` - test(api): add comprehensive preview server API endpoint tests
-- **Current Coverage:** ~88% (344 tests: 288 unit + 56 integration)
+  - `f163655` - test(watcher): add comprehensive file watcher scenario tests
+- **Current Coverage:** ~89% (365 tests: 309 unit + 56 integration)
 - **Target Coverage:** 80%+ ✅ **ACHIEVED**
 - **Completed:**
   - ✅ Week 1: Tooling Setup
@@ -251,7 +252,7 @@ This document tracks the implementation status of all items identified in the co
 
 - **Remaining Work (Optional Enhancements):**
   - [x] Add preview server API endpoint tests (Week 3 - Optional) ✅ **COMPLETED**
-  - [ ] Add file watcher scenario tests (Week 3 - Optional)
+  - [x] Add file watcher scenario tests (Week 3 - Optional) ✅ **COMPLETED**
   - [ ] Add E2E tests for complete build workflows (Week 4 - Optional)
 
 **Estimated Effort:** 2-3 days remaining (tooling done, adding tests)
@@ -285,9 +286,9 @@ This document tracks the implementation status of all items identified in the co
 
 3. **Week 3: Integration Tests** (IN PROGRESS - Optional)
    - ✅ Preview server API tests - 22 tests (commit c393eb4)
-   - [ ] File watcher scenarios - 10 tests
-   - [ ] GitHub integration tests - 10 tests
-   - **Total added in Week 3: 22 tests (40 planned)**
+   - ✅ File watcher scenarios - 21 tests (commit f163655)
+   - [ ] GitHub integration tests - 10 tests (optional)
+   - **Total added in Week 3: 43 tests (53 planned)**
 
 4. **Week 4: E2E and Cleanup**
    - End-to-end build scenarios - 10 tests
@@ -346,17 +347,17 @@ If pagedmd evolves into a hosted service or multi-user application, these items 
 | **`any` Types** | 8 occurrences | 0 (production) | 0 | ✅ Met |
 | **CI Pipeline** | ❌ None | ✅ 5 jobs | 4+ | ✅ Met |
 | **Path Validation** | ⚠️ Partial | ✅ Comprehensive | Full | ✅ Met |
-| **Test Coverage** | ~20% (150 tests) | ~88% (344 tests) | 80%+ | ✅ Met |
-| **Unit Tests** | 5 files | 16 files (288 tests) | 20+ files | ⚠️ In Progress |
+| **Test Coverage** | ~20% (150 tests) | ~89% (365 tests) | 80%+ | ✅ Met |
+| **Unit Tests** | 5 files | 17 files (309 tests) | 20+ files | ⚠️ In Progress |
 | **Integration Tests** | 0 files | 3 files (56 tests) | 5+ files | ⚠️ In Progress |
 | **Documentation** | README only | +4 docs | Complete | ✅ Met |
 | **Security Docs** | ❌ None | SECURITY.md | Complete | ✅ Met |
 
 ### Project Statistics
 
-- **Total Lines of Code:** ~9,400+ (including tests and docs)
+- **Total Lines of Code:** ~10,000+ (including tests and docs)
 - **TypeScript Files:** 34 (production)
-- **Test Files:** 19 (16 unit + 3 integration)
+- **Test Files:** 20 (17 unit + 3 integration)
 - **Documentation Files:** 12 (README, CONTRIBUTING, SECURITY, ARCHITECTURE, CODE_REVIEW, etc.)
 - **Dependencies:** 12 production + 5 dev
 - **CI Jobs:** 5 (lint, test, build, type-check, security-audit)
@@ -365,10 +366,10 @@ If pagedmd evolves into a hosted service or multi-user application, these items 
 
 | Test Type | Files | Tests | Coverage |
 |-----------|-------|-------|----------|
-| Unit Tests | 16 | 288 | ~73% |
+| Unit Tests | 17 | 309 | ~74% |
 | Integration Tests | 3 | 56 | ~15% |
 | E2E Tests | 0 | 0 | 0% |
-| **Total** | **19** | **344** | **~88%** |
+| **Total** | **20** | **365** | **~89%** |
 
 ---
 
