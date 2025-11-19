@@ -246,6 +246,88 @@ describe('Feature name', () => {
    bun test --coverage
    ```
 
+## Security and Dependency Management
+
+### Dependency Security
+
+The project uses automated tools to monitor and update dependencies securely:
+
+1. **Automated Vulnerability Scanning**
+   - **CI Security Audit**: Every push and pull request runs `bun audit` to check for known vulnerabilities
+   - **Dependabot**: Automatically creates PRs for dependency updates weekly
+   - **Lock File Integrity**: CI verifies `bun.lockb` hasn't been tampered with
+
+2. **Manual Security Audits**
+   ```bash
+   # Check for vulnerabilities
+   bun audit
+
+   # Get detailed JSON report
+   bun audit --json
+
+   # Update vulnerable dependencies
+   bun update [package-name]
+   ```
+
+3. **Dependency Update Process**
+   - **Automated Updates**: Dependabot creates PRs every Monday at 9:00 AM
+   - **Review Process**:
+     - Check PR description for breaking changes
+     - Review CHANGELOG of updated packages
+     - Run full test suite locally
+     - Merge if tests pass and no breaking changes
+   - **Security Updates**: High-priority, merge as soon as verified
+   - **Grouped Updates**: Minor/patch updates grouped to reduce PR noise
+
+4. **Adding New Dependencies**
+
+   Before adding a new dependency:
+   ```bash
+   # Check package health
+   - npm view [package-name]        # Verify it's maintained
+   - Check GitHub stars/activity    # Ensure active development
+   - Review security advisories     # Check for known issues
+
+   # Install dependency
+   bun add [package-name]
+
+   # Run security audit
+   bun audit
+
+   # Commit updated lock file
+   git add bun.lockb package.json
+   git commit -m "chore(deps): add [package-name]"
+   ```
+
+5. **Lock File Management**
+   - **Always commit** `bun.lockb` with dependency changes
+   - **Never manually edit** the lock file
+   - **CI enforces** `--frozen-lockfile` to prevent inconsistencies
+   - **Resolve conflicts** by running `bun install` after merging
+
+6. **Security Update Priority**
+   - **Critical**: Immediate update required (vulnerabilities with known exploits)
+   - **High**: Update within 7 days (publicly disclosed vulnerabilities)
+   - **Medium**: Update in next release cycle (low-risk vulnerabilities)
+   - **Low**: Update during regular maintenance
+
+7. **Reporting Vulnerabilities**
+
+   If you discover a security vulnerability:
+   - **Do not** create a public GitHub issue
+   - Email maintainers directly (see SECURITY.md when available)
+   - Provide detailed reproduction steps
+   - Allow reasonable time for fix before disclosure
+
+### GitHub Actions Security
+
+The CI/CD pipeline includes security measures:
+
+- **Frozen lockfile**: Ensures consistent dependencies across environments
+- **Automated audits**: Runs on every commit to catch new vulnerabilities
+- **Minimal permissions**: GitHub Actions use least-privilege principle
+- **Audit logging**: All security audit results logged in CI output
+
 ## Submitting Changes
 
 ### Before Submitting
