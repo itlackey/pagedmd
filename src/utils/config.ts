@@ -11,6 +11,7 @@ import { Config, BuildOptions, Manifest } from '../types.ts';
 import { fileExists, isDirectory } from './file-utils.ts';
 import { debug as logDebug, info } from './logger.ts';
 import { DEFAULTS, FILENAMES, EXTENSIONS } from '../constants.ts';
+import { ManifestSchema, formatManifestErrors } from '../schemas/manifest.schema.ts';
 
 /**
  * Create a Config object from CLI options
@@ -51,240 +52,24 @@ export function createBuildOptions(
 }
 
 /**
- * Validate manifest structure and types
+ * Validate manifest structure and types using Zod schema
+ *
+ * @param manifest - Raw manifest data parsed from YAML
+ * @param manifestPath - Path to manifest file (for error messages)
+ * @returns Validated manifest data
  * @throws Error with clear message if validation fails
  */
 export function validateManifest(manifest: unknown, manifestPath: string): Manifest {
-  if (typeof manifest !== 'object' || manifest === null) {
-    throw new Error(`Invalid manifest at ${manifestPath}: must be a YAML object`);
+  // Use Zod schema for runtime validation
+  const result = ManifestSchema.safeParse(manifest);
+
+  if (!result.success) {
+    // Format Zod errors into user-friendly message
+    const errorMessage = formatManifestErrors(result.error);
+    throw new Error(`${errorMessage}\n\nManifest location: ${manifestPath}`);
   }
 
-  // Check if manifest is an array (YAML lists become arrays)
-  if (Array.isArray(manifest)) {
-    throw new Error(`Invalid manifest at ${manifestPath}: must be a YAML object, not a list`);
-  }
-
-  const m = manifest as Record<string, unknown>;
-
-  // Validate title field
-  if (m.title !== undefined && typeof m.title !== 'string') {
-    throw new Error(
-      `Invalid manifest at ${manifestPath}: title must be a string, got ${typeof m.title}`
-    );
-  }
-
-  // Validate authors field
-  if (m.authors !== undefined) {
-    if (!Array.isArray(m.authors)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: authors must be an array, got ${typeof m.authors}`
-      );
-    }
-    // Validate each author is a string
-    for (let i = 0; i < m.authors.length; i++) {
-      if (typeof m.authors[i] !== 'string') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: authors[${i}] must be a string, got ${typeof m.authors[i]}`
-        );
-      }
-    }
-  }
-
-  // Validate styles field
-  if (m.styles !== undefined) {
-    if (!Array.isArray(m.styles)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: styles must be an array, got ${typeof m.styles}`
-      );
-    }
-
-    // Validate each style path
-    m.styles.forEach((style, index) => {
-      if (typeof style !== 'string') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: styles[${index}] must be a string, got ${typeof style}`
-        );
-      }
-
-      // Reject absolute paths (they won't be copied correctly)
-      if (path.isAbsolute(style)) {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: styles[${index}] must be a relative path, got absolute path "${style}"`
-        );
-      }
-
-      // Reject paths that go outside the input directory
-      const normalized = path.normalize(style);
-      if (normalized.startsWith('..')) {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: styles[${index}] cannot reference paths outside the input directory ("${style}")`
-        );
-      }
-    });
-  }
-
-  // Validate disableDefaultStyles field
-  if (m.disableDefaultStyles !== undefined && typeof m.disableDefaultStyles !== 'boolean') {
-    throw new Error(
-      `Invalid manifest at ${manifestPath}: disableDefaultStyles must be a boolean, got ${typeof m.disableDefaultStyles}`
-    );
-  }
-
-  // Validate format field
-  if (m.format !== undefined) {
-    if (typeof m.format !== 'object' || m.format === null || Array.isArray(m.format)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: format must be an object, got ${typeof m.format}`
-      );
-    }
-
-    const format = m.format as Record<string, unknown>;
-
-    // Validate format.size
-    if (format.size !== undefined && typeof format.size !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: format.size must be a string, got ${typeof format.size}`
-      );
-    }
-
-    // Validate format.margins
-    if (format.margins !== undefined && typeof format.margins !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: format.margins must be a string, got ${typeof format.margins}`
-      );
-    }
-
-    // Validate format.bleed
-    if (format.bleed !== undefined && typeof format.bleed !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: format.bleed must be a string, got ${typeof format.bleed}`
-      );
-    }
-
-    // Validate format.colorMode
-    if (format.colorMode !== undefined) {
-      if (typeof format.colorMode !== 'string') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: format.colorMode must be a string, got ${typeof format.colorMode}`
-        );
-      }
-      if (format.colorMode !== 'rgb' && format.colorMode !== 'cmyk') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: format.colorMode must be 'rgb' or 'cmyk', got '${format.colorMode}'`
-        );
-      }
-    }
-
-    // Check for unknown format fields
-    const validFormatFields = new Set(['size', 'margins', 'bleed', 'colorMode']);
-    const unknownFormatFields = Object.keys(format).filter(key => !validFormatFields.has(key));
-    if (unknownFormatFields.length > 0) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: unknown format fields: ${unknownFormatFields.join(', ')}. Valid fields are: ${Array.from(validFormatFields).join(', ')}`
-      );
-    }
-  }
-
-  // Validate extensions field
-  if (m.extensions !== undefined) {
-    if (!Array.isArray(m.extensions)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: extensions must be an array, got ${typeof m.extensions}`
-      );
-    }
-    // Validate each extension is a string
-    for (let i = 0; i < m.extensions.length; i++) {
-      if (typeof m.extensions[i] !== 'string') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: extensions[${i}] must be a string, got ${typeof m.extensions[i]}`
-        );
-      }
-    }
-  }
-
-  // Validate files field
-  if (m.files !== undefined) {
-    if (!Array.isArray(m.files)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: files must be an array, got ${typeof m.files}`
-      );
-    }
-
-    // Validate each file path
-    m.files.forEach((file, index) => {
-      if (typeof file !== 'string') {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: files[${index}] must be a string, got ${typeof file}`
-        );
-      }
-
-      // Reject absolute paths (they won't be processed correctly)
-      if (path.isAbsolute(file)) {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: files[${index}] must be a relative path, got absolute path "${file}"`
-        );
-      }
-
-      // Reject paths that go outside the input directory
-      const normalized = path.normalize(file);
-      if (normalized.startsWith('..')) {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: files[${index}] cannot reference paths outside the input directory ("${file}")`
-        );
-      }
-
-      // Require .md extension
-      if (!file.endsWith(EXTENSIONS.MARKDOWN)) {
-        throw new Error(
-          `Invalid manifest at ${manifestPath}: files[${index}] must have ${EXTENSIONS.MARKDOWN} extension, got "${file}"`
-        );
-      }
-    });
-  }
-
-  // Validate metadata field
-  if (m.metadata !== undefined) {
-    if (typeof m.metadata !== 'object' || m.metadata === null || Array.isArray(m.metadata)) {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: metadata must be an object, got ${typeof m.metadata}`
-      );
-    }
-
-    const metadata = m.metadata as Record<string, unknown>;
-
-    // Validate metadata.author
-    if (metadata.author !== undefined && typeof metadata.author !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: metadata.author must be a string, got ${typeof metadata.author}`
-      );
-    }
-
-    // Validate metadata.date
-    if (metadata.date !== undefined && typeof metadata.date !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: metadata.date must be a string, got ${typeof metadata.date}`
-      );
-    }
-
-    // Validate metadata.isbn
-    if (metadata.isbn !== undefined && typeof metadata.isbn !== 'string') {
-      throw new Error(
-        `Invalid manifest at ${manifestPath}: metadata.isbn must be a string, got ${typeof metadata.isbn}`
-      );
-    }
-   
-  }
-
-  // Check for unknown fields and warn (helps catch typos)
-  const validFields = new Set(['title', 'authors', 'format', 'styles', 'disableDefaultStyles', 'extensions', 'files', 'metadata']);
-  const unknownFields = Object.keys(m).filter(key => !validFields.has(key));
-  if (unknownFields.length > 0) {
-    throw new Error(
-      `Invalid manifest at ${manifestPath}: unknown fields: ${unknownFields.join(', ')}. Valid fields are: ${Array.from(validFields).join(', ')}`
-    );
-  }
-
-  return m as Manifest;
+  return result.data;
 }
 
 
