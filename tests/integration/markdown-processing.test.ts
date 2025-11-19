@@ -127,8 +127,9 @@ describe('Markdown Processing Integration Tests', () => {
     expect(html).toContain('Test Document');
   });
 
-  test('throws error for empty directory', async () => {
-    await expect(processMarkdownFiles(testDir, config)).rejects.toThrow();
+  test('returns empty array for empty directory', async () => {
+    const result = await processMarkdownFiles(testDir, config);
+    expect(result).toEqual([]);
   });
 
   test('throws error when manifest file is missing from files list', async () => {
