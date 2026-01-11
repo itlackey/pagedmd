@@ -54,11 +54,8 @@ export async function startPreviewServer(options: PreviewServerOptions): Promise
   const configManager = await initializeConfiguration(inputPath, options);
   const config = configManager.getConfig();
 
-  // Determine which engine to use
-  const engineId = options.engine || 'pagedjs';
-
-  // Generate initial HTML using selected engine
-  await generateAndWriteHtml(inputPath, tempDir, config, engineId);
+  // Generate initial HTML
+  await generateAndWriteHtml(inputPath, tempDir, config);
 
   // Stage 4: Create state and client tracker
   const state = createServerState(inputPath, tempDir, assetsSourceDir, configManager, options);

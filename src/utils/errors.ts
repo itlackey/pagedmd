@@ -19,9 +19,12 @@ export class BuildError extends Error {
  * Error thrown when configuration is invalid
  */
 export class ConfigError extends Error {
-  constructor(message: string) {
-    super(message);
+  suggestion?: string;
+
+  constructor(message: string, suggestion?: string) {
+    super(suggestion ? `${message}\nSuggestion: ${suggestion}` : message);
     this.name = 'ConfigError';
+    this.suggestion = suggestion;
   }
 }
 

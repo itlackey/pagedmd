@@ -1,6 +1,9 @@
 # Removing Paged.js: Standardizing on Vivliostyle + Prince
 
-This document outlines the steps to remove Paged.js from pagedmd and standardize on:
+> **Status: COMPLETED**
+> This migration has been completed. This document is preserved for historical reference and to document the architectural decisions made.
+
+This document outlines the steps that were taken to remove Paged.js from pagedmd and standardize on:
 - **Vivliostyle Viewer** for preview
 - **Prince XML** for print-ready PDF export
 

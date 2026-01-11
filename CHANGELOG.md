@@ -131,9 +131,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Core Build System**
-  - Markdown-to-PDF conversion using Paged.js
+  - Markdown-to-PDF conversion using Prince XML
   - HTML output format
-  - Preview format with offline Paged.js viewer
+  - Live preview with Vivliostyle viewer
   - Watch mode for auto-rebuild on file changes
 
 - **Markdown Processing**
@@ -144,7 +144,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - Anchors and cross-references
   - Custom attributes (markdown-it-attrs)
 
-- **Paged.js Directives**
+- **Layout Directives**
   - `@page-break` - Force page breaks
   - `@spread` - Two-page spreads
   - `@columns` - Multi-column layouts
@@ -212,7 +212,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **TypeScript** - Type-safe development
 - **Vite** - Development server with HMR
 - **Chokidar** - File watching
-- **Pagedjs-cli** - PDF generation via Puppeteer
+- **Prince XML** - Professional PDF typesetter
 - **markdown-it** - Markdown processing
 - **Zod** - Runtime validation
 

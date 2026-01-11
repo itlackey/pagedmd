@@ -51,10 +51,10 @@ export class PluginLoader {
     this.enableCache = options.cache ?? true;
     this.cache = new Map();
 
-    // Register built-in plugins
-    this.builtinPlugins = new Map([
-      ['ttrpg', ttrpgPlugin],
-      ['dimmCity', dimmCityPlugin],
+    // Register built-in plugins (cast to MarkdownItPlugin to allow different option types)
+    this.builtinPlugins = new Map<string, MarkdownItPlugin>([
+      ['ttrpg', ttrpgPlugin as MarkdownItPlugin],
+      ['dimmCity', dimmCityPlugin as MarkdownItPlugin],
     ]);
   }
 

@@ -1,14 +1,15 @@
 {
   "name": "@dimm-city/pagedmd",
   "version": "1.0.0",
-  "description": "Markdown-to-PDF converter using Paged.js for professional print layout",
+  "description": "Markdown-to-PDF converter using Prince XML for professional print layout",
   "author": "itlackey",
   "license": "CC-BY-4.0",
   "keywords": [
     "markdown",
     "pdf",
     "print",
-    "paged.js",
+    "vivliostyle",
+    "prince",
     "book",
     "publishing",
     "ttrpg"
@@ -54,6 +55,7 @@
   },
   "devDependencies": {
     "@types/bun": "latest",
+    "@types/js-yaml": "^4.0.9",
     "@typescript-eslint/eslint-plugin": "^7.0.0",
     "@typescript-eslint/parser": "^7.0.0",
     "eslint": "^8.57.0",
@@ -74,7 +76,6 @@
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-attrs": "^4.3.0",
     "markdown-it-container": "^4.0.0",
-    "pagedjs-cli": "^0.4.3",
     "vite": "^7.2.1",
     "zod": "^3.22.4"
   }

@@ -24,7 +24,7 @@ export const NETWORK = {
 export const TIMEOUTS = {
   /** Default timeout for operations */
   DEFAULT: 60000, // 60 seconds
-  /** Timeout for PDF generation via pagedjs-cli */
+  /** Timeout for PDF generation via Prince */
   PDF_GENERATION: 60000, // 60 seconds
 } as const;
 

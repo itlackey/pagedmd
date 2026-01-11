@@ -24,7 +24,7 @@ import type { PreviewServerOptions } from '../types';
 function createTestServerState(
   inputPath: string,
   tempDir: string,
-  options: PreviewServerOptions = {}
+  options: Partial<PreviewServerOptions> = {}
 ): ServerState {
   const configManager = new ConfigurationManager(inputPath);
 
@@ -34,12 +34,16 @@ function createTestServerState(
     configManager,
     options: {
       port: 3000,
-      open: false,
+      verbose: false,
       noWatch: false,
+      openBrowser: false,
       ...options,
     },
     currentWatcher: null,
     isRebuilding: false,
+    viteServer: null,
+    isShuttingDown: false,
+    assetsSourceDir: tempDir,
   };
 }
 
@@ -64,7 +68,7 @@ describe('generateAndWriteHtml', () => {
     await rm(tempDir, { recursive: true, force: true });
   }, 60000);
 
-  test('generates preview.html with Paged.js polyfill', async () => {
+  test('generates preview.html with proper doctype', async () => {
     // Create test markdown file
     await writeFile(join(testDir, 'test.md'), '# Test Heading\n\nTest content.');
     await writeFile(
@@ -89,8 +93,8 @@ describe('generateAndWriteHtml', () => {
     expect(content).toContain('Test Heading');
     expect(content).toContain('Test content');
 
-    // Verify Paged.js polyfill was injected
-    expect(content).toContain('paged.polyfill');
+    // Verify doctype is present
+    expect(content.toLowerCase()).toContain('<!doctype');
   }, 60000);
 
   test('overwrites existing preview.html', async () => {

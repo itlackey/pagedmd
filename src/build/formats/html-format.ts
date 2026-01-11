@@ -6,7 +6,8 @@
  */
 
 import path from 'path';
-import { writeFile, mkdir } from '../../utils/file-utils.ts';
+import { copyFile } from 'fs/promises';
+import { writeFile, mkdir, fileExists } from '../../utils/file-utils.ts';
 import { info } from '../../utils/logger.ts';
 import { validateOutputPath } from '../../utils/path-validation.ts';
 import { AssetCopier } from '../asset-copier.ts';
@@ -21,6 +22,7 @@ export class HtmlFormatStrategy implements FormatStrategy {
    * 1. Create output directory
    * 2. Write index.html
    * 3. Copy assets to output directory
+   * 4. Copy manifest.yaml if debug mode (for debugging)
    */
   async build(options: BuildOptions, htmlContent: string): Promise<string> {
     const inputBasename = path.basename(options.input || process.cwd());
@@ -46,6 +48,16 @@ export class HtmlFormatStrategy implements FormatStrategy {
       verbose: options.verbose,
     });
     await assetCopier.copyAssets();
+
+    // In debug mode, also copy manifest.yaml for debugging purposes
+    if (options.debug) {
+      const inputDir = options.input || process.cwd();
+      const manifestSrc = path.join(inputDir, FILENAMES.MANIFEST);
+      const manifestDest = path.join(absoluteOutputPath, FILENAMES.MANIFEST);
+      if (await fileExists(manifestSrc)) {
+        await copyFile(manifestSrc, manifestDest);
+      }
+    }
 
     return absoluteOutputPath;
   }

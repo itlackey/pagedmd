@@ -13,7 +13,7 @@
  */
 
 import type MarkdownIt from 'markdown-it';
-import { StateInline, Token } from 'markdown-it/index.js';
+import type { StateInline, Token } from 'markdown-it/index.js';
 import container from 'markdown-it-container';
 
 
@@ -42,7 +42,8 @@ function parseDistrictBadge(state: StateInline, silent: boolean): boolean {
     if (state.src.charCodeAt(start) !== 0x23 /* # */) return false;
 
     // Check if preceded by whitespace or start of line
-    if (start > 0 && !/\s/.test(state.src[start - 1])) return false;
+    const prevChar = start > 0 ? state.src[start - 1] : '';
+    if (start > 0 && prevChar && !/\s/.test(prevChar)) return false;
 
     const districts = {
         TechD: "Tech District",
@@ -59,7 +60,8 @@ function parseDistrictBadge(state: StateInline, silent: boolean): boolean {
         if (state.src.slice(start + 1, start + 1 + code.length) === code) {
             // Check if followed by non-word character or end
             const endPos = start + 1 + code.length;
-            if (endPos >= max || !/\w/.test(state.src[endPos])) {
+            const nextChar = state.src[endPos];
+            if (endPos >= max || !nextChar || !/\w/.test(nextChar)) {
                 matched = { code, name, length: code.length };
                 break;
             }
@@ -80,8 +82,10 @@ function parseDistrictBadge(state: StateInline, silent: boolean): boolean {
 }
 
 function renderDistrictBadge(tokens: Token[], idx: number): string {
-    const code = tokens[idx].content as string;
-    const { name } = tokens[idx].meta as DistrictMeta;
+    const token = tokens[idx];
+    if (!token) return '';
+    const code = token.content as string;
+    const { name } = token.meta as DistrictMeta;
 
     return `<span class="district-badge district-${code.toLowerCase()}" title="${name}">${code}</span>`;
 }
@@ -119,7 +123,9 @@ function parseRollPrompt(state: StateInline, silent: boolean): boolean {
 }
 
 function renderRollPrompt(tokens: Token[], idx: number): string {
-    const content = tokens[idx].content as string;
+    const token = tokens[idx];
+    if (!token) return '';
+    const content = token.content as string;
 
     return `<span class="roll-prompt" title="Time to roll!"><span class="roll-icon">🎲</span><span class="roll-text">${content}</span></span>`;
 }
@@ -147,7 +153,8 @@ function dimmCityPlugin(
         .use(container, 'aug', {
             validate: (params: string) => params.trim().split(' ', 2)[0] === 'aug',
             render: (tokens: { [x: string]: { nesting: number; }; }, idx: string | number) => {
-                if (tokens[idx].nesting === 1) {
+                const token = tokens[idx];
+                if (token?.nesting === 1) {
                     return '<div class="aug" data-augmented-ui>\n';
                 } else {
                     return '</div>\n';
@@ -157,7 +164,8 @@ function dimmCityPlugin(
         .use(container, 'aug-page', {
             validate: (params: string) => params.trim().split(' ', 2)[0] === 'aug-page',
             render: (tokens: { [x: string]: { nesting: number; }; }, idx: string | number) => {
-                if (tokens[idx].nesting === 1) {
+                const token = tokens[idx];
+                if (token?.nesting === 1) {
                     return '<div class="page aug" data-augmented-ui>\n';
                 } else {
                     return '</div>\n';
@@ -168,7 +176,8 @@ function dimmCityPlugin(
             validate: (params: string) =>
                 params.trim().split(' ', 2)[0] === 'ability-continued',
             render: (tokens: { [x: string]: { nesting: number; }; }, idx: string | number) => {
-                if (tokens[idx].nesting === 1) {
+                const token = tokens[idx];
+                if (token?.nesting === 1) {
                     return '<div class="wrapper item ability continued">\n';
                 } else {
                     return '</div>\n';
@@ -178,7 +187,8 @@ function dimmCityPlugin(
         .use(container, 'ability', {
             validate: (params: string) => params.trim().split(' ', 2)[0] === 'ability',
             render: (tokens: { [x: string]: { nesting: number; }; }, idx: string | number) => {
-                if (tokens[idx].nesting === 1) {
+                const token = tokens[idx];
+                if (token?.nesting === 1) {
                     return '<div class="wrapper item ability">\n';
                 } else {
                     return '</div>\n';
@@ -188,7 +198,8 @@ function dimmCityPlugin(
         .use(container, 'item', {
             validate: (params: string) => params.trim().split(' ', 2)[0] === 'item',
             render: (tokens: { [x: string]: { nesting: number; }; }, idx: string | number) => {
-                if (tokens[idx].nesting === 1) {
+                const token = tokens[idx];
+                if (token?.nesting === 1) {
                     return '<div class="wrapper item">\n';
                 } else {
                     return '</div>\n';

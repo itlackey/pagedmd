@@ -1,15 +1,14 @@
 # Copilot Instructions for pagedmd
 
 ## Project Overview
-**pagedmd** is a Bun-based CLI tool that converts markdown to professional print-ready PDFs using Paged.js. It features a sophisticated build pipeline with format strategies, extensible markdown plugins, and a dual-server preview architecture.
+**pagedmd** is a Bun-based CLI tool that converts markdown to professional print-ready PDFs using Prince XML for PDF generation and Vivliostyle for live preview. It features a sophisticated build pipeline with format strategies, extensible markdown plugins, and a dual-server preview architecture.
 
 ## Core Architecture
 
 ### Build Pipeline (Strategy Pattern)
 The build system uses strategy pattern in `src/build/formats/`:
-- **PdfFormatStrategy**: Generates PDF via pagedjs-cli subprocess in `.tmp/` directory
+- **PdfFormatStrategy**: Generates PDF via Prince XML typesetter
 - **HtmlFormatStrategy**: Outputs standalone HTML with inlined assets
-- **PreviewFormatStrategy**: Injects Paged.js polyfill for offline viewing
 
 All strategies implement `FormatStrategy` interface with `build()` and `validateOutput()` methods.
 

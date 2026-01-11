@@ -20,7 +20,7 @@ A comprehensive guide to creating beautiful print-ready documents from markdown 
 
 ## Getting Started
 
-PagedMD converts markdown files into professional print PDFs using Paged.js. It's designed for creating books, manuals, rulebooks, and any print-first documents.
+PagedMD converts markdown files into professional print PDFs. It's designed for creating books, manuals, rulebooks, and any print-first documents. Uses Prince XML for PDF generation and Vivliostyle for live preview.
 
 ### Basic Workflow
 
@@ -117,7 +117,7 @@ size: "148mm 210mm"
 
 ## Core Directives
 
-PagedMD provides powerful directives to control page layout and behavior. Directives are HTML comments that control Paged.js rendering.
+PagedMD provides powerful directives to control page layout and behavior. Directives are HTML comments that control print layout rendering.
 
 ### Page Templates
 
@@ -508,7 +508,7 @@ Best practices for print images:
 
 1. **Resolution:** 300 DPI minimum for print quality
 2. **Format:** JPEG for photos, PNG for graphics with transparency
-3. **Color space:** RGB (Paged.js handles CMYK conversion)
+3. **Color space:** RGB (Prince XML handles CMYK conversion)
 4. **Size:** Pre-size images to final dimensions to reduce PDF file size
 5. **Bleed:** For full-bleed images, add 0.125in to all edges
 
@@ -1065,7 +1065,8 @@ blank          - Blank page
 
 ## Additional Resources
 
-- **Paged.js Documentation:** https://pagedjs.org/documentation/
+- **Prince XML Documentation:** https://www.princexml.com/doc/
+- **Vivliostyle Documentation:** https://docs.vivliostyle.org/
 - **Markdown Guide:** https://www.markdownguide.org/
 - **Print Design Best Practices:** Research book design principles
 - **CSS Paged Media:** https://www.w3.org/TR/css-page-3/

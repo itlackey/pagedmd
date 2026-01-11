@@ -2,7 +2,7 @@
 
 **Date:** 2025-11-18
 **Reviewer:** Claude Code (AI Assistant)
-**Project:** pagedmd - Markdown-to-PDF converter using Paged.js
+**Project:** pagedmd - Markdown-to-PDF converter using Prince XML and Vivliostyle
 
 ## Executive Summary
 

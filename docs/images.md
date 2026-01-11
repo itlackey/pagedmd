@@ -117,7 +117,7 @@ that accompany text.
 ### Color Space
 
 - **Use:** RGB color space
-- **Why:** Paged.js handles CMYK conversion
+- **Why:** Prince XML handles CMYK conversion
 - **Test:** Preview in grayscale if printing B&W
 
 ### File Size Optimization

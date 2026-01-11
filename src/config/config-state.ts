@@ -14,8 +14,12 @@ import { DEFAULTS } from "../constants.ts";
 /**
  * Resolved configuration combining BuildOptions with Manifest properties
  * This is what markdown processing and other systems need - a unified config
+ * Note: Manifest.format (PageFormat for print layout) is renamed to pageFormat
+ * to avoid conflict with BuildOptions.format (OutputFormat for html/pdf)
  */
-export type ResolvedConfig = BuildOptions & Manifest;
+export type ResolvedConfig = BuildOptions & Omit<Manifest, 'format'> & {
+  pageFormat?: Manifest['format'];
+};
 
 /**
  * Simple configuration manager that merges CLI options with manifest settings
@@ -65,16 +69,19 @@ export class ConfigurationManager {
    * @returns Merged configuration with all defaults applied
    */
   getConfig(): ResolvedConfig {
+    // Extract manifest properties, renaming 'format' to 'pageFormat' to avoid conflict
+    const { format: pageFormat, ...manifestRest } = this.manifest || {};
     return {
       ...this.mergedConfig,
-      ...(this.manifest || {}),
+      ...manifestRest,
+      pageFormat,
     } as ResolvedConfig;
   }
 
   /**
    * Get the build format from configuration
    *
-   * @returns Output format (pdf, html, or preview)
+   * @returns Output format (pdf or html)
    */
   getBuildFormat(): OutputFormat {
     return this.mergedConfig.format ?? OutputFormat.PDF;

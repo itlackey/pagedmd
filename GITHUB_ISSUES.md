@@ -1,5 +1,7 @@
 # GitHub Issues - Code Review Remaining Items
 
+> **Note:** This document is historical. Some issues related to pagedjs-cli and Puppeteer have been resolved by migrating to Prince XML and Vivliostyle. See `docs/MIGRATION-REMOVE-PAGEDJS.md` for details.
+
 This file contains all remaining issues from the comprehensive code review. Copy each section into a new GitHub issue.
 
 ---
