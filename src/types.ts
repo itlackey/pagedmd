@@ -34,6 +34,15 @@ export enum OutputFormat {
 }
 
 /**
+ * PDF engine types for PDF generation
+ * - 'auto': Automatically select best available engine (Prince > DocRaptor > Vivliostyle)
+ * - 'vivliostyle': Use bundled Vivliostyle CLI (always available)
+ * - 'prince': Use local Prince XML installation
+ * - 'docraptor': Use DocRaptor cloud API (requires API key)
+ */
+export type PdfEngineType = 'auto' | 'vivliostyle' | 'prince' | 'docraptor';
+
+/**
  * Options for building PDF from markdown
  */
 export interface BuildOptions {
@@ -57,6 +66,14 @@ export interface BuildOptions {
   force?: boolean;
   /** Enable detailed performance profiling */
   profile?: boolean;
+  /** PDF engine to use ('auto', 'vivliostyle', 'prince', 'docraptor') */
+  pdfEngine?: PdfEngineType;
+  /** Path to Prince binary (if not in PATH) */
+  princePath?: string;
+  /** DocRaptor API key (can also be set via DOCRAPTOR_API_KEY env var) */
+  docraptorApiKey?: string;
+  /** Use DocRaptor in test mode (watermarked PDFs, unlimited) */
+  docraptorTestMode?: boolean;
 }
 
 /**
@@ -76,6 +93,43 @@ export interface PreviewServerOptions  {
   noWatch: boolean;
   /** Automatically open browser (default: true) */
   openBrowser: boolean;
+}
+
+/**
+ * PDF generation configuration
+ */
+export interface PdfConfig {
+  /** PDF engine to use ('auto', 'vivliostyle', 'prince', 'docraptor') */
+  engine?: PdfEngineType;
+
+  /** Path to Prince binary (if not in PATH) */
+  princePath?: string;
+
+  /** DocRaptor configuration */
+  docraptor?: {
+    /** API key (can also use DOCRAPTOR_API_KEY env var) */
+    apiKey?: string;
+    /** Generate test PDFs (watermarked, unlimited) */
+    testMode?: boolean;
+  };
+
+  /** Press-ready PDF options */
+  pressReady?: boolean;
+
+  /** PDF profile (Prince/DocRaptor: 'PDF/X-1a', 'PDF/X-3', 'PDF/X-4') */
+  profile?: string;
+
+  /** Enable crop marks for printing */
+  cropMarks?: boolean;
+
+  /** Bleed area for crop marks (e.g., '3mm', '0.125in') */
+  bleed?: string;
+
+  /** ICC output intent path (Prince) */
+  outputIntent?: string;
+
+  /** Convert colors to output intent */
+  convertColors?: boolean;
 }
 
 /**
@@ -119,6 +173,9 @@ export interface Manifest {
 
   /** Additional book metadata for PDF output */
   metadata?: ManifestMetadata;
+
+  /** PDF generation configuration */
+  pdf?: PdfConfig;
 }
 
 /**

@@ -1,34 +1,40 @@
 /**
  * PDF Format Strategy
  *
- * Generates print-ready CMYK/PDF/X output using Prince XML typesetter.
+ * Generates print-ready PDF output using multiple engine options:
+ * - Vivliostyle CLI (bundled, default)
+ * - Prince XML (optional, highest quality)
+ * - DocRaptor API (optional, cloud-based Prince)
  *
  * Features:
- * - Native PDF/X profiles (PDF/X-1a, PDF/X-3, PDF/X-4)
- * - ICC output intent for CMYK color management
- * - Superior CSS Paged Media support
+ * - Automatic engine detection and selection
+ * - PDF/X profiles for print production
+ * - ICC color profiles and color conversion
+ * - Crop marks and bleed support
  *
  * Usage:
  *   pagedmd build --format pdf
+ *   pagedmd build --format pdf --pdf-engine prince
+ *   pagedmd build --format pdf --pdf-engine vivliostyle
  */
 
 import path from 'path';
 import { promises as fs } from 'fs';
-import { generatePdfWithPrince, type PdfProfile, type PrincePdfOptions } from './prince-wrapper.ts';
+import { generatePdf, type PdfEngineOptions, type PdfEngine } from './pdf-engine.ts';
 import { writeFile, mkdir, remove, isDirectory, readDirectory, copyDirectory as copyDir } from '../../utils/file-utils.ts';
 import { info, debug } from '../../utils/logger.ts';
 import { validateOutputPath } from '../../utils/path-validation.ts';
 import { BUILD, FILENAMES, EXTENSIONS } from '../../constants.ts';
-import type { FormatStrategy, BuildOptions, OutputValidation, OutputFormat } from '../../types.ts';
+import type { FormatStrategy, BuildOptions, OutputValidation, OutputFormat, PdfEngineType, PdfConfig } from '../../types.ts';
 
 /**
- * Extended build options for Prince PDF
+ * Extended build options for PDF generation
  */
-export interface PrinceBuildOptions extends BuildOptions {
+export interface PdfBuildOptions extends BuildOptions {
   /**
-   * PDF profile for print production
+   * PDF profile for print production (Prince/DocRaptor)
    */
-  pdfProfile?: PdfProfile;
+  pdfProfile?: string;
 
   /**
    * Path to ICC output intent file
@@ -39,28 +45,48 @@ export interface PrinceBuildOptions extends BuildOptions {
    * Convert colors to output intent color space
    */
   convertColors?: boolean;
+
+  /**
+   * Enable press-ready output (Vivliostyle)
+   */
+  pressReady?: boolean;
+
+  /**
+   * Enable crop marks
+   */
+  cropMarks?: boolean;
+
+  /**
+   * Bleed area for crop marks
+   */
+  bleed?: string;
+
+  /**
+   * PDF configuration from manifest
+   */
+  pdfConfig?: PdfConfig;
 }
 
 /**
  * PDF Format Strategy
  *
- * Generates PDF using Prince XML typesetter for print-ready output.
+ * Generates PDF using the best available engine.
  */
 export class PdfFormatStrategy implements FormatStrategy {
-  private options: Partial<PrincePdfOptions>;
+  private options: Partial<PdfEngineOptions>;
 
-  constructor(options: Partial<PrincePdfOptions> = {}) {
+  constructor(options: Partial<PdfEngineOptions> = {}) {
     this.options = options;
   }
 
   /**
-   * Build PDF output using Prince
+   * Build PDF output using the selected engine
    *
    * Process:
    * 1. Create .tmp/[basename]/ directory
    * 2. Copy assets to build directory
    * 3. Write HTML to .tmp/[basename]/index.html
-   * 4. Run Prince to generate PDF
+   * 4. Run PDF engine to generate PDF
    * 5. Clean up .tmp/ directory (handled by cleanup() method)
    */
   async build(options: BuildOptions, htmlContent: string): Promise<string> {
@@ -85,34 +111,100 @@ export class PdfFormatStrategy implements FormatStrategy {
       ? outputPath
       : path.resolve(process.cwd(), outputPath);
 
-    // Merge options
-    const princeOptions: PrincePdfOptions = {
+    // Build engine options from build options and manifest config
+    const engineOptions = this.buildEngineOptions(options);
+
+    const result = await generatePdf(tempHtml, absoluteOutputPath, engineOptions, htmlContent);
+
+    info(`PDF generated: ${result.outputPath} (engine: ${result.engine})`);
+    if (result.pageCount) {
+      info(`  Page count: ${result.pageCount}`);
+    }
+    if (result.testMode) {
+      info(`  Note: Generated in test mode (watermarked)`);
+    }
+
+    return result.outputPath;
+  }
+
+  /**
+   * Build PDF engine options from build options and manifest config
+   */
+  private buildEngineOptions(options: BuildOptions): PdfEngineOptions {
+    const extendedOptions = options as PdfBuildOptions;
+    const pdfConfig = extendedOptions.pdfConfig;
+
+    // Start with strategy defaults
+    const engineOptions: PdfEngineOptions = {
       ...this.options,
       timeout: options.timeout,
       debug: options.debug,
       verbose: options.verbose,
     };
 
-    // Cast to extended options to check for Prince-specific settings
-    const extendedOptions = options as PrinceBuildOptions;
+    // Apply CLI options (highest priority)
+    if (options.pdfEngine) {
+      engineOptions.engine = options.pdfEngine as PdfEngine;
+    } else if (pdfConfig?.engine) {
+      engineOptions.engine = pdfConfig.engine as PdfEngine;
+    }
+
+    if (options.princePath) {
+      engineOptions.princePath = options.princePath;
+    } else if (pdfConfig?.princePath) {
+      engineOptions.princePath = pdfConfig.princePath;
+    }
+
+    if (options.docraptorApiKey) {
+      engineOptions.docraptorApiKey = options.docraptorApiKey;
+    } else if (pdfConfig?.docraptor?.apiKey) {
+      engineOptions.docraptorApiKey = pdfConfig.docraptor.apiKey;
+    }
+
+    if (options.docraptorTestMode !== undefined) {
+      engineOptions.docraptorTestMode = options.docraptorTestMode;
+    } else if (pdfConfig?.docraptor?.testMode !== undefined) {
+      engineOptions.docraptorTestMode = pdfConfig.docraptor.testMode;
+    }
+
+    // Apply PDF-specific options from extended options
     if (extendedOptions.pdfProfile) {
-      princeOptions.pdfProfile = extendedOptions.pdfProfile;
+      engineOptions.pdfProfile = extendedOptions.pdfProfile;
+    } else if (pdfConfig?.profile) {
+      engineOptions.pdfProfile = pdfConfig.profile;
     }
+
     if (extendedOptions.outputIntent) {
-      princeOptions.outputIntent = extendedOptions.outputIntent;
-    }
-    if (extendedOptions.convertColors) {
-      princeOptions.convertColors = extendedOptions.convertColors;
-    }
-
-    const result = await generatePdfWithPrince(tempHtml, absoluteOutputPath, princeOptions);
-
-    info(`PDF generated: ${result.outputPath}`);
-    if (result.pageCount) {
-      info(`  Page count: ${result.pageCount}`);
+      engineOptions.outputIntent = extendedOptions.outputIntent;
+    } else if (pdfConfig?.outputIntent) {
+      engineOptions.outputIntent = pdfConfig.outputIntent;
     }
 
-    return result.outputPath;
+    if (extendedOptions.convertColors !== undefined) {
+      engineOptions.convertColors = extendedOptions.convertColors;
+    } else if (pdfConfig?.convertColors !== undefined) {
+      engineOptions.convertColors = pdfConfig.convertColors;
+    }
+
+    if (extendedOptions.pressReady !== undefined) {
+      engineOptions.pressReady = extendedOptions.pressReady;
+    } else if (pdfConfig?.pressReady !== undefined) {
+      engineOptions.pressReady = pdfConfig.pressReady;
+    }
+
+    if (extendedOptions.cropMarks !== undefined) {
+      engineOptions.cropMarks = extendedOptions.cropMarks;
+    } else if (pdfConfig?.cropMarks !== undefined) {
+      engineOptions.cropMarks = pdfConfig.cropMarks;
+    }
+
+    if (extendedOptions.bleed) {
+      engineOptions.bleed = extendedOptions.bleed;
+    } else if (pdfConfig?.bleed) {
+      engineOptions.bleed = pdfConfig.bleed;
+    }
+
+    return engineOptions;
   }
 
   /**
@@ -185,6 +277,6 @@ export class PdfFormatStrategy implements FormatStrategy {
 /**
  * Factory function to create PDF strategy with options
  */
-export function createPdfStrategy(options?: Partial<PrincePdfOptions>): PdfFormatStrategy {
+export function createPdfStrategy(options?: Partial<PdfEngineOptions>): PdfFormatStrategy {
   return new PdfFormatStrategy(options);
 }
