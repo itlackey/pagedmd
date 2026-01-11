@@ -7,7 +7,7 @@
 
 import path, { join } from 'path';
 import YAML from 'js-yaml';
-import { Config, BuildOptions, Manifest } from '../types.ts';
+import type { Config, BuildOptions, Manifest } from '../types.ts';
 import { fileExists, isDirectory } from './file-utils.ts';
 import { debug as logDebug, info } from './logger.ts';
 import { DEFAULTS, FILENAMES, EXTENSIONS } from '../constants.ts';
@@ -198,7 +198,7 @@ function resolvePath(filePath: string): string {
 /**
  * Valid output format types
  */
-type ValidFormat = 'html' | 'pdf' | 'preview';
+type ValidFormat = 'html' | 'pdf';
 
 /**
  * Type guard to check if a string is a valid format
@@ -206,7 +206,7 @@ type ValidFormat = 'html' | 'pdf' | 'preview';
  * @returns True if value is a valid format
  */
 function isValidFormat(value: string): value is ValidFormat {
-  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf'] as const;
   return validFormats.includes(value as ValidFormat);
 }
 
@@ -217,7 +217,7 @@ function isValidFormat(value: string): value is ValidFormat {
  * @throws Error if format is invalid
  */
 export function validateFormatOption(format: string): ValidFormat {
-  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf'] as const;
   const normalized = format.toLowerCase();
 
   if (!isValidFormat(normalized)) {

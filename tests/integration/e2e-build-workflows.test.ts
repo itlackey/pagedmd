@@ -10,6 +10,7 @@ import { join } from 'path';
 import { mkdtemp, rm, mkdir, writeFile, readFile } from 'fs/promises';
 import { tmpdir } from 'os';
 import { build } from '../../src/build/build';
+import { OutputFormat } from '../../src/types';
 import type { BuildOptions } from '../../src/types';
 
 /**
@@ -80,7 +81,7 @@ describe('E2E: Complete PDF Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 
@@ -107,7 +108,7 @@ describe('E2E: Complete PDF Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 
@@ -142,7 +143,7 @@ describe('E2E: Complete PDF Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 
@@ -178,7 +179,7 @@ Content across two pages.
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 
@@ -210,7 +211,7 @@ describe('E2E: Complete HTML Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
     });
 
@@ -242,7 +243,7 @@ describe('E2E: Complete HTML Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
     });
 
@@ -270,7 +271,7 @@ describe('E2E: Complete HTML Workflow', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
     });
 
@@ -279,67 +280,6 @@ describe('E2E: Complete HTML Workflow', () => {
     const htmlContent = await Bun.file(join(outputPath, 'index.html')).text();
     expect(htmlContent).toContain('.custom-class');
     expect(htmlContent).toContain('background: blue');
-  }, 60000);
-});
-
-describe('E2E: Complete Preview Workflow', () => {
-  let testDir: string;
-
-  beforeEach(async () => {
-    testDir = await mkdtemp(join(tmpdir(), 'pagedmd-e2e-preview-'));
-  });
-
-  afterEach(async () => {
-    await rm(testDir, { recursive: true, force: true });
-  }, 60000);
-
-  test('generates preview HTML with Paged.js polyfill', async () => {
-    await createManifest(testDir);
-    await writeFile(
-      join(testDir, 'test.md'),
-      '# Preview Document\n\nThis will be previewed in the browser.'
-    );
-
-    const outputPath = join(testDir, 'preview.html');
-
-    const result = await build({
-      input: testDir,
-      output: outputPath,
-      format: 'preview',
-      verbose: false,
-    });
-
-    expect(result.success).toBe(true);
-    expect(await fileExists(outputPath)).toBe(true);
-
-    // Verify polyfill is injected
-    const previewContent = await Bun.file(outputPath).text();
-    expect(previewContent).toContain('paged.polyfill');
-    expect(previewContent).toContain('Preview Document');
-  }, 60000);
-
-  test('preview includes all markdown content', async () => {
-    await createManifest(testDir, {
-      files: ['part1.md', 'part2.md'],
-    });
-
-    await writeFile(join(testDir, 'part1.md'), '# Part One\n\nFirst section.');
-    await writeFile(join(testDir, 'part2.md'), '# Part Two\n\nSecond section.');
-
-    const outputPath = join(testDir, 'preview.html');
-
-    const result = await build({
-      input: testDir,
-      output: outputPath,
-      format: 'preview',
-      verbose: false,
-    });
-
-    expect(result.success).toBe(true);
-
-    const content = await Bun.file(outputPath).text();
-    expect(content).toContain('Part One');
-    expect(content).toContain('Part Two');
   }, 60000);
 });
 
@@ -389,7 +329,7 @@ describe('E2E: CSS Import Resolution', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
     });
 
@@ -427,7 +367,7 @@ describe('E2E: CSS Import Resolution', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 
@@ -456,7 +396,7 @@ describe('E2E: Error Handling Workflows', () => {
       await build({
         input: testDir,
         output: outputPath,
-        format: 'pdf',
+        format: OutputFormat.PDF,
         verbose: false,
       });
       // Should throw an error
@@ -479,7 +419,7 @@ describe('E2E: Error Handling Workflows', () => {
       await build({
         input: testDir,
         output: outputPath,
-        format: 'pdf',
+        format: OutputFormat.PDF,
         verbose: false,
       });
       expect(true).toBe(false); // Should not reach here
@@ -501,7 +441,7 @@ describe('E2E: Error Handling Workflows', () => {
       await build({
         input: testDir,
         output: outputPath,
-        format: 'pdf',
+        format: OutputFormat.PDF,
         verbose: false,
       });
       expect(true).toBe(false); // Should not reach here
@@ -523,7 +463,7 @@ describe('E2E: Error Handling Workflows', () => {
       await build({
         input: testDir,
         output: invalidPath,
-        format: 'pdf',
+        format: OutputFormat.PDF,
         verbose: false,
       });
       expect(true).toBe(false); // Should not reach here
@@ -557,7 +497,7 @@ describe('E2E: Configuration Cascade', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: true, // CLI option
     });
 
@@ -584,7 +524,7 @@ describe('E2E: Configuration Cascade', () => {
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
     });
 
@@ -713,7 +653,7 @@ Thank you for reading.
     const result = await build({
       input: testDir,
       output: outputPath,
-      format: 'pdf',
+      format: OutputFormat.PDF,
       verbose: false,
     });
 

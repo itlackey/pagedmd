@@ -142,7 +142,7 @@ export function createMarkdownEngineWithPlugins(
     debug(
       `Applying plugin: ${loadedPlugin.metadata.name} (priority: ${loadedPlugin.priority})`,
     );
-    md.use(loadedPlugin.plugin, loadedPlugin.metadata.options || {});
+    md.use(loadedPlugin.plugin, loadedPlugin.options || {});
   }
 
   // Attributes plugin MUST run last to avoid consuming stat block syntax
@@ -421,7 +421,9 @@ export async function generateHtmlFromMarkdown(
   // Load manifest from input directory
   info(`Generating HTML from markdown in: ${inputPath}`);
   const manifest = await loadManifest(inputPath);
-  let config = { ...inputConfig, ...manifest };
+  // Rename manifest.format to pageFormat to avoid conflict with BuildOptions.format
+  const { format: pageFormat, ...manifestRest } = manifest || {};
+  const config: ResolvedConfig = { ...inputConfig, ...manifestRest, pageFormat };
   const { content, pluginCSS } = await processMarkdownFiles(inputPath, config);
 
   if (content.length === 0) {

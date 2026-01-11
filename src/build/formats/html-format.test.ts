@@ -9,6 +9,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
 import { mkdir, writeFile, remove, fileExists, readFile } from '../../utils/file-utils.ts';
 import { HtmlFormatStrategy } from './html-format.ts';
+import { OutputFormat } from '../../types.ts';
 import type { BuildOptions } from '../../types.ts';
 
 describe('HTML Format Strategy', () => {
@@ -24,7 +25,7 @@ describe('HTML Format Strategy', () => {
     options = {
       input: testDir,
       output: join(testDir, 'output-html'),
-      format: 'html',
+      format: OutputFormat.HTML,
       verbose: false,
       debug: false,
     };
@@ -114,10 +115,11 @@ describe('HTML Format Strategy', () => {
   });
 
   test('validates output path correctly', () => {
-    const result = strategy.validateOutputPath('/test/output', false);
+    // Use testDir since it exists
+    const result = strategy.validateOutputPath(testDir, false);
 
-    expect(result.valid).toBe(true);
-    expect(result.path).toBe('/test/output');
+    expect(result.isValid).toBe(true);
+    expect(result.conflictType).toBe('none');
   });
 
   test('cleanup does nothing (HTML has no temp files)', async () => {

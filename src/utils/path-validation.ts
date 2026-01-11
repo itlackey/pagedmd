@@ -36,7 +36,7 @@ export function validateSafePath(targetPath: string, basePath: string): boolean 
 /**
  * Validate output path for a specific format
  *
- * @param format Output format (html, pdf, or preview)
+ * @param format Output format (html or pdf)
  * @param outputPath Path to validate
  * @param force Whether to skip validation
  * @returns Validation result with conflict type and suggestions
@@ -104,17 +104,17 @@ export function validateOutputPath(
     };
   }
 
-  // HTML and Preview formats require directory path, not file
-  if (format === 'html' || format === 'preview') {
+  // HTML format requires directory path, not file
+  if (format === 'html') {
     if (isFile) {
       return {
         isValid: false,
         conflictType: 'file-for-directory',
-        message: `Output path '${outputPath}' is a file, but ${format.toUpperCase()} format requires a directory path.`,
+        message: `Output path '${outputPath}' is a file, but HTML format requires a directory path.`,
         suggestedFix: `Remove the file or use --force to overwrite.`
       };
     }
-    // Existing directory is OK for HTML/Preview (will write into it)
+    // Existing directory is OK for HTML (will write into it)
     return {
       isValid: true,
       conflictType: 'none',

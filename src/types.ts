@@ -30,8 +30,7 @@ export interface Config {
  */
 export enum OutputFormat {
   HTML = 'html',
-  PDF = 'pdf',
-  PREVIEW = 'preview'
+  PDF = 'pdf'
 }
 
 /**
@@ -50,7 +49,7 @@ export interface BuildOptions {
   verbose?: boolean;
   /** Debug mode (preserve temporary files) */
   debug?: boolean;
-  /** Output format (html, pdf, or preview) */
+  /** Output format (html or pdf) */
   format?: OutputFormat;
   /** Enable watch mode for automatic rebuilds */
   watch?: boolean;

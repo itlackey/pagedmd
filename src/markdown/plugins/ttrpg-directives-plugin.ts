@@ -13,7 +13,7 @@
  */
 
 import type MarkdownIt from 'markdown-it';
-import { StateInline, Token } from 'markdown-it/index.js';
+import type { StateInline, Token } from 'markdown-it/index.js';
 
 
 export interface TTRPGPluginOptions {
@@ -67,7 +67,9 @@ function parseStatBlock(state: StateInline, silent: boolean): boolean {
 }
 
 function renderStatBlock(tokens: Token[], idx: number): string {
-    const content = tokens[idx].content as string;
+    const token = tokens[idx];
+    if (!token) return '';
+    const content = token.content as string;
     const parts = content.split(/\s+/);
 
     let html = '<span class="stat-block">';
@@ -104,15 +106,17 @@ function parseDiceNotation(state: StateInline, silent: boolean): boolean {
     const re = /^(\d+)d(\d+)([+-]\d+)?/;
     const match = state.src.slice(start).match(re);
 
-    if (!match) return false;
+    if (!match?.[0] || !match[1] || !match[2]) return false;
 
     const fullMatch = match[0];
 
     // Don't match if it's part of a word
-    if (start > 0 && /\w/.test(state.src[start - 1])) return false;
+    const prevChar = start > 0 ? state.src[start - 1] : '';
+    if (prevChar && /\w/.test(prevChar)) return false;
+    const nextChar = state.src[start + fullMatch.length];
     if (
         start + fullMatch.length < max &&
-        /\w/.test(state.src[start + fullMatch.length])
+        nextChar && /\w/.test(nextChar)
     )
         return false;
 
@@ -122,7 +126,7 @@ function parseDiceNotation(state: StateInline, silent: boolean): boolean {
         const meta: DiceMeta = {
             count: match[1],
             sides: match[2],
-            modifier: match[3] || "",
+            modifier: match[3] ?? "",
         };
         token.meta = meta;
     }
@@ -132,8 +136,10 @@ function parseDiceNotation(state: StateInline, silent: boolean): boolean {
 }
 
 function renderDiceNotation(tokens: Token[], idx: number): string {
-    const meta = tokens[idx].meta as DiceMeta;
-    const content = tokens[idx].content as string;
+    const token = tokens[idx];
+    if (!token) return '';
+    const meta = token.meta as DiceMeta;
+    const content = token.content as string;
 
     return `<span class="dice-notation" data-dice="${content}" title="Roll ${content}"><span class="dice-icon">🎲</span><span class="dice-formula">${content}</span></span>`;
 }
@@ -175,7 +181,7 @@ function parseCrossReference(state: StateInline, silent: boolean): boolean {
     let type = "ref";
     let identifier = content;
 
-    if (parts.length === 2) {
+    if (parts.length === 2 && parts[0] && parts[1]) {
         type = parts[0].toLowerCase();
         identifier = parts[1];
     }
@@ -193,9 +199,11 @@ function parseCrossReference(state: StateInline, silent: boolean): boolean {
 }
 
 function renderCrossReference(tokens: Token[], idx: number): string {
-    const type = tokens[idx].attrGet("data-ref-type") ?? "ref";
-    const id = tokens[idx].attrGet("data-ref-id") ?? "";
-    const className = tokens[idx].attrGet("class") ?? "";
+    const token = tokens[idx];
+    if (!token) return '';
+    const type = token.attrGet("data-ref-type") ?? "ref";
+    const id = token.attrGet("data-ref-id") ?? "";
+    const className = token.attrGet("class") ?? "";
 
     // Generate link based on type
     const href = `#${type}-${id.toLowerCase().replace(/\s+/g, "-")}`;
@@ -228,7 +236,7 @@ function parseTraitCallout(state: StateInline, silent: boolean): boolean {
         .slice(start)
         .match(/^::(trait|ability)\[([^\]]+)\]/);
 
-    if (!match) return false;
+    if (!match?.[0] || !match[1] || !match[2]) return false;
 
     const fullMatch = match[0];
     const calloutType = match[1];
@@ -247,8 +255,10 @@ function parseTraitCallout(state: StateInline, silent: boolean): boolean {
 }
 
 function renderTraitCallout(tokens: Token[], idx: number): string {
-    const { type } = tokens[idx].meta as TraitMeta;
-    const content = tokens[idx].content as string;
+    const token = tokens[idx];
+    if (!token) return '';
+    const { type } = token.meta as TraitMeta;
+    const content = token.content as string;
 
     const icon = type === "trait" ? "⚡" : "💫";
 
@@ -271,13 +281,14 @@ function parseChallengeRating(state: StateInline, silent: boolean): boolean {
     // Match CR:N pattern
     const match = state.src.slice(start).match(/^CR:(\d+)/);
 
-    if (!match) return false;
+    if (!match?.[0] || !match[1]) return false;
 
     const fullMatch = match[0];
     const rating = match[1];
 
     // Check context
-    if (start > 0 && /\w/.test(state.src[start - 1])) return false;
+    const prevChar = start > 0 ? state.src[start - 1] : '';
+    if (prevChar && /\w/.test(prevChar)) return false;
 
     if (!silent) {
         const token = state.push("challenge_rating", "span", 0);
@@ -289,7 +300,9 @@ function parseChallengeRating(state: StateInline, silent: boolean): boolean {
 }
 
 function renderChallengeRating(tokens: Token[], idx: number): string {
-    const rating = tokens[idx].content as string;
+    const token = tokens[idx];
+    if (!token) return '';
+    const rating = token.content as string;
     const difficulty =
         parseInt(rating, 10) <= 3
             ? "easy"

@@ -9,7 +9,8 @@ import { ConfigurationManager, createConfigManager } from './config-state.ts';
 import { mkdir, writeFile, remove } from '../utils/file-utils.ts';
 import { join } from 'path';
 import YAML from 'js-yaml';
-import type { Manifest, OutputFormat } from '../types.ts';
+import { OutputFormat } from '../types.ts';
+import type { Manifest } from '../types.ts';
 
 describe('ConfigurationManager', () => {
   let testDir: string;
@@ -54,13 +55,13 @@ describe('ConfigurationManager', () => {
 
     const manager = new ConfigurationManager(testDir, {
       timeout: 5000,
-      format: 'html' as OutputFormat
+      format: OutputFormat.HTML
     });
     await manager.initialize();
 
     const config = manager.getConfig();
     expect(config.timeout).toBe(5000);
-    expect(config.format).toBe('html');
+    expect(config.format).toBe(OutputFormat.HTML);
   });
 
   test('provides defaults for missing values', async () => {
@@ -93,10 +94,10 @@ describe('ConfigurationManager', () => {
   });
 
   test('getBuildFormat returns correct format', async () => {
-    const manager = new ConfigurationManager(testDir, { format: 'html' as OutputFormat });
+    const manager = new ConfigurationManager(testDir, { format: OutputFormat.HTML });
     await manager.initialize();
 
-    expect(manager.getBuildFormat()).toBe('html');
+    expect(manager.getBuildFormat()).toBe(OutputFormat.HTML);
   });
 
   test('handles file input path', async () => {
@@ -136,7 +137,7 @@ describe('ConfigurationManager', () => {
       timeout: 10000,
       verbose: true,
       debug: true,
-      format: 'pdf' as OutputFormat,
+      format: OutputFormat.PDF,
       watch: true,
       force: true,
     });
@@ -148,7 +149,7 @@ describe('ConfigurationManager', () => {
     expect(config.timeout).toBe(10000);
     expect(config.verbose).toBe(true);
     expect(config.debug).toBe(true);
-    expect(config.format).toBe('pdf');
+    expect(config.format).toBe(OutputFormat.PDF);
     expect(config.watch).toBe(true);
     expect(config.force).toBe(true);
   });
@@ -185,7 +186,7 @@ describe('ConfigurationManager', () => {
     const manager = new ConfigurationManager(testDir, {});
     await manager.initialize();
 
-    expect(manager.getBuildFormat()).toBe('pdf');
+    expect(manager.getBuildFormat()).toBe(OutputFormat.PDF);
   });
 
   test('handles empty manifest', async () => {
@@ -198,6 +199,6 @@ describe('ConfigurationManager', () => {
     expect(config.input).toBe(testDir);
     // Should still have defaults
     expect(config.verbose).toBe(false);
-    expect(config.format).toBe('pdf');
+    expect(config.format).toBe(OutputFormat.PDF);
   });
 });

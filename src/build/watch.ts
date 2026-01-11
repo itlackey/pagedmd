@@ -121,7 +121,7 @@ export async function startWatchMode(options: BuildOptions): Promise<void> {
  */
 function getBackoffDelay(consecutiveFailures: number): number {
   const index = Math.min(consecutiveFailures, BACKOFF_DELAYS.length - 1);
-  return BACKOFF_DELAYS[index];
+  return BACKOFF_DELAYS[index] ?? BACKOFF_DELAYS[0] ?? 1000;
 }
 
 /**

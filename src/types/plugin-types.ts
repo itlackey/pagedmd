@@ -49,6 +49,9 @@ export interface LoadedPlugin {
 
   /** Plugin priority (higher = loaded earlier) */
   priority: number;
+
+  /** Plugin options passed from configuration */
+  options?: Record<string, unknown>;
 }
 
 /**

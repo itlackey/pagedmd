@@ -308,8 +308,8 @@ export const metadata = {
       const results = await loader.loadPlugins(configs);
 
       expect(results).toHaveLength(2);
-      expect(results[0].metadata.name).toBe('ttrpg');
-      expect(results[1].metadata.name).toBe('dimmCity');
+      expect(results[0]!.metadata.name).toBe('ttrpg');
+      expect(results[1]!.metadata.name).toBe('dimmCity');
     });
 
     test('sorts plugins by priority', async () => {
@@ -323,10 +323,10 @@ export const metadata = {
       const results = await loader.loadPlugins(configs);
 
       // Higher priority first
-      expect(results[0].metadata.name).toBe('dimmCity');
-      expect(results[0].priority).toBe(200);
-      expect(results[1].metadata.name).toBe('ttrpg');
-      expect(results[1].priority).toBe(100);
+      expect(results[0]!.metadata.name).toBe('dimmCity');
+      expect(results[0]!.priority).toBe(200);
+      expect(results[1]!.metadata.name).toBe('ttrpg');
+      expect(results[1]!.priority).toBe(100);
     });
 
     test('filters out disabled plugins', async () => {
@@ -340,7 +340,7 @@ export const metadata = {
       const results = await loader.loadPlugins(configs);
 
       expect(results).toHaveLength(1);
-      expect(results[0].metadata.name).toBe('ttrpg');
+      expect(results[0]!.metadata.name).toBe('ttrpg');
     });
 
     test('filters out failed loads in non-strict mode', async () => {

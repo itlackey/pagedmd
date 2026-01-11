@@ -301,7 +301,7 @@ export async function generatePdfWithPrince(
         // Extract page count from output if available
         let pageCount: number | undefined;
         const pageMatch = stdout.match(/(\d+)\s+pages?/i);
-        if (pageMatch) {
+        if (pageMatch?.[1]) {
           pageCount = parseInt(pageMatch[1], 10);
         }
 

@@ -19,8 +19,9 @@
  */
 
 import type MarkdownIt from 'markdown-it';
-import type { StateCore } from 'markdown-it/lib/rules_core/state_core.mjs';
+import type StateCore from 'markdown-it/lib/rules_core/state_core.mjs';
 import type Token from 'markdown-it/lib/token.mjs';
+import TokenClass from 'markdown-it/lib/token.mjs';
 import type { DirectiveType, PageTemplateName } from '../../types.ts';
 import { warn } from '../../utils/logger.ts';
 
@@ -82,25 +83,34 @@ function levenshteinDistance(a: string, b: string): number {
     for (let i = 0; i <= b.length; i++) {
         matrix[i] = [i];
     }
+    const firstRow = matrix[0];
+    if (!firstRow) return a.length || b.length;
     for (let j = 0; j <= a.length; j++) {
-        matrix[0][j] = j;
+        firstRow[j] = j;
     }
 
     for (let i = 1; i <= b.length; i++) {
+        const currentRow = matrix[i];
+        const prevRow = matrix[i - 1];
+        if (!currentRow || !prevRow) continue;
         for (let j = 1; j <= a.length; j++) {
+            const prevDiag = prevRow[j - 1] ?? 0;
+            const prevRowJ = prevRow[j] ?? 0;
+            const currentPrev = currentRow[j - 1] ?? 0;
             if (b.charAt(i - 1) === a.charAt(j - 1)) {
-                matrix[i][j] = matrix[i - 1][j - 1];
+                currentRow[j] = prevDiag;
             } else {
-                matrix[i][j] = Math.min(
-                    matrix[i - 1][j - 1] + 1,
-                    matrix[i][j - 1] + 1,
-                    matrix[i - 1][j] + 1
+                currentRow[j] = Math.min(
+                    prevDiag + 1,
+                    currentPrev + 1,
+                    prevRowJ + 1
                 );
             }
         }
     }
 
-    return matrix[b.length][a.length];
+    const lastRow = matrix[b.length];
+    return lastRow?.[a.length] ?? Math.max(a.length, b.length);
 }
 
 /**
@@ -130,6 +140,7 @@ function parseDirective(content: string): { type: DirectiveType; value: string |
     if (!match) return null;
 
     const [, type, rawValue] = match;
+    if (!type) return null;
     const value = rawValue?.trim() || null;
 
     // Validate and normalize directives
@@ -247,11 +258,13 @@ function parseCalloutSyntax(tokens: Token[], blockquoteIdx: number): CalloutData
     // Look for the first paragraph_open after blockquote_open
     let paragraphIdx = -1;
     for (let i = blockquoteIdx + 1; i < tokens.length; i++) {
-        if (tokens[i].type === 'paragraph_open') {
+        const tok = tokens[i];
+        if (!tok) continue;
+        if (tok.type === 'paragraph_open') {
             paragraphIdx = i;
             break;
         }
-        if (tokens[i].type === 'blockquote_close') {
+        if (tok.type === 'blockquote_close') {
             break;
         }
     }
@@ -266,14 +279,14 @@ function parseCalloutSyntax(tokens: Token[], blockquoteIdx: number): CalloutData
 
     // The first child should be a text token with [!type]
     const firstChild = inlineToken.children[0];
-    if (firstChild.type !== 'text') return null;
+    if (!firstChild || firstChild.type !== 'text') return null;
 
     const firstText = firstChild.content.trim();
 
     // Match [!type] or [!type] Custom Title
     const match = firstText.match(/^\[!(\w+)\](?:\s+(.+))?$/);
 
-    if (!match) return null;
+    if (!match?.[1]) return null;
 
     const type = match[1].toLowerCase() as CalloutType;
     if (!(type in CALLOUT_TYPES)) return null;
@@ -304,8 +317,9 @@ function transformBlockquoteToCallout(
     let endIdx = startIdx + 1;
     let depth = 1;
     while (endIdx < tokens.length && depth > 0) {
-        if (tokens[endIdx].type === 'blockquote_open') depth++;
-        if (tokens[endIdx].type === 'blockquote_close') depth--;
+        const currentToken = tokens[endIdx];
+        if (currentToken?.type === 'blockquote_open') depth++;
+        if (currentToken?.type === 'blockquote_close') depth--;
         endIdx++;
     }
 
@@ -313,11 +327,13 @@ function transformBlockquoteToCallout(
     const inlineToken = tokens[firstParagraphIdx + 1];
     if (inlineToken && inlineToken.type === 'inline' && inlineToken.children) {
         // Remove first child (text with [!type]) and second child (softbreak) if it exists
-        if (inlineToken.children.length > 0 && inlineToken.children[0].type === 'text') {
+        const firstInlineChild = inlineToken.children[0];
+        if (inlineToken.children.length > 0 && firstInlineChild?.type === 'text') {
             inlineToken.children.shift(); // Remove [!type] text
 
             // If the next token is a softbreak, remove it too
-            if (inlineToken.children.length > 0 && inlineToken.children[0].type === 'softbreak') {
+            const nextChild = inlineToken.children[0];
+            if (inlineToken.children.length > 0 && nextChild?.type === 'softbreak') {
                 inlineToken.children.shift(); // Remove softbreak
             }
         }
@@ -335,7 +351,8 @@ function transformBlockquoteToCallout(
     // Collect all remaining content tokens
     const contentTokens: Token[] = [];
     for (let i = startIdx + 1; i < endIdx - 1; i++) {
-        contentTokens.push(tokens[i]);
+        const contentToken = tokens[i];
+        if (contentToken) contentTokens.push(contentToken);
     }
 
     // Render content tokens to HTML
@@ -355,9 +372,10 @@ ${contentHtml}</div>
 </aside>\n`;
 
     // Replace blockquote tokens with a single html_block
-    const htmlToken = new tokens[startIdx].constructor('html_block', '', 0);
+    const startToken = tokens[startIdx];
+    const htmlToken = new TokenClass('html_block', '', 0);
     htmlToken.content = calloutHtml;
-    htmlToken.map = tokens[startIdx].map;
+    htmlToken.map = startToken?.map ?? null;
 
     // Remove all blockquote tokens and replace with html_block
     tokens.splice(startIdx, endIdx - startIdx, htmlToken);
@@ -385,6 +403,7 @@ function hasExplicitDirectiveNearby(tokens: Token[], startIdx: number, windowSiz
 
     for (let i = minIdx; i <= maxIdx; i++) {
         const token = tokens[i];
+        if (!token) continue;
 
         // Check if this is a marker div created from an explicit directive
         if ((token.type === 'html_block' || token.type === 'html_inline') && token.content) {
@@ -418,6 +437,7 @@ function applyAutoRules(state: StateCore): boolean {
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
+        if (!token) continue;
 
         // Detect old container syntax (markdown-it-container tokens)
         if (token.type.startsWith('container_') && token.type.endsWith('_open')) {
@@ -429,6 +449,7 @@ function applyAutoRules(state: StateCore): boolean {
 
     for (let i = 0; i < tokens.length; i++) {
         const token = tokens[i];
+        if (!token) continue;
 
         // Parse explicit directives from HTML comments FIRST
         // This must happen before auto-rules so hasExplicitDirectiveNearby works correctly

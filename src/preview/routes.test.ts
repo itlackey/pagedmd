@@ -18,6 +18,12 @@ import { getHomeDirectory } from "../utils/path-security";
 import { mkdtemp, rm, mkdir, writeFile } from "fs/promises";
 import { tmpdir } from "os";
 import { join } from "path";
+import type { DirectoryListResponse, FolderChangeResponse, GitHubAuthStatus, GitHubUserInfo, GitHubLoginResponse, GitHubCloneResponse } from "../types";
+
+// Helper to parse JSON response with proper typing
+async function parseJson<T>(response: Response): Promise<T> {
+  return await response.json() as T;
+}
 
 describe("handleListDirectories", () => {
   test("returns home directory when no path parameter provided", async () => {
@@ -26,7 +32,7 @@ describe("handleListDirectories", () => {
 
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.currentPath).toBe(getHomeDirectory());
     expect(data.isAtHome).toBe(true);
     expect(data.parent).toBeUndefined();
@@ -45,7 +51,7 @@ describe("handleListDirectories", () => {
 
     expect(response.status).toBe(404);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.error).toContain("does not exist");
   });
 
@@ -60,7 +66,7 @@ describe("handleListDirectories", () => {
 
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.currentPath).toBe(getHomeDirectory());
     expect(data.isAtHome).toBe(true);
   });
@@ -83,7 +89,7 @@ describe("handleListDirectories", () => {
 
       expect(response.status).toBe(200);
 
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.currentPath).toBe(tempDir);
       expect(data.directories.length).toBe(2);
       expect(data.directories[0].name).toBe("subdir1");
@@ -110,7 +116,7 @@ describe("handleListDirectories", () => {
 
       expect(response.status).toBe(200);
 
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.currentPath).toBe(subDir);
       expect(data.isAtHome).toBe(false);
       expect(data.parent).toBe(tempDir);
@@ -132,7 +138,7 @@ describe("handleChangeFolder", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("Invalid JSON");
   });
@@ -149,7 +155,7 @@ describe("handleChangeFolder", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("Missing required field");
   });
@@ -166,7 +172,7 @@ describe("handleChangeFolder", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("must be a string");
   });
@@ -183,7 +189,7 @@ describe("handleChangeFolder", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("cannot be empty");
   });
@@ -202,7 +208,7 @@ describe("handleChangeFolder", () => {
 
     expect(response.status).toBe(404);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("does not exist");
   });
@@ -231,7 +237,7 @@ describe("handleChangeFolder", () => {
 
       expect(response.status).toBe(200);
 
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.success).toBe(true);
       expect(data.path).toBe(tempDir);
       expect(callbackCalled).toBe(true);
@@ -260,7 +266,7 @@ describe("handleChangeFolder", () => {
 
       expect(response.status).toBe(500);
 
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.success).toBe(false);
       expect(data.error).toContain("Failed to restart preview");
     } finally {
@@ -284,7 +290,7 @@ describe("handleChangeFolder", () => {
     // Should be rejected by Zod schema path security validation
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
   });
 
@@ -306,7 +312,7 @@ describe("handleChangeFolder", () => {
 
       expect(response.status).toBe(400);
 
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.success).toBe(false);
       expect(data.error).toContain("not a directory");
     } finally {
@@ -330,7 +336,7 @@ describe("handleShutdown", () => {
 
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(true);
     expect(data.message).toContain("shutting down");
 
@@ -353,7 +359,7 @@ describe("handleShutdown", () => {
     // Response should still be successful (error is logged but not returned)
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(true);
   });
 
@@ -391,7 +397,7 @@ describe("handleGitHubStatus", () => {
     expect(response.status).toBe(200);
     expect(response.headers.get("Content-Type")).toBe("application/json");
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data).toHaveProperty("ghCliInstalled");
     expect(data).toHaveProperty("authenticated");
     expect(typeof data.ghCliInstalled).toBe("boolean");
@@ -402,7 +408,7 @@ describe("handleGitHubStatus", () => {
     const request = new Request("http://localhost:3000/api/gh/status");
     const response = await handleGitHubStatus(request);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
 
     if (data.authenticated) {
       expect(typeof data.username).toBe("string");
@@ -416,7 +422,7 @@ describe("handleGitHubStatus", () => {
 
     expect(response.status).toBe(200);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
 
     if (!data.ghCliInstalled) {
       expect(data.authenticated).toBe(false);
@@ -435,7 +441,7 @@ describe("handleGitHubLogin", () => {
 
     expect(response.headers.get("Content-Type")).toBe("application/json");
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data).toHaveProperty("success");
     expect(typeof data.success).toBe("boolean");
   });
@@ -447,7 +453,7 @@ describe("handleGitHubLogin", () => {
 
     const response = await handleGitHubLogin(request);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
 
     // If gh CLI is not installed, should fail
     if (!data.success) {
@@ -463,7 +469,7 @@ describe("handleGitHubLogin", () => {
 
     const response = await handleGitHubLogin(request);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
 
     // If login fails, status should be 500
     if (!data.success) {
@@ -484,7 +490,7 @@ describe("handleGitHubClone", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toContain("Invalid JSON");
   });
@@ -501,7 +507,7 @@ describe("handleGitHubClone", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
     expect(data.error).toBeTruthy();
   });
@@ -518,7 +524,7 @@ describe("handleGitHubClone", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
   });
 
@@ -540,7 +546,7 @@ describe("handleGitHubClone", () => {
       });
 
       const response = await handleGitHubClone(request, mockCallback);
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
 
       // Should pass validation (may fail at clone stage, but not validation)
       if (!data.success && response.status === 400) {
@@ -561,7 +567,7 @@ describe("handleGitHubClone", () => {
 
     expect(response.status).toBe(400);
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
   });
 
@@ -577,7 +583,7 @@ describe("handleGitHubClone", () => {
 
     expect(response.headers.get("Content-Type")).toBe("application/json");
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     expect(data).toHaveProperty("success");
     expect(typeof data.success).toBe("boolean");
   });
@@ -599,7 +605,7 @@ describe("handleGitHubClone", () => {
     const response = await handleGitHubClone(request, mockCallback);
 
     // Should pass validation (will fail at clone, but validation should pass)
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
     if (!data.success && response.status === 400) {
       // Should not fail validation
       expect(data.error).not.toContain("targetDir");
@@ -638,7 +644,7 @@ describe("handleGitHubUser", () => {
 
     expect(response.headers.get("Content-Type")).toBe("application/json");
 
-    const data = await response.json();
+    const data = await parseJson<Record<string, unknown>>(response);
 
     if (response.status === 200) {
       expect(data).toHaveProperty("username");
@@ -654,7 +660,7 @@ describe("handleGitHubUser", () => {
 
     // Most likely not authenticated in test environment
     if (response.status === 401) {
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data.error).toContain("Not authenticated");
     }
   });
@@ -664,7 +670,7 @@ describe("handleGitHubUser", () => {
     const response = await handleGitHubUser(request);
 
     if (response.status !== 200) {
-      const data = await response.json();
+      const data = await parseJson<Record<string, unknown>>(response);
       expect(data).toHaveProperty("error");
       expect(typeof data.error).toBe("string");
     }
