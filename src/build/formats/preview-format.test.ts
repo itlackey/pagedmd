@@ -9,6 +9,7 @@ import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
 import { mkdir, writeFile, remove, fileExists, readFile } from '../../utils/file-utils.ts';
 import { PreviewFormatStrategy } from './preview-format.ts';
+import { OutputFormat } from '../../types.ts';
 import type { BuildOptions } from '../../types.ts';
 
 describe('Preview Format Strategy - Build', () => {
@@ -24,7 +25,7 @@ describe('Preview Format Strategy - Build', () => {
     options = {
       input: testDir,
       output: join(testDir, 'output-preview'),
-      format: 'preview',
+      format: OutputFormat.PREVIEW,
       verbose: false,
       debug: false,
     };

@@ -24,7 +24,7 @@ import type { PreviewServerOptions } from '../types';
 function createTestServerState(
   inputPath: string,
   tempDir: string,
-  options: PreviewServerOptions = {}
+  options: Partial<PreviewServerOptions> = {}
 ): ServerState {
   const configManager = new ConfigurationManager(inputPath);
 
@@ -34,8 +34,9 @@ function createTestServerState(
     configManager,
     options: {
       port: 3000,
-      open: false,
+      verbose: false,
       noWatch: false,
+      openBrowser: false,
       ...options,
     },
     currentWatcher: null,
