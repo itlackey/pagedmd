@@ -165,7 +165,17 @@ files:  # Optional - control file order
   - chapter-02.md
   - chapter-03.md
 
-extensions:  # Enable markdown plugins
+# Plugin system (new approach - recommended)
+plugins:
+  - ttrpg                      # Built-in TTRPG plugin
+  - ./plugins/my-plugin.js     # Local custom plugin
+  - name: pagedmd-plugin-name  # npm package plugin
+    version: "^1.0.0"
+    options:
+      customOption: true
+
+# Legacy extensions (deprecated - use plugins instead)
+extensions:
   - ttrpg      # Stat blocks, dice notation
   - dimmCity   # Custom game syntax
 ```
@@ -205,6 +215,86 @@ This content flows in two columns.
 
 Back to single column.
 ```
+
+## Plugin System
+
+pagedmd supports a powerful plugin system that lets you extend markdown syntax with custom features. Plugins can add new markdown syntax, modify rendering, and inject CSS styles.
+
+### Built-in Plugins
+
+```yaml
+plugins:
+  - ttrpg      # TTRPG features (stat blocks, dice notation, cross-refs)
+  - dimmCity   # Dimm City game syntax (district badges, roll prompts)
+```
+
+### Local Plugins
+
+Create your own plugins as JavaScript files:
+
+```yaml
+plugins:
+  - ./plugins/my-plugin.js     # Local plugin file
+  - path: ./plugins/callouts.js
+    priority: 200               # Higher priority = loads first
+    options:
+      types: ["note", "warning"]
+```
+
+**Example plugin** (`plugins/my-plugin.js`):
+
+```javascript
+// Plugin function
+export default function myPlugin(md, options) {
+  // Extend markdown-it functionality
+  md.renderer.rules.heading_open = function(tokens, idx) {
+    return `<h${tokens[idx].tag.slice(1)} class="custom">`;
+  };
+}
+
+// Plugin metadata
+export const metadata = {
+  name: 'my-plugin',
+  version: '1.0.0',
+  description: 'Custom heading styles'
+};
+
+// Plugin CSS (automatically injected)
+export const css = `
+.custom { color: blue; }
+`;
+```
+
+### npm Package Plugins
+
+Install and use plugins from npm:
+
+```bash
+npm install markdown-it-footnote
+```
+
+```yaml
+plugins:
+  - name: markdown-it-footnote
+    version: "^3.0.0"
+    options:
+      footnoteMarker: true
+```
+
+### Plugin Priority
+
+Control load order with priority (higher = earlier):
+
+```yaml
+plugins:
+  - path: ./plugins/preprocessor.js
+    priority: 500  # Runs first
+  - ttrpg          # Default priority (100)
+  - path: ./plugins/postprocessor.js
+    priority: 50   # Runs last
+```
+
+**Learn more:** See [examples/plugins/README.md](./examples/plugins/README.md) for a complete plugin development guide and working examples.
 
 ## Styling
 
@@ -371,6 +461,357 @@ bun run build
 # Run tests
 bun test
 ```
+
+### Troubleshooting
+
+#### Installation Issues
+
+**Problem: Puppeteer 403 Errors During Installation**
+
+If you encounter 403 errors or Chrome download failures during `bun install`:
+
+1. **Set environment variables before installing:**
+   ```bash
+   # Copy the example environment file
+   cp .env.example .env
+
+   # Or manually export (Linux/macOS)
+   export PUPPETEER_SKIP_DOWNLOAD=true
+   export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
+
+   # Or set permanently (Windows PowerShell)
+   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_DOWNLOAD', 'true', 'User')
+   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_CHROMIUM_DOWNLOAD', 'true', 'User')
+   ```
+
+2. **Install dependencies:**
+   ```bash
+   bun install
+   ```
+
+3. **Install Chrome manually (for PDF generation):**
+   - **Linux**: `sudo apt install google-chrome-stable`
+   - **macOS**: Download from https://www.google.com/chrome/
+   - **Windows**: Download from https://www.google.com/chrome/
+
+**Problem: Command Not Found After Installation**
+
+If `pagedmd` command isn't found after global installation:
+
+```bash
+# Check if bun's global bin directory is in PATH
+echo $PATH | grep -q ".bun/bin" || echo "Bun bin not in PATH"
+
+# Add to your shell profile (.bashrc, .zshrc, etc.)
+export PATH="$HOME/.bun/bin:$PATH"
+
+# Reload shell configuration
+source ~/.bashrc  # or ~/.zshrc
+```
+
+#### Build Issues
+
+**Problem: PDF Generation Fails with "Chrome Not Found"**
+
+Ensure Chrome/Chromium is installed and accessible:
+
+```bash
+# Verify Chrome installation
+which google-chrome-stable      # Linux
+which "Google Chrome"            # macOS
+where chrome.exe                 # Windows
+
+# If Chrome is in a custom location, set PUPPETEER_EXECUTABLE_PATH
+export PUPPETEER_EXECUTABLE_PATH="/path/to/chrome"
+```
+
+**Problem: Build Fails with "manifest.yaml not found"**
+
+Create a minimal manifest.yaml in your project directory:
+
+```yaml
+title: "My Book"
+authors:
+  - "Your Name"
+```
+
+**Problem: CSS Import Not Resolving**
+
+CSS imports are resolved relative to the file containing the @import. Check paths:
+
+```css
+/* If your CSS is in styles/theme.css */
+@import "variables.css";        /* Looks for styles/variables.css */
+@import "../common/base.css";   /* Looks for common/base.css */
+```
+
+Verify the file exists:
+```bash
+# From your project root
+ls -la styles/variables.css
+```
+
+**Problem: Build Hangs or Takes Very Long**
+
+Large images or complex CSS can slow down PDF generation:
+
+1. **Optimize images:**
+   ```bash
+   # Resize large images (requires ImageMagick)
+   mogrify -resize 1920x1080\> -quality 85 images/*.jpg
+   ```
+
+2. **Use `--verbose` to see where it's stuck:**
+   ```bash
+   pagedmd build --verbose
+   ```
+
+3. **Check for circular CSS imports:**
+   - A imports B
+   - B imports A
+   - Result: infinite loop
+
+#### Preview Mode Issues
+
+**Problem: Preview Server Won't Start**
+
+Port might be in use:
+
+```bash
+# Check what's using the default port (3000)
+lsof -i :3000          # Linux/macOS
+netstat -ano | findstr :3000  # Windows
+
+# Use a different port
+pagedmd preview --port 8080
+```
+
+**Problem: Changes Not Reflecting in Preview**
+
+File watching might have failed:
+
+1. **Check file system limits (Linux):**
+   ```bash
+   # Increase inotify watchers
+   echo fs.inotify.max_user_watches=524288 | sudo tee -a /etc/sysctl.conf
+   sudo sysctl -p
+   ```
+
+2. **Restart preview server:**
+   ```bash
+   # Ctrl+C to stop
+   pagedmd preview
+   ```
+
+3. **Hard refresh browser:**
+   - Chrome/Edge: Ctrl+Shift+R (Windows/Linux) or Cmd+Shift+R (macOS)
+   - Firefox: Ctrl+F5 (Windows/Linux) or Cmd+Shift+R (macOS)
+
+**Problem: Preview Shows "Cannot Connect to Vite Server"**
+
+The dual-server architecture requires both servers to start:
+
+1. **Check if ports are available:**
+   ```bash
+   # Main server (3000 default)
+   lsof -i :3000
+
+   # Vite server (auto-assigned, usually 5173)
+   lsof -i :5173
+   ```
+
+2. **Check firewall settings:**
+   - Ensure localhost connections are allowed
+   - Try disabling firewall temporarily to test
+
+3. **Check logs for errors:**
+   ```bash
+   pagedmd preview --verbose
+   ```
+
+#### Content Issues
+
+**Problem: Page Breaks Not Working**
+
+Ensure directives are on their own line:
+
+```markdown
+<!-- ❌ Wrong -->
+Some text @page More text
+
+<!-- ✓ Correct -->
+Some text
+
+@page
+
+More text
+```
+
+**Problem: Images Not Showing in PDF**
+
+1. **Check image paths are relative to markdown file:**
+   ```markdown
+   <!-- If markdown is in chapters/chapter1.md -->
+   ![Image](../images/photo.jpg)  <!-- Looks for images/photo.jpg -->
+   ```
+
+2. **Verify image file exists:**
+   ```bash
+   ls -la images/photo.jpg
+   ```
+
+3. **Check image format is supported:**
+   - Supported: JPG, PNG, GIF, SVG, WebP
+   - Not supported: TIFF, BMP (convert first)
+
+**Problem: Styles Not Applied**
+
+Check CSS cascade order in manifest.yaml:
+
+```yaml
+# Styles are applied in order (last wins)
+styles:
+  - "themes/base.css"      # Applied first
+  - "themes/theme.css"     # Overrides base
+  - "custom.css"           # Overrides everything
+```
+
+Verify CSS files exist:
+```bash
+ls -la themes/theme.css custom.css
+```
+
+#### GitHub Integration Issues
+
+**Problem: "gh CLI Not Found"**
+
+Install GitHub CLI:
+
+```bash
+# macOS
+brew install gh
+
+# Linux
+curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg
+echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null
+sudo apt update
+sudo apt install gh
+
+# Windows
+winget install --id GitHub.cli
+```
+
+**Problem: GitHub Authentication Fails**
+
+Authenticate with GitHub:
+
+```bash
+# Interactive authentication
+gh auth login
+
+# Or use the preview UI's "Login to GitHub" button
+```
+
+**Problem: Clone Permission Denied**
+
+Ensure you have access to the repository:
+
+```bash
+# For private repos, check authentication
+gh auth status
+
+# For public repos, try HTTPS URL instead of SSH:
+# Use: https://github.com/owner/repo
+# Not: git@github.com:owner/repo.git
+```
+
+#### Performance Issues
+
+**Problem: Build is Slow**
+
+1. **Use `--profile` to identify bottlenecks:**
+   ```bash
+   pagedmd build --profile
+   ```
+
+2. **Common slow operations:**
+   - Large images (optimize/resize)
+   - Complex CSS (simplify selectors)
+   - Many files (combine related content)
+   - Circular CSS imports (fix import chain)
+
+3. **Try HTML format first (faster):**
+   ```bash
+   pagedmd build --format html
+   ```
+
+**Problem: Preview Uses Too Much Memory**
+
+1. **Close other browser tabs**
+
+2. **Reduce image sizes in your content**
+
+3. **Disable file watching if not needed:**
+   ```bash
+   pagedmd preview --no-watch
+   ```
+
+#### Common Error Messages
+
+**"Cannot find module 'zod'"**
+
+Dependencies not installed:
+```bash
+bun install
+```
+
+**"ENOENT: no such file or directory"**
+
+Check paths in manifest.yaml are relative to project root:
+```yaml
+# If manifest.yaml is in /home/user/project/
+files:
+  - "chapters/intro.md"  # Looks for /home/user/project/chapters/intro.md
+```
+
+**"Invalid manifest.yaml: title is required"**
+
+Ensure required fields are present:
+```yaml
+title: "Your Title"    # Required
+authors:               # Required
+  - "Your Name"
+```
+
+**"Failed to parse markdown"**
+
+Check for syntax errors in your markdown:
+- Unclosed code blocks (```)
+- Invalid YAML frontmatter
+- Malformed HTML tags
+
+#### Getting Help
+
+If you're still stuck:
+
+1. **Check existing issues:** https://github.com/dimm-city/pagedmd/issues
+2. **Enable verbose output:**
+   ```bash
+   pagedmd build --verbose
+   pagedmd preview --verbose
+   ```
+3. **Create a minimal reproduction:**
+   - Single markdown file
+   - Minimal manifest.yaml
+   - No custom CSS
+4. **Open an issue:** Include:
+   - Operating system and version
+   - Bun/Node version (`bun --version`)
+   - pagedmd version (`pagedmd --version`)
+   - Full error message
+   - Steps to reproduce
+
+**Note**: The project's `package.json` already includes `config.puppeteer_skip_download=true`, so you may only need to install Chrome manually for PDF generation to work.
 
 ### Contributing
 

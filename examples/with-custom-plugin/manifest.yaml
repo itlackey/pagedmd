@@ -1,0 +1,29 @@
+title: "Custom Plugin Example"
+authors:
+  - "pagedmd Examples"
+description: "Demonstrates using a custom local plugin for callouts/admonitions"
+
+page:
+  size: "letter"
+  margins:
+    top: "1in"
+    bottom: "1in"
+    inside: "1in"
+    outside: "1in"
+
+# Load custom callouts plugin (local copy)
+plugins:
+  - path: "./callouts-plugin.js"
+    priority: 100
+    options:
+      types: ["note", "tip", "warning", "danger", "info"]
+      className: "callout"
+
+# Also load built-in TTRPG plugin for comparison
+  - name: "ttrpg"
+    priority: 50
+
+files:
+  - "introduction.md"
+  - "using-callouts.md"
+  - "combining-features.md"
