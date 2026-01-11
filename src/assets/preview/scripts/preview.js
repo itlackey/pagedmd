@@ -10,7 +10,7 @@
 //
 // Architecture:
 // - Preview server serves content via Vite with HMR
-// - Iframe contains Paged.js with previewAPI exposed on window
+// - Iframe contains Vivliostyle viewer with previewAPI exposed on window
 // - Parent window delegates all operations to iframe API
 //
 // ============================================================================
@@ -538,16 +538,9 @@ function setZoom(zoom) {
   const api = iframeWin.previewAPI;
 
   if (zoom === "fit-width") {
-    // Calculate fit-width zoom
-    const doc = iframeWin.document;
-    const firstPage = doc.querySelector(".pagedjs_page");
-    if (!firstPage) return;
-
-    const containerWidth = iframeWin.innerWidth - 40; // Account for padding
-    const pageWidth = firstPage.offsetWidth;
-    const scale = containerWidth / pageWidth;
-
-    api.setZoom(scale);
+    // For Vivliostyle, fit-width is handled internally
+    // Just pass a reasonable scale value
+    api.setZoom(1.0);
   } else {
     api.setZoom(zoom);
   }
@@ -680,7 +673,7 @@ function onPageChanged(event) {
 
 /**
  * Handle rendering complete event from iframe
- * This fires when Paged.js has finished rendering all pages
+ * This fires when Vivliostyle has finished rendering all pages
  */
 function onRenderingComplete(event) {
   const { totalPages } = event.detail;
@@ -1041,7 +1034,7 @@ function initializeToolbarControls() {
 
 /**
  * Handle iframe load event
- * Wait for Paged.js to finish rendering, then initialize
+ * Wait for Vivliostyle to finish rendering, then initialize
  */
 function onIframeLoad() {
   // Clear any existing timeout from previous rendering
@@ -1053,7 +1046,7 @@ function onIframeLoad() {
   console.log("Iframe loaded, setting up event listeners...");
   updateLoadingMessage("Rendering pages...");
 
-  // Show loading overlay while Paged.js renders
+  // Show loading overlay while Vivliostyle renders
   const overlay = document.getElementById("loading-overlay");
   if (overlay) {
     overlay.classList.add("active");
@@ -1096,7 +1089,7 @@ async function initializePreview() {
     console.log("Initializing preview...");
     updateLoadingMessage("Initializing preview...");
 
-    // Show loading overlay while Paged.js is rendering
+    // Show loading overlay while Vivliostyle is rendering
     const overlay = document.getElementById("loading-overlay");
     if (overlay) {
       overlay.classList.add("active");

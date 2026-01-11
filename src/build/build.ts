@@ -14,7 +14,6 @@ import { ConfigurationManager } from '../config/config-state.ts';
 import { PdfFormatStrategy } from './formats/pdf-format.ts';
 import { HtmlFormatStrategy } from './formats/html-format.ts';
 import { PreviewFormatStrategy } from './formats/preview-format.ts';
-import { PrincePdfFormatStrategy } from './formats/prince-pdf-format.ts';
 import { validateInputExists } from './build-validator.ts';
 import { PerformanceMonitor, isSlow } from '../utils/performance.ts';
 import { MemoryMonitor } from '../utils/memory.ts';
@@ -31,8 +30,6 @@ function getFormatStrategy(format: OutputFormat): FormatStrategy {
       return new HtmlFormatStrategy();
     case 'preview' as OutputFormat:
       return new PreviewFormatStrategy();
-    case 'prince' as OutputFormat:
-      return new PrincePdfFormatStrategy();
     default:
       throw new Error(`Unknown format: ${format}`);
   }

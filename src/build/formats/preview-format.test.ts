@@ -1,84 +1,15 @@
 /**
  * Tests for Preview format strategy
  *
- * Tests the Preview output generation including Paged.js polyfill injection,
- * directory creation, file writing, and asset copying
+ * Tests the Preview output generation including directory creation,
+ * file writing, and asset copying
  */
 
 import { describe, test, expect, beforeEach, afterEach } from 'bun:test';
 import { join } from 'path';
 import { mkdir, writeFile, remove, fileExists, readFile } from '../../utils/file-utils.ts';
-import { PreviewFormatStrategy, injectPagedJsPolyfill } from './preview-format.ts';
+import { PreviewFormatStrategy } from './preview-format.ts';
 import type { BuildOptions } from '../../types.ts';
-
-describe('Preview Format Strategy - Polyfill Injection', () => {
-  test('injects Paged.js polyfill scripts before </head> tag', () => {
-    const html = '<html><head><title>Test</title></head><body>Content</body></html>';
-
-    const result = injectPagedJsPolyfill(html);
-
-    expect(result).toContain('window.PagedConfig');
-    expect(result).toContain('paged.polyfill.js');
-    expect(result).toContain('interface.js');
-    expect(result).toContain('interface.css');
-    expect(result).toContain('auto: false');
-  });
-
-  test('preserves existing HTML structure', () => {
-    const html = '<html><head><meta charset="utf-8"><title>Test</title></head><body><h1>Title</h1></body></html>';
-
-    const result = injectPagedJsPolyfill(html);
-
-    expect(result).toContain('<meta charset="utf-8">');
-    expect(result).toContain('<title>Test</title>');
-    expect(result).toContain('<h1>Title</h1>');
-  });
-
-  test('throws error if HTML is missing </head> tag', () => {
-    const html = '<html><body>Content</body></html>';
-
-    expect(() => injectPagedJsPolyfill(html)).toThrow('missing required </head> tag');
-  });
-
-  test('throws error if injection fails (paranoid check)', () => {
-    // This test verifies the paranoid check for replace failure
-    // In practice, this shouldn't happen if </head> exists, but the code checks anyway
-    const html = '<html><head></head><body>Test</body></html>';
-
-    // Normal case should work
-    expect(() => injectPagedJsPolyfill(html)).not.toThrow();
-  });
-
-  test('injects polyfill before closing head tag, not after', () => {
-    const html = '<html><head><title>Test</title></head><body>Content</body></html>';
-
-    const result = injectPagedJsPolyfill(html);
-
-    const headCloseIndex = result.indexOf('</head>');
-    const polyfillIndex = result.indexOf('paged.polyfill.js');
-
-    expect(polyfillIndex).toBeLessThan(headCloseIndex);
-  });
-
-  test('handles HTML with multiple lines and whitespace', () => {
-    const html = `
-      <html>
-        <head>
-          <title>Test</title>
-          <meta charset="utf-8">
-        </head>
-        <body>
-          <h1>Content</h1>
-        </body>
-      </html>
-    `;
-
-    const result = injectPagedJsPolyfill(html);
-
-    expect(result).toContain('paged.polyfill.js');
-    expect(result).toContain('<title>Test</title>');
-  });
-});
 
 describe('Preview Format Strategy - Build', () => {
   let testDir: string;
@@ -119,7 +50,27 @@ describe('Preview Format Strategy - Build', () => {
 
     const written = await readFile(join(outputPath, 'preview.html'));
     expect(written).toContain('<h1>Test</h1>');
-    expect(written).toContain('paged.polyfill.js');
+    expect(written).toContain('<!DOCTYPE html>');
+  });
+
+  test('adds doctype if missing', async () => {
+    const htmlContent = '<html><head><title>Test</title></head><body>No doctype</body></html>';
+
+    const outputPath = await strategy.build(options, htmlContent);
+    const written = await readFile(join(outputPath, 'preview.html'));
+
+    expect(written.trim().toLowerCase()).toMatch(/^<!doctype html>/);
+  });
+
+  test('preserves existing doctype', async () => {
+    const htmlContent = '<!DOCTYPE html><html><head><title>Test</title></head><body>Has doctype</body></html>';
+
+    const outputPath = await strategy.build(options, htmlContent);
+    const written = await readFile(join(outputPath, 'preview.html'));
+
+    // Should not have double doctype
+    const doctypeMatches = written.match(/<!DOCTYPE/gi);
+    expect(doctypeMatches?.length).toBe(1);
   });
 
   test('creates output directory if it does not exist', async () => {
@@ -203,7 +154,6 @@ describe('Preview Format Strategy - Build', () => {
     expect(await fileExists(join(options.output!, 'preview.html'))).toBe(true);
     const content = await readFile(join(options.output!, 'preview.html'));
     expect(content).toContain('New');
-    expect(content).toContain('paged.polyfill.js');
   });
 
   test('handles relative output paths', async () => {

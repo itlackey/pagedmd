@@ -31,8 +31,7 @@ export interface Config {
 export enum OutputFormat {
   HTML = 'html',
   PDF = 'pdf',
-  PREVIEW = 'preview',
-  PRINCE = 'prince'
+  PREVIEW = 'preview'
 }
 
 /**
@@ -62,11 +61,6 @@ export interface BuildOptions {
 }
 
 /**
- * Preview engine identifier
- */
-export type PreviewEngineId = 'pagedjs' | 'vivliostyle';
-
-/**
  * Options for preview server (internal)
  * Used by preview-server.ts implementation
  */
@@ -83,8 +77,6 @@ export interface PreviewServerOptions  {
   noWatch: boolean;
   /** Automatically open browser (default: true) */
   openBrowser: boolean;
-  /** Preview engine to use (default: 'pagedjs') */
-  engine?: PreviewEngineId;
 }
 
 /**
@@ -167,7 +159,7 @@ export interface PDFGenerationResult {
 export type DirectiveType = 'page' | 'break' | 'spread' | 'columns';
 
 /**
- * Page template names for Paged.js @page rules
+ * Page template names for CSS @page rules
  */
 export type PageTemplateName =
   | 'chapter'      // Chapter openings (auto-applied to H1)

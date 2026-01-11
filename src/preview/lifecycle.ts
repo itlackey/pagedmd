@@ -179,8 +179,8 @@ export async function restartPreview(newInputPath: string, state: ServerState): 
   await state.configManager.initialize();
   const updatedConfig = state.configManager.getConfig();
 
-  // Regenerate HTML using current engine
-  await generateAndWriteHtml(newInputPath, state.tempDir, updatedConfig, state.currentEngine);
+  // Regenerate HTML
+  await generateAndWriteHtml(newInputPath, state.tempDir, updatedConfig);
 
   // Restart watcher
   startFileWatcher(state);

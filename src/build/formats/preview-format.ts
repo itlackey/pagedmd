@@ -1,8 +1,8 @@
 /**
  * Preview Format Strategy
  *
- * Generates HTML directory structure with Paged.js polyfill injected
- * Enables offline paginated viewing without running preview server
+ * Generates HTML directory structure for viewing in Vivliostyle Viewer
+ * or other paged media viewers. No client-side polyfill injection.
  */
 
 import path from 'path';
@@ -12,60 +12,18 @@ import { validateOutputPath } from '../../utils/path-validation.ts';
 import { AssetCopier } from '../asset-copier.ts';
 import type { FormatStrategy, BuildOptions, OutputValidation, OutputFormat } from '../../types.ts';
 
-
-/**
- * Inject Paged.js polyfill script tags into HTML head
- *
- * Adds Paged.js polyfill before </head> tag to enable client-side pagination
- * Same pattern used in preview server routes.ts:666-672
- *
- * @param html HTML content to inject polyfill into
- * @returns HTML with polyfill script tags injected
- * @throws Error if HTML is missing </head> tag or assets are invalid
- */
-export function injectPagedJsPolyfill(html: string): string {
-  // Validate input HTML has required structure
-  if (!html.includes('</head>')) {
-    throw new Error('HTML is missing required </head> tag for polyfill injection');
-  }
-
-  const polyfillScript = `
-    <script>
-      // Disable auto mode - we'll initialize manually
-      window.PagedConfig = {
-        auto: false
-      };
-    </script>
-    <script src="/preview/scripts/paged.polyfill.js"></script>
-    <script src="/preview/scripts/interface.js"></script>   
-    <link rel="stylesheet" href="/preview/styles/interface.css">  
-  `;
-
-  // Inject before closing </head> tag
-  const injectedHtml = html.replace('</head>', `${polyfillScript}</head>`);
-
-  // Verify injection occurred (paranoid check)
-  if (injectedHtml === html) {
-    throw new Error('Failed to inject polyfill script - HTML unchanged after replace operation');
-  }
-
-  return injectedHtml;
-}
-
 export class PreviewFormatStrategy implements FormatStrategy {
   /**
    * Build Preview output
    *
    * Process:
-   * 1. Inject Paged.js polyfill into HTML
-   * 2. Create output directory
-   * 3. Write index.html with polyfill
-   * 4. Copy assets to output directory
+   * 1. Create output directory
+   * 2. Write index.html
+   * 3. Copy assets to output directory
+   *
+   * The output can be viewed in Vivliostyle Viewer or any paged media viewer.
    */
   async build(options: BuildOptions, htmlContent: string): Promise<string> {
-    // Inject Paged.js polyfill
-    const htmlWithPolyfill = injectPagedJsPolyfill(htmlContent);
-
     const inputBasename = path.basename(options.input || process.cwd());
     const outputPath = options.output || path.join(process.cwd(), `${inputBasename}-preview`);
 
@@ -77,9 +35,15 @@ export class PreviewFormatStrategy implements FormatStrategy {
     // Create output directory
     await mkdir(absoluteOutputPath);
 
-    // Write preview.html with polyfill
-    const previewFilePath = path.join(absoluteOutputPath, "preview.html");
-    await writeFile(previewFilePath, htmlWithPolyfill);
+    // Ensure proper doctype
+    let processedHtml = htmlContent;
+    if (!processedHtml.trim().toLowerCase().startsWith('<!doctype')) {
+      processedHtml = '<!DOCTYPE html>\n' + processedHtml;
+    }
+
+    // Write preview.html
+    const previewFilePath = path.join(absoluteOutputPath, 'preview.html');
+    await writeFile(previewFilePath, processedHtml);
     info(`Preview HTML written to: ${previewFilePath}`);
 
     // Copy assets from input directory to output directory

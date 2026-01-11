@@ -198,7 +198,7 @@ function resolvePath(filePath: string): string {
 /**
  * Valid output format types
  */
-type ValidFormat = 'html' | 'pdf' | 'preview' | 'prince';
+type ValidFormat = 'html' | 'pdf' | 'preview';
 
 /**
  * Type guard to check if a string is a valid format
@@ -206,7 +206,7 @@ type ValidFormat = 'html' | 'pdf' | 'preview' | 'prince';
  * @returns True if value is a valid format
  */
 function isValidFormat(value: string): value is ValidFormat {
-  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview', 'prince'] as const;
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
   return validFormats.includes(value as ValidFormat);
 }
 
@@ -217,7 +217,7 @@ function isValidFormat(value: string): value is ValidFormat {
  * @throws Error if format is invalid
  */
 export function validateFormatOption(format: string): ValidFormat {
-  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview', 'prince'] as const;
+  const validFormats: readonly ValidFormat[] = ['html', 'pdf', 'preview'] as const;
   const normalized = format.toLowerCase();
 
   if (!isValidFormat(normalized)) {

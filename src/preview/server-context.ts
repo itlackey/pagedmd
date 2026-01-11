@@ -6,7 +6,7 @@
 
 import type { FSWatcher } from 'chokidar';
 import type { ViteDevServer } from 'vite';
-import type { PreviewServerOptions, PreviewEngineId } from '../types.ts';
+import type { PreviewServerOptions } from '../types.ts';
 import type { ConfigurationManager } from '../config/config-state.ts';
 
 /**
@@ -31,8 +31,6 @@ export interface ServerState {
   configManager: ConfigurationManager;
   /** Server options */
   options: PreviewServerOptions;
-  /** Current preview engine */
-  currentEngine: PreviewEngineId;
 }
 
 /**
@@ -67,7 +65,6 @@ export function createServerState(
     assetsSourceDir,
     configManager,
     options,
-    currentEngine: options.engine || 'pagedjs',
   };
 }
 

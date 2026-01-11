@@ -1,28 +1,66 @@
 /**
  * PDF Format Strategy
  *
- * Generates single PDF file using intermediate .tmp/ directory
- * Uses pagedjs-cli for pagination
+ * Generates print-ready CMYK/PDF/X output using Prince XML typesetter.
+ *
+ * Features:
+ * - Native PDF/X profiles (PDF/X-1a, PDF/X-3, PDF/X-4)
+ * - ICC output intent for CMYK color management
+ * - Superior CSS Paged Media support
+ *
+ * Usage:
+ *   pagedmd build --format pdf
  */
 
 import path from 'path';
 import { promises as fs } from 'fs';
-import { generatePDF } from './pagedjs-cli-wrapper.ts';
+import { generatePdfWithPrince, type PdfProfile, type PrincePdfOptions } from './prince-wrapper.ts';
 import { writeFile, mkdir, remove, isDirectory, readDirectory, copyDirectory as copyDir } from '../../utils/file-utils.ts';
 import { info, debug } from '../../utils/logger.ts';
 import { validateOutputPath } from '../../utils/path-validation.ts';
 import { BUILD, FILENAMES, EXTENSIONS } from '../../constants.ts';
 import type { FormatStrategy, BuildOptions, OutputValidation, OutputFormat } from '../../types.ts';
 
-export class PdfFormatStrategy implements FormatStrategy {
+/**
+ * Extended build options for Prince PDF
+ */
+export interface PrinceBuildOptions extends BuildOptions {
   /**
-   * Build PDF output
+   * PDF profile for print production
+   */
+  pdfProfile?: PdfProfile;
+
+  /**
+   * Path to ICC output intent file
+   */
+  outputIntent?: string;
+
+  /**
+   * Convert colors to output intent color space
+   */
+  convertColors?: boolean;
+}
+
+/**
+ * PDF Format Strategy
+ *
+ * Generates PDF using Prince XML typesetter for print-ready output.
+ */
+export class PdfFormatStrategy implements FormatStrategy {
+  private options: Partial<PrincePdfOptions>;
+
+  constructor(options: Partial<PrincePdfOptions> = {}) {
+    this.options = options;
+  }
+
+  /**
+   * Build PDF output using Prince
    *
    * Process:
    * 1. Create .tmp/[basename]/ directory
    * 2. Copy assets to build directory
    * 3. Write HTML to .tmp/[basename]/index.html
-   * 4. Run pagedjs-cli to generate PDF
+   * 4. Run Prince to generate PDF
    * 5. Clean up .tmp/ directory (handled by cleanup() method)
    */
   async build(options: BuildOptions, htmlContent: string): Promise<string> {
@@ -47,12 +85,32 @@ export class PdfFormatStrategy implements FormatStrategy {
       ? outputPath
       : path.resolve(process.cwd(), outputPath);
 
-    const result = await generatePDF(tempHtml, absoluteOutputPath, {
+    // Merge options
+    const princeOptions: PrincePdfOptions = {
+      ...this.options,
       timeout: options.timeout,
       debug: options.debug,
-    });
+      verbose: options.verbose,
+    };
+
+    // Cast to extended options to check for Prince-specific settings
+    const extendedOptions = options as PrinceBuildOptions;
+    if (extendedOptions.pdfProfile) {
+      princeOptions.pdfProfile = extendedOptions.pdfProfile;
+    }
+    if (extendedOptions.outputIntent) {
+      princeOptions.outputIntent = extendedOptions.outputIntent;
+    }
+    if (extendedOptions.convertColors) {
+      princeOptions.convertColors = extendedOptions.convertColors;
+    }
+
+    const result = await generatePdfWithPrince(tempHtml, absoluteOutputPath, princeOptions);
 
     info(`PDF generated: ${result.outputPath}`);
+    if (result.pageCount) {
+      info(`  Page count: ${result.pageCount}`);
+    }
 
     return result.outputPath;
   }
@@ -122,4 +180,11 @@ export class PdfFormatStrategy implements FormatStrategy {
       info(`Debug mode: temporary files preserved at ${buildDir}`);
     }
   }
+}
+
+/**
+ * Factory function to create PDF strategy with options
+ */
+export function createPdfStrategy(options?: Partial<PrincePdfOptions>): PdfFormatStrategy {
+  return new PdfFormatStrategy(options);
 }
