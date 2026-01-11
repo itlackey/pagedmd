@@ -50,6 +50,7 @@ describe('ConfigurationManager', () => {
     // Create manifest with default timeout
     const manifest: Manifest = {
       title: 'Test Book',
+      authors: ['Test Author'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
 
@@ -68,6 +69,7 @@ describe('ConfigurationManager', () => {
     // Create minimal manifest
     const manifest: Manifest = {
       title: 'Minimal Book',
+      authors: ['Test Author'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
 
@@ -106,6 +108,7 @@ describe('ConfigurationManager', () => {
 
     const manifest: Manifest = {
       title: 'Test',
+      authors: ['Test Author'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
 
@@ -120,6 +123,7 @@ describe('ConfigurationManager', () => {
   test('createConfigManager helper function', async () => {
     const manifest: Manifest = {
       title: 'Helper Test',
+      authors: ['Test Author'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
 
@@ -157,6 +161,7 @@ describe('ConfigurationManager', () => {
   test('handles manifest with styles', async () => {
     const manifest: Manifest = {
       title: 'Styled Book',
+      authors: ['Test Author'],
       styles: ['custom1.css', 'custom2.css'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
@@ -171,6 +176,7 @@ describe('ConfigurationManager', () => {
   test('handles manifest with file list', async () => {
     const manifest: Manifest = {
       title: 'Multi-file Book',
+      authors: ['Test Author'],
       files: ['chapter1.md', 'chapter2.md', 'chapter3.md'],
     };
     await writeFile(manifestPath, YAML.dump(manifest));
@@ -189,8 +195,13 @@ describe('ConfigurationManager', () => {
     expect(manager.getBuildFormat()).toBe(OutputFormat.PDF);
   });
 
-  test('handles empty manifest', async () => {
-    await writeFile(manifestPath, YAML.dump({}));
+  test('handles minimal manifest', async () => {
+    // Minimal valid manifest with only required fields
+    const manifest: Manifest = {
+      title: 'Minimal Book',
+      authors: ['Test Author'],
+    };
+    await writeFile(manifestPath, YAML.dump(manifest));
 
     const manager = new ConfigurationManager(testDir, {});
     await manager.initialize();

@@ -157,7 +157,7 @@ describe("handleChangeFolder", () => {
 
     const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
-    expect(data.error).toContain("Missing required field");
+    expect(data.error).toBe("Invalid request body");
   });
 
   test("returns 400 for non-string path", async () => {
@@ -174,7 +174,7 @@ describe("handleChangeFolder", () => {
 
     const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
-    expect(data.error).toContain("must be a string");
+    expect(data.error).toBe("Invalid request body");
   });
 
   test("returns 400 for empty path", async () => {
@@ -191,7 +191,7 @@ describe("handleChangeFolder", () => {
 
     const data = await parseJson<Record<string, unknown>>(response);
     expect(data.success).toBe(false);
-    expect(data.error).toContain("cannot be empty");
+    expect(data.error).toBe("Invalid request body");
   });
 
   test("returns 404 for non-existent path", async () => {
