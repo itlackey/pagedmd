@@ -47,6 +47,7 @@ interface PreviewCommandOptions {
   open: string | boolean;
   verbose: boolean;
   debug: boolean;
+  engine: string;
 }
 
 /**
@@ -67,7 +68,7 @@ program
   .argument('[input]', 'Input markdown file or directory (defaults to current directory)')
   .option('-o, --output <path>', 'Output path (file for PDF, directory for HTML/preview)')
   .option('--html-output <path>', 'Save intermediate HTML to specified path (for debugging)')
-  .option('--format <format>', 'Output format: html, pdf, or preview (default: pdf)', 'pdf')
+  .option('--format <format>', 'Output format: html, pdf, preview, or prince (default: pdf)', 'pdf')
   .option('--watch', 'Watch for file changes and automatically rebuild', false)
   .option('--force', 'Force overwrite existing output without validation', false)
   .option('--timeout <ms>', 'Timeout for PDF generation in milliseconds', String(DEFAULTS.TIMEOUT))
@@ -98,6 +99,7 @@ program
   .option('--port <number>', 'Port for live-server', String(NETWORK.DEFAULT_PORT))
   .option('--no-watch', 'Disable file watching')
   .option('--open <boolean>', 'Automatically open browser (default: true)', 'true')
+  .option('--engine <engine>', 'Preview engine: pagedjs or vivliostyle (default: pagedjs)', 'pagedjs')
   .option('--verbose', 'Enable verbose output', false)
   .option('--debug', 'Debug mode (preserve temporary files)', false)
   .action(async (input: string | undefined, opts: PreviewCommandOptions) => {
@@ -125,6 +127,13 @@ program
       // Parse --open boolean flag (supports 'true'/'false' strings)
       const openBrowser = opts.open === 'true' || opts.open === true;
 
+      // Validate engine option
+      const validEngines = ['pagedjs', 'vivliostyle'] as const;
+      const engine = opts.engine as typeof validEngines[number];
+      if (!validEngines.includes(engine)) {
+        throw new ConfigError(`Invalid engine: "${opts.engine}". Valid engines: ${validEngines.join(', ')}`);
+      }
+
       await startPreviewServer({
         input: inputPath,
         port: parseInt(opts.port, 10),
@@ -132,6 +141,7 @@ program
         verbose: opts.verbose,
         openBrowser,
         debug: opts.debug,
+        engine,
       });
     } catch (error) {
       handleError(error, opts.verbose);
@@ -153,6 +163,7 @@ Examples:
   $ pagedmd preview                         # Preview current directory (explicit)
   $ pagedmd preview ./my-book               # Preview specific directory
   $ pagedmd preview --port 3579             # Preview with custom port
+  $ pagedmd preview --engine vivliostyle    # Use Vivliostyle engine
   $ pagedmd build                           # Build from current directory
   $ pagedmd build ./my-book                 # Build from specific directory
   $ pagedmd build chapter.md                # Build single file

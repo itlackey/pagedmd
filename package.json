@@ -66,6 +66,7 @@
     "@mdit/plugin-img-size": "^0.22.2",
     "@types/markdown-it-attrs": "^4.1.3",
     "@types/markdown-it-container": "^2.0.10",
+    "@vivliostyle/viewer": "^2.39.1",
     "chokidar": "^4.0.3",
     "commander": "^12.1.0",
     "js-yaml": "^4.1.0",
