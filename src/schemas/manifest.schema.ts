@@ -33,6 +33,38 @@ const ExtensionSchema = z.enum(['ttrpg', 'dimmCity', 'containers'], {
 });
 
 /**
+ * PDF engine options
+ */
+const PdfEngineSchema = z.enum(['auto', 'vivliostyle', 'prince', 'docraptor'], {
+  errorMap: () => ({
+    message: "PDF engine must be one of: 'auto', 'vivliostyle', 'prince', 'docraptor'",
+  }),
+});
+
+/**
+ * DocRaptor configuration schema
+ */
+const DocRaptorConfigSchema = z.object({
+  apiKey: z.string().optional().describe('DocRaptor API key'),
+  testMode: z.boolean().optional().default(true).describe('Generate test PDFs (watermarked, unlimited)'),
+});
+
+/**
+ * PDF configuration schema
+ */
+const PdfConfigSchema = z.object({
+  engine: PdfEngineSchema.optional().default('auto').describe('PDF engine to use'),
+  princePath: z.string().optional().describe('Path to Prince binary (if not in PATH)'),
+  docraptor: DocRaptorConfigSchema.optional().describe('DocRaptor cloud API configuration'),
+  pressReady: z.boolean().optional().describe('Generate press-ready PDF'),
+  profile: z.string().optional().describe('PDF profile (PDF/X-1a, PDF/X-3, PDF/X-4, PDF/A-1a, etc.)'),
+  cropMarks: z.boolean().optional().describe('Enable crop marks for printing'),
+  bleed: z.string().optional().describe('Bleed area for crop marks (e.g., 3mm, 0.125in)'),
+  outputIntent: z.string().optional().describe('ICC output intent path (Prince)'),
+  convertColors: z.boolean().optional().describe('Convert colors to output intent'),
+});
+
+/**
  * Plugin type enum
  */
 const PluginTypeSchema = z.enum(['local', 'package', 'builtin', 'remote'], {
@@ -170,6 +202,8 @@ export const ManifestSchema = z.object({
     .optional()
     .default(false)
     .describe('Disable default CSS styles'),
+
+  pdf: PdfConfigSchema.optional().describe('PDF generation configuration'),
 });
 
 /**

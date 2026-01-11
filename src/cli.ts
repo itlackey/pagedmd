@@ -19,7 +19,8 @@ import { fileExists } from './utils/file-utils.ts';
 import { BuildError, ConfigError } from './utils/errors.ts';
 import { setLogLevel, error as logError } from './utils/logger.ts';
 import { DEFAULTS, NETWORK } from './constants.ts';
-import { OutputFormat } from './types.ts';
+import { OutputFormat, type PdfEngineType } from './types.ts';
+import { getEngineInfo } from './build/formats/pdf-engine.ts';
 
 // Get package version
 const SOURCE_FOLDER = path.dirname(fileURLToPath(import.meta.url));
@@ -39,6 +40,10 @@ interface BuildCommandOptions {
   watch?: boolean;
   force?: boolean;
   profile?: boolean;
+  pdfEngine?: string;
+  princePath?: string;
+  docraptorApiKey?: string;
+  docraptorTestMode?: boolean;
 }
 
 interface PreviewCommandOptions {
@@ -68,6 +73,10 @@ program
   .option('-o, --output <path>', 'Output path (file for PDF, directory for HTML)')
   .option('--html-output <path>', 'Save intermediate HTML to specified path (for debugging)')
   .option('--format <format>', 'Output format: html or pdf (default: pdf)', 'pdf')
+  .option('--pdf-engine <engine>', 'PDF engine: auto, vivliostyle, prince, docraptor (default: auto)')
+  .option('--prince-path <path>', 'Path to Prince binary (if not in PATH)')
+  .option('--docraptor-api-key <key>', 'DocRaptor API key (or use DOCRAPTOR_API_KEY env var)')
+  .option('--docraptor-test-mode', 'Use DocRaptor test mode (watermarked, unlimited)')
   .option('--watch', 'Watch for file changes and automatically rebuild', false)
   .option('--force', 'Force overwrite existing output without validation', false)
   .option('--timeout <ms>', 'Timeout for PDF generation in milliseconds', String(DEFAULTS.TIMEOUT))
@@ -139,6 +148,23 @@ program
   });
 
 /**
+ * PDF engines command - Show available PDF engines
+ */
+program
+  .command('pdf-engines')
+  .description('Show available PDF engines and their status')
+  .option('--verbose', 'Enable verbose output', false)
+  .action(async (opts: { verbose: boolean }) => {
+    setupLogging(opts.verbose);
+    try {
+      const info = await getEngineInfo();
+      console.log(info);
+    } catch (error) {
+      handleError(error, opts.verbose);
+    }
+  });
+
+/**
  * Version and help
  */
 program
@@ -157,6 +183,9 @@ Examples:
   $ pagedmd build ./my-book                 # Build from specific directory
   $ pagedmd build chapter.md                # Build single file
   $ pagedmd build --output my-book.pdf      # Custom output path
+  $ pagedmd build --pdf-engine vivliostyle  # Use Vivliostyle for PDF
+  $ pagedmd build --pdf-engine prince       # Use Prince for PDF (if installed)
+  $ pagedmd pdf-engines                     # Show available PDF engines
 
 Custom CSS Configuration:
   Create manifest.yaml in your project directory:
@@ -168,6 +197,11 @@ Custom CSS Configuration:
     styles:
       - styles/custom.css
       - styles/extra.css
+    pdf:
+      engine: auto           # auto, vivliostyle, prince, docraptor
+      pressReady: true       # Generate press-ready PDF
+      cropMarks: true        # Add crop marks
+      bleed: 3mm             # Bleed area
 `
   );
 
@@ -227,6 +261,27 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
     buildOptions.watch = opts.watch || false;
     buildOptions.force = opts.force || false;
     buildOptions.profile = opts.profile || false;
+
+    // PDF engine options
+    if (opts.pdfEngine) {
+      const validEngines = ['auto', 'vivliostyle', 'prince', 'docraptor'];
+      if (!validEngines.includes(opts.pdfEngine)) {
+        throw new ConfigError(
+          `Invalid PDF engine: "${opts.pdfEngine}"`,
+          `Valid engines: ${validEngines.join(', ')}`
+        );
+      }
+      buildOptions.pdfEngine = opts.pdfEngine as PdfEngineType;
+    }
+    if (opts.princePath) {
+      buildOptions.princePath = opts.princePath;
+    }
+    if (opts.docraptorApiKey) {
+      buildOptions.docraptorApiKey = opts.docraptorApiKey;
+    }
+    if (opts.docraptorTestMode) {
+      buildOptions.docraptorTestMode = opts.docraptorTestMode;
+    }
 
     const inputPath = buildOptions.input || process.cwd();
 

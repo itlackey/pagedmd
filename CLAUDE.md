@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF using Prince XML typesetter with custom CSS styling for print-ready documents. The preview mode uses Vivliostyle for in-browser rendering.
+**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents. The default PDF engine is **Vivliostyle CLI** (bundled), with optional support for **Prince XML** (commercial, highest quality) and **DocRaptor API** (cloud-based Prince). The preview mode uses Vivliostyle for in-browser rendering.
 
 ## Architecture
 
@@ -33,17 +33,26 @@ The build pipeline uses a strategy pattern for different output formats:
    - Resolves all @import statements and inlines CSS at build time
 
 2. **Format Strategy Pattern** (`src/build/formats/`)
-   - **PdfFormatStrategy** (`pdf-format.ts`) - Generates PDF via Prince XML typesetter
+   - **PdfFormatStrategy** (`pdf-format.ts`) - Generates PDF via multi-engine system
    - **HtmlFormatStrategy** (`html-format.ts`) - Outputs standalone HTML
    - Each strategy implements `FormatStrategy` interface with `build()` and `validateOutput()` methods
 
-3. **Build Orchestration** (`src/build/build.ts`)
+3. **PDF Engine System** (`src/build/formats/pdf-engine.ts`)
+   - **Multi-engine support** with automatic detection and selection:
+     - **Vivliostyle CLI** (`vivliostyle-wrapper.ts`) - Bundled, always available (default)
+     - **Prince XML** (`prince-wrapper.ts`) - Optional, if installed locally
+     - **DocRaptor API** (`docraptor-wrapper.ts`) - Optional, cloud-based Prince
+   - **Auto-selection priority**: Prince > DocRaptor > Vivliostyle
+   - **Configuration via manifest.yaml or CLI flags**
+   - **Engine-specific options**: crop marks, bleed, press-ready, PDF/X profiles
+
+4. **Build Orchestration** (`src/build/build.ts`)
    - Loads configuration from manifest.yaml and CLI options
    - Processes markdown files to HTML
    - Delegates to appropriate format strategy
    - Handles asset copying and cleanup
 
-4. **Watch Mode** (`src/build/watch.ts`)
+5. **Watch Mode** (`src/build/watch.ts`)
    - File system monitoring using chokidar
    - Debounced change detection (500ms default)
    - Prevents overlapping builds with async lock
@@ -180,6 +189,14 @@ bun src/cli.ts build --output my-book.pdf
 
 # Build HTML instead of PDF
 bun src/cli.ts build --format html
+
+# Build with specific PDF engine
+bun src/cli.ts build --pdf-engine vivliostyle  # Use bundled Vivliostyle (default)
+bun src/cli.ts build --pdf-engine prince       # Use Prince XML (if installed)
+bun src/cli.ts build --pdf-engine docraptor    # Use DocRaptor API (needs API key)
+
+# Show available PDF engines
+bun src/cli.ts pdf-engines
 
 # Watch mode (auto-rebuild on changes)
 bun src/cli.ts build --watch
@@ -411,6 +428,77 @@ extensionsToPlugins(['ttrpg', 'dimmCity'])
 ```
 
 Both approaches use the same plugin loading pipeline internally.
+
+## PDF Engine System
+
+The PDF engine system provides flexible PDF generation with multiple backend options.
+
+### Available Engines
+
+1. **Vivliostyle CLI** (default, bundled)
+   - Open-source CSS Paged Media implementation
+   - No additional installation required
+   - Good quality output suitable for most use cases
+   - Supports press-ready PDF and crop marks
+
+2. **Prince XML** (optional, commercial)
+   - Industry-leading CSS Paged Media support
+   - Highest quality output for professional print
+   - Requires separate installation from https://www.princexml.com/
+   - Supports PDF/X profiles, ICC color profiles, CMYK output
+
+3. **DocRaptor API** (optional, cloud-based)
+   - Prince XML as a cloud service
+   - No local installation required
+   - Requires API key from https://docraptor.com/
+   - Test mode available (watermarked, unlimited)
+
+### Engine Selection Priority (auto mode)
+
+1. **Prince** - If installed locally (highest quality)
+2. **DocRaptor** - If API key configured
+3. **Vivliostyle** - Always available as fallback
+
+### Configuration
+
+**Via CLI:**
+```bash
+pagedmd build --pdf-engine vivliostyle
+pagedmd build --pdf-engine prince
+pagedmd build --pdf-engine prince --prince-path /opt/prince/bin/prince
+pagedmd build --pdf-engine docraptor --docraptor-api-key YOUR_KEY
+```
+
+**Via manifest.yaml:**
+```yaml
+title: My Book
+authors:
+  - Author Name
+pdf:
+  engine: auto           # auto, vivliostyle, prince, docraptor
+  princePath: /opt/prince/bin/prince  # Optional path to Prince
+  docraptor:
+    apiKey: YOUR_API_KEY  # Or use DOCRAPTOR_API_KEY env var
+    testMode: true        # Generate watermarked test PDFs
+  pressReady: true        # Generate press-ready PDF (Vivliostyle)
+  profile: PDF/X-1a       # PDF profile (Prince/DocRaptor)
+  cropMarks: true         # Add crop marks
+  bleed: 3mm              # Bleed area for printing
+```
+
+**Via environment variables:**
+```bash
+export DOCRAPTOR_API_KEY=your_api_key
+pagedmd build --pdf-engine docraptor
+```
+
+### Key Files
+
+- `src/build/formats/pdf-engine.ts` - Engine detection, selection, and unified interface
+- `src/build/formats/vivliostyle-wrapper.ts` - Vivliostyle CLI integration
+- `src/build/formats/prince-wrapper.ts` - Prince XML integration
+- `src/build/formats/docraptor-wrapper.ts` - DocRaptor API integration
+- `src/build/formats/pdf-format.ts` - PDF format strategy using engine system
 
 ## Development Workflow
 
