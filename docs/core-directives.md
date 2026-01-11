@@ -1,6 +1,6 @@
 # Core Directives Reference
 
-PagedMD provides powerful directives to control page layout and behavior. Directives are HTML comments that control Paged.js rendering.
+PagedMD provides powerful directives to control page layout and behavior. Directives are HTML comments that control print layout rendering.
 
 ## Page Templates
 

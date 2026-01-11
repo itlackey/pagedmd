@@ -1,6 +1,6 @@
 # pagedmd
 
-A powerful CLI tool and live preview UI for creating professional print-ready PDFs from markdown using [Paged.js](https://pagedjs.org). Write your content in markdown and let pagedmd handle the complex CSS Paged Media layout.
+A powerful CLI tool and live preview UI for creating professional print-ready PDFs from markdown. Write your content in markdown and let pagedmd handle the complex CSS Paged Media layout. Uses Prince XML for PDF generation and Vivliostyle for live preview.
 
 ## Features
 
@@ -348,7 +348,7 @@ pagedmd build [input] [options]
 
 **Options:**
 - `--output <file>` - Output file path (default: output.pdf)
-- `--format <type>` - Output format: `pdf`, `html`, or `preview` (default: pdf)
+- `--format <type>` - Output format: `pdf` or `html` (default: pdf)
 - `--watch` - Watch for changes and rebuild automatically
 
 **Examples:**
@@ -359,9 +359,6 @@ pagedmd build ./book --output book.pdf
 
 # Build standalone HTML
 pagedmd build --format html --output book.html
-
-# Build preview bundle (offline Paged.js viewer)
-pagedmd build --format preview
 
 # Watch mode
 pagedmd build --watch
@@ -401,7 +398,7 @@ pagedmd preview --no-watch
 1. **Markdown Processing** - Converts markdown to HTML with markdown-it
 2. **Plugin System** - Extensible directives and custom syntax
 3. **CSS Resolution** - Resolves and inlines all @import statements
-4. **Format Strategy** - Delegates to PDF, HTML, or Preview output strategy
+4. **Format Strategy** - Delegates to PDF or HTML output strategy
 
 ### Preview Mode
 
@@ -413,9 +410,8 @@ pagedmd preview --no-watch
 
 ### Output Formats
 
-- **PDF** - Renders via pagedjs-cli subprocess (Chromium headless)
-- **HTML** - Standalone HTML file (requires online Paged.js CDN)
-- **Preview** - Self-contained bundle with Paged.js polyfill (offline)
+- **PDF** - Renders via Prince XML typesetter for professional print quality
+- **HTML** - Standalone HTML file for web viewing
 
 ## Project Structure
 
@@ -466,34 +462,6 @@ bun test
 
 #### Installation Issues
 
-**Problem: Puppeteer 403 Errors During Installation**
-
-If you encounter 403 errors or Chrome download failures during `bun install`:
-
-1. **Set environment variables before installing:**
-   ```bash
-   # Copy the example environment file
-   cp .env.example .env
-
-   # Or manually export (Linux/macOS)
-   export PUPPETEER_SKIP_DOWNLOAD=true
-   export PUPPETEER_SKIP_CHROMIUM_DOWNLOAD=true
-
-   # Or set permanently (Windows PowerShell)
-   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_DOWNLOAD', 'true', 'User')
-   [System.Environment]::SetEnvironmentVariable('PUPPETEER_SKIP_CHROMIUM_DOWNLOAD', 'true', 'User')
-   ```
-
-2. **Install dependencies:**
-   ```bash
-   bun install
-   ```
-
-3. **Install Chrome manually (for PDF generation):**
-   - **Linux**: `sudo apt install google-chrome-stable`
-   - **macOS**: Download from https://www.google.com/chrome/
-   - **Windows**: Download from https://www.google.com/chrome/
-
 **Problem: Command Not Found After Installation**
 
 If `pagedmd` command isn't found after global installation:
@@ -511,18 +479,16 @@ source ~/.bashrc  # or ~/.zshrc
 
 #### Build Issues
 
-**Problem: PDF Generation Fails with "Chrome Not Found"**
+**Problem: PDF Generation Fails with "Prince Not Found"**
 
-Ensure Chrome/Chromium is installed and accessible:
+Ensure Prince XML is installed and accessible:
 
 ```bash
-# Verify Chrome installation
-which google-chrome-stable      # Linux
-which "Google Chrome"            # macOS
-where chrome.exe                 # Windows
+# Verify Prince installation
+which prince      # Linux/macOS
+where prince.exe  # Windows
 
-# If Chrome is in a custom location, set PUPPETEER_EXECUTABLE_PATH
-export PUPPETEER_EXECUTABLE_PATH="/path/to/chrome"
+# Install Prince from https://www.princexml.com/download/
 ```
 
 **Problem: Build Fails with "manifest.yaml not found"**
@@ -811,13 +777,14 @@ If you're still stuck:
    - Full error message
    - Steps to reproduce
 
-**Note**: The project's `package.json` already includes `config.puppeteer_skip_download=true`, so you may only need to install Chrome manually for PDF generation to work.
+**Note**: PDF generation requires Prince XML to be installed. See https://www.princexml.com/download/ for installation instructions.
 
 ### Contributing
 
 This project uses:
 - [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
-- [Paged.js](https://pagedjs.org) - CSS Paged Media polyfill
+- [Prince XML](https://www.princexml.com/) - Professional PDF typesetter
+- [Vivliostyle](https://vivliostyle.org/) - CSS Paged Media viewer for preview
 - [markdown-it](https://github.com/markdown-it/markdown-it) - Markdown parser
 
 Contributions are welcome! Please feel free to submit a Pull Request.

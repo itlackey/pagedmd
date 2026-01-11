@@ -54,10 +54,11 @@ pagedmd build
   curl -fsSL https://bun.sh/install | bash
   ```
 
-- **Chrome/Chromium** - Required for PDF generation (pagedjs-cli uses Puppeteer)
-  - macOS: Usually pre-installed
-  - Linux: `sudo apt install chromium-browser` or equivalent
-  - Windows: Install Google Chrome
+- **Prince XML** - Required for PDF generation
+  - Download from https://www.princexml.com/download/
+  - macOS: `brew install prince` or download installer
+  - Linux: Use .deb/.rpm package from website
+  - Windows: Download installer from website
 
 ### Install pagedmd
 
@@ -325,7 +326,7 @@ function hello() {
 ![Alt text](images/photo.jpg =800x)
 ```
 
-### Paged.js Directives
+### Layout Directives
 
 Control page layout with special directives:
 
@@ -577,7 +578,7 @@ pagedmd preview --no-watch
 - **Page Navigation** - First, Previous, Next, Last buttons
 - **View Modes** - Single page or two-column spread
 - **Zoom** - Zoom in/out/reset controls
-- **Debug Mode** - Show Paged.js debug info
+- **Debug Mode** - Show layout debug info
 - **Folder Switcher** - Browse and switch to different projects
 
 **Live Updates:**
@@ -641,9 +642,6 @@ pagedmd build --format pdf
 pagedmd build --format html
 # Result: output.html (self-contained)
 
-# Offline preview
-pagedmd build --format preview
-# Result: output.html (with Paged.js polyfill)
 ```
 
 ### Watch Mode

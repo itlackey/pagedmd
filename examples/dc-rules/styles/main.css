@@ -428,7 +428,8 @@ img {
         padding: 1rem;
     }
 
-    .pagedjs_page {
+    /* Page containers in Vivliostyle viewer */
+    [data-vivliostyle-page-container] {
         box-shadow: 0 0 20px rgba(0, 0, 0, 0.2);
         margin: 1rem auto;
     }

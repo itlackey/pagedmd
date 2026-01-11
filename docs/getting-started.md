@@ -1,6 +1,6 @@
 # Getting Started with PagedMD
 
-PagedMD converts markdown files into professional print PDFs using Paged.js. It's designed for creating books, manuals, rulebooks, and any print-first documents.
+PagedMD converts markdown files into professional print PDFs. It's designed for creating books, manuals, rulebooks, and any print-first documents. Uses Prince XML for PDF generation and Vivliostyle for live preview.
 
 ## Basic Workflow
 

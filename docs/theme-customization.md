@@ -1206,7 +1206,8 @@ h1, h2, h3 {
 
 ## Resources
 
-- **[Paged.js Documentation](https://pagedjs.org/documentation/)** - Comprehensive guide
+- **[Prince XML Documentation](https://www.princexml.com/doc/)** - PDF typesetter guide
+- **[Vivliostyle Documentation](https://docs.vivliostyle.org/)** - Preview engine guide
 - **[CSS Paged Media](https://www.w3.org/TR/css-page-3/)** - W3C specification
 - **[Print CSS Guide](https://www.smashingmagazine.com/2015/01/designing-for-print-with-css/)** - Smashing Magazine
 - **[User Guide](./user-guide.md)** - pagedmd usage guide

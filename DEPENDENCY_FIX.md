@@ -1,5 +1,7 @@
 # Dependency Installation Fix
 
+> **Note:** This document is historical. The project has since migrated from Paged.js/pagedjs-cli to Prince XML and Vivliostyle, resolving many of these dependency issues.
+
 ## Problem
 
 `bun install` was hanging indefinitely during dependency resolution when trying to install all dependencies at once.

@@ -295,7 +295,7 @@
  *   <div class='sidebar-content'>...</div>
  * </div>
  *
- * Note: Paged.js may not support CSS floats perfectly
+ * Note: CSS floats may have limited support in paged media
  * For guaranteed positioning, use grid layout above
  */
 .sidebar-inline-right {
@@ -812,7 +812,7 @@
    ======================================== */
 
 /**
- * Fallback for non-Paged.js rendering
+ * Fallback for environments without CSS Grid support
  * If CSS Grid not supported, stack sidebars
  */
 @supports not (display: grid) {

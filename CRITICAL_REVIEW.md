@@ -1,5 +1,7 @@
 # pagedmd: Critical End-to-End Review
 
+> **Note:** This review was conducted before the migration to Prince XML/Vivliostyle. Some architectural details may be outdated. See `docs/MIGRATION-REMOVE-PAGEDJS.md` for the migration history.
+
 **Review Date:** 2025-11-19
 **Project Version:** 0.1.0
 **Overall Grade:** A+ (Enterprise Grade) ✅
@@ -9,7 +11,7 @@
 
 ## Executive Summary
 
-**pagedmd** is a markdown-to-PDF converter using Paged.js for professional print layout. After comprehensive code review and implementation of 15 improvement items, the project has achieved **A+ Enterprise Grade** status with:
+**pagedmd** is a markdown-to-PDF converter using Prince XML for PDF generation and Vivliostyle for preview. After comprehensive code review and implementation of 15 improvement items, the project has achieved **A+ Enterprise Grade** status with:
 
 - **100% completion** of all code review items (15/15)
 - **90% test coverage** (383 tests across 21 test files)

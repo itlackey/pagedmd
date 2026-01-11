@@ -161,7 +161,7 @@ See [CONTRIBUTING.md - Security and Dependency Management](./CONTRIBUTING.md#sec
 **Mitigation**:
 - markdown-it used with safe defaults
 - HTML sanitization when needed
-- PDF output via Chromium sandboxing (pagedjs-cli)
+- PDF output via Prince XML (isolated subprocess)
 - Preview mode uses iframe isolation
 
 ### 4. Dependency Vulnerabilities
@@ -173,14 +173,14 @@ See [CONTRIBUTING.md - Security and Dependency Management](./CONTRIBUTING.md#sec
 - Prompt updates for security patches
 - Lock file integrity checks
 
-### 5. PDF Generation (pagedjs-cli)
+### 5. PDF Generation (Prince XML)
 
-**Risk**: Subprocess execution of headless Chrome
+**Risk**: Subprocess execution for PDF generation
 **Mitigation**:
-- Input validation before passing to pagedjs-cli
+- Input validation before passing to Prince
 - Timeout limits to prevent resource exhaustion
-- Sandboxed Chromium execution
-- No network access during PDF generation
+- No JavaScript execution in PDF generation
+- Output validation
 
 ## Security Features
 

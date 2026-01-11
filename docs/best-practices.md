@@ -432,7 +432,8 @@ Make your documents accessible:
 
 ## Resources
 
-- **Paged.js Docs:** https://pagedjs.org/documentation/
+- **Prince XML Docs:** https://www.princexml.com/doc/
+- **Vivliostyle Docs:** https://docs.vivliostyle.org/
 - **Markdown Guide:** https://www.markdownguide.org/
 - **Print Design:** Research book design principles
 - **CSS Paged Media:** https://www.w3.org/TR/css-page-3/

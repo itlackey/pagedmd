@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pagedmd** is a markdown-to-PDF converter using Paged.js for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents.
+**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF using Prince XML typesetter with custom CSS styling for print-ready documents. The preview mode uses Vivliostyle for in-browser rendering.
 
 ## Architecture
 
@@ -33,9 +33,8 @@ The build pipeline uses a strategy pattern for different output formats:
    - Resolves all @import statements and inlines CSS at build time
 
 2. **Format Strategy Pattern** (`src/build/formats/`)
-   - **PdfFormatStrategy** (`pdf-format.ts`) - Generates PDF via pagedjs-cli subprocess
+   - **PdfFormatStrategy** (`pdf-format.ts`) - Generates PDF via Prince XML typesetter
    - **HtmlFormatStrategy** (`html-format.ts`) - Outputs standalone HTML
-   - **PreviewFormatStrategy** (`preview-format.ts`) - Injects Paged.js polyfill for offline viewing
    - Each strategy implements `FormatStrategy` interface with `build()` and `validateOutput()` methods
 
 3. **Build Orchestration** (`src/build/build.ts`)
@@ -58,7 +57,7 @@ The build pipeline uses a strategy pattern for different output formats:
   - Reverse proxies preview content and HMR to Vite
   - Static file serving with security validation
 - **Vite Server** (auto-assigned port) - Development server
-  - Serves preview.html with Paged.js polyfill
+  - Serves preview.html with Vivliostyle viewer
   - Provides Hot Module Replacement (HMR) for instant updates
   - Handles asset bundling and transformations
 
@@ -77,7 +76,7 @@ Vite Server (auto port) → Serves preview.html + assets with HMR
 **Preview Workflow**:
 1. Creates temporary directory (`/tmp/pagedmd-preview-*`)
 2. Copies input files and assets to temp directory
-3. Generates HTML from markdown with Paged.js polyfill injected
+3. Generates HTML from markdown with Vivliostyle viewer integration
 4. Starts Vite server on auto-assigned port
 5. Starts Bun server on user-specified port with reverse proxy
 6. Watches source files for changes and regenerates HTML automatically
@@ -93,7 +92,7 @@ Vite Server (auto port) → Serves preview.html + assets with HMR
   - preview.html loaded in iframe with previewAPI exposed
   - Parent window delegates operations to iframe API
   - Event-driven page change notifications
-- **Paged.js Integration** (`src/assets/preview/scripts/interface.js`)
+- **Vivliostyle Integration** (`src/assets/preview/scripts/interface.js`)
   - Custom handler exposes window.previewAPI
   - Supports page navigation, view modes, zoom levels, debug mode
 
@@ -126,7 +125,7 @@ Vite Server (auto port) → Serves preview.html + assets with HMR
 **CLI** (`src/cli.ts`):
 ```bash
 # Build commands
-bun src/cli.ts build [input] --output [file] --format [pdf|html|preview] --watch
+bun src/cli.ts build [input] --output [file] --format [pdf|html] --watch
 
 # Preview commands
 bun src/cli.ts preview [input] --port [number] --open [boolean] --no-watch
@@ -158,9 +157,9 @@ bun src/cli.ts preview [input] --port [number] --open [boolean] --no-watch
 - `plugins/` - CSS for markdown extensions
 - `fonts/` - Web fonts
 - `preview/` - Preview mode assets:
-  - `scripts/` - paged.polyfill.js, interface.js, preview.js, toast.js
+  - `scripts/` - interface.js, preview.js, toast.js
   - `styles/` - interface.css, preview.css
-  - `index.html` - Preview UI shell
+  - `index.html` - Preview UI shell (uses Vivliostyle viewer)
 
 Assets are bundled into HTML using Bun's text loader (`with { type: 'text' }`) for self-contained output.
 
@@ -181,9 +180,6 @@ bun src/cli.ts build --output my-book.pdf
 
 # Build HTML instead of PDF
 bun src/cli.ts build --format html
-
-# Build preview (offline Paged.js viewer)
-bun src/cli.ts build --format preview
 
 # Watch mode (auto-rebuild on changes)
 bun src/cli.ts build --watch
@@ -459,7 +455,7 @@ To add a new output format:
 
 ### Code Structure Patterns
 
-**Strategy Pattern**: Used for build formats (PDF, HTML, Preview) - allows adding new formats without modifying core build logic
+**Strategy Pattern**: Used for build formats (PDF, HTML) - allows adding new formats without modifying core build logic
 
 **Configuration Cascade**: CLI > Manifest > Defaults - consistent override pattern throughout codebase
 
@@ -498,7 +494,7 @@ Preview mode uses a dual-process architecture:
 
 2. **Browser Client** (`src/assets/preview/scripts/`):
    - Parent window with toolbar UI (preview.js)
-   - Iframe containing preview.html with Paged.js
+   - Iframe containing preview.html with Vivliostyle viewer
    - previewAPI exposed on iframe window for page navigation
    - Event-driven updates (pageChanged, renderingComplete)
    - No state duplication - iframe is source of truth
@@ -515,11 +511,10 @@ Empty or omitted extensions array enables all plugins by default.
 
 ## Code Index
 
-A comprehensive code index with AST analysis and Paged.js documentation has been created in `.references/`:
+A comprehensive code index with AST analysis has been created in `.references/`:
 
 - `.references/pagedmd.index.md` - Main index with code structure and documentation links
 - `.references/pagedmd_structure.md` - Detailed AST analysis
-- `.references/external-docs/` - Scraped Paged.js documentation
 
 Use the index for efficient context gathering without loading entire files.
 - this project uses CC-BY license
