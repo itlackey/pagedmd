@@ -31,7 +31,8 @@ export interface Config {
 export enum OutputFormat {
   HTML = 'html',
   PDF = 'pdf',
-  PREVIEW = 'preview'
+  PREVIEW = 'preview',
+  PRINCE = 'prince'
 }
 
 /**
@@ -61,6 +62,11 @@ export interface BuildOptions {
 }
 
 /**
+ * Preview engine identifier
+ */
+export type PreviewEngineId = 'pagedjs' | 'vivliostyle';
+
+/**
  * Options for preview server (internal)
  * Used by preview-server.ts implementation
  */
@@ -77,6 +83,8 @@ export interface PreviewServerOptions  {
   noWatch: boolean;
   /** Automatically open browser (default: true) */
   openBrowser: boolean;
+  /** Preview engine to use (default: 'pagedjs') */
+  engine?: PreviewEngineId;
 }
 
 /**

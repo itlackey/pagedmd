@@ -19,6 +19,8 @@ import {
 } from './routes.ts';
 import type { ServerState, ClientTracker } from './server-context.ts';
 import { checkForAutoShutdown } from './lifecycle.ts';
+import { getAllEngines, getEngine } from './engines/index.ts';
+import type { PreviewEngineId } from '../types.ts';
 
 /**
  * Max request body size (1MB)
@@ -101,6 +103,35 @@ async function handleHeartbeat(
 }
 
 /**
+ * Handle /api/engine - Get current engine info
+ */
+function handleGetEngine(
+  res: ServerResponse,
+  state: ServerState
+): void {
+  const currentEngine = getEngine(state.currentEngine);
+  const availableEngines = getAllEngines().map(e => ({
+    id: e.id,
+    name: e.name,
+    version: e.version,
+    description: e.description,
+  }));
+
+  res.statusCode = 200;
+  res.setHeader('Content-Type', 'application/json');
+  res.end(JSON.stringify({
+    current: state.currentEngine,
+    currentInfo: currentEngine ? {
+      id: currentEngine.id,
+      name: currentEngine.name,
+      version: currentEngine.version,
+      description: currentEngine.description,
+    } : null,
+    available: availableEngines,
+  }));
+}
+
+/**
  * Handle /api/disconnect - Client disconnection tracking
  */
 async function handleDisconnect(
@@ -162,6 +193,12 @@ export function createApiMiddleware(
     // Handle /api/disconnect
     if (url.pathname === '/api/disconnect' && req.method === 'POST') {
       await handleDisconnect(req, res, clientTracker, shutdownFn);
+      return;
+    }
+
+    // Handle /api/engine - Get current engine info
+    if (url.pathname === '/api/engine' && req.method === 'GET') {
+      handleGetEngine(res, state);
       return;
     }
 

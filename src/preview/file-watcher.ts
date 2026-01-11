@@ -12,12 +12,14 @@ import { DEBOUNCE } from '../constants.ts';
 import { generateHtmlFromMarkdown } from '../markdown/markdown.ts';
 import { injectPagedJsPolyfill } from '../build/formats/preview-format.ts';
 import type { ServerState } from './server-context.ts';
+import type { PreviewEngineId } from '../types.ts';
+import { getEngineOrDefault } from './engines/index.ts';
 
 /**
  * Generate HTML from markdown and write to temporary directory
  *
  * Processes all markdown files in the input directory, generates HTML,
- * injects the Paged.js polyfill for browser-based pagination, and writes
+ * injects engine-specific scripts for browser-based pagination, and writes
  * the result to preview.html in the temp directory.
  *
  * This function is called during:
@@ -28,6 +30,7 @@ import type { ServerState } from './server-context.ts';
  * @param inputPath - Absolute path to the input directory containing markdown files
  * @param tempDir - Absolute path to the temporary directory where preview.html will be written
  * @param config - Resolved configuration object from ConfigurationManager
+ * @param engineId - Preview engine to use (default: 'pagedjs')
  * @returns Promise that resolves when HTML generation and writing is complete
  * @throws {Error} If markdown processing or file writing fails
  *
@@ -36,7 +39,8 @@ import type { ServerState } from './server-context.ts';
  * await generateAndWriteHtml(
  *   '/home/user/my-book',
  *   '/tmp/pagedmd-preview/abc123',
- *   configManager.getConfig()
+ *   configManager.getConfig(),
+ *   'pagedjs'
  * );
  * // Creates /tmp/pagedmd-preview/abc123/preview.html
  * ```
@@ -44,13 +48,19 @@ import type { ServerState } from './server-context.ts';
 export async function generateAndWriteHtml(
   inputPath: string,
   tempDir: string,
-  config: any
+  config: any,
+  engineId: PreviewEngineId = 'pagedjs'
 ): Promise<void> {
   const htmlContent = await generateHtmlFromMarkdown(inputPath, config);
-  const htmlWithPolyfill = injectPagedJsPolyfill(htmlContent);
+
+  // Get the preview engine and inject its scripts
+  const engine = getEngineOrDefault(engineId);
+  const defaultSettings = engine.getDefaultSettings();
+  const { html: processedHtml } = engine.injectEngineScripts(htmlContent, defaultSettings);
+
   const outputPath = path.join(tempDir, 'preview.html');
-  await Bun.write(outputPath, htmlWithPolyfill);
-  debug(`Generated preview.html in ${tempDir}`);
+  await Bun.write(outputPath, processedHtml);
+  debug(`Generated preview.html in ${tempDir} using ${engine.name} engine`);
 }
 
 /**
@@ -125,7 +135,7 @@ export function createFileWatcher(state: ServerState): FSWatcher {
         // Reinitialize config and regenerate
         await state.configManager.initialize();
         const updatedConfig = state.configManager.getConfig();
-        await generateAndWriteHtml(state.currentInputPath, state.tempDir, updatedConfig);
+        await generateAndWriteHtml(state.currentInputPath, state.tempDir, updatedConfig, state.currentEngine);
 
         info('Preview updated');
       } catch (err) {
