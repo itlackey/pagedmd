@@ -11,10 +11,10 @@
  *   - Browser-based rendering (Chromium)
  */
 
-import { spawn } from 'child_process';
-import path from 'path';
-import { BuildError } from '../../utils/errors.ts';
-import { debug, info } from '../../utils/logger.ts';
+import { spawn } from "child_process";
+import path from "path";
+import { BuildError } from "../../utils/errors.ts";
+import { debug, info } from "../../utils/logger.ts";
 
 /**
  * Vivliostyle PDF generation options
@@ -73,7 +73,7 @@ export interface VivliostylePdfOptions {
   /**
    * Preflight mode for print preparation
    */
-  preflight?: 'press-ready' | 'press-ready-local';
+  preflight?: "press-ready" | "press-ready-local";
 
   /**
    * Preflight options (e.g., 'gray-scale', 'enforce-outline')
@@ -103,7 +103,7 @@ export interface VivliostylePdfOptions {
   /**
    * Reading progression direction
    */
-  readingProgression?: 'ltr' | 'rtl';
+  readingProgression?: "ltr" | "rtl";
 
   /**
    * Verbose output
@@ -141,8 +141,8 @@ export interface VivliostylePdfResult {
  * Uses the locally installed package from node_modules
  */
 function getVivliostyleBin(): string {
-  // Use npx to run the locally installed vivliostyle
-  return 'npx';
+  // Source nvm and use newer Node version to support import assertions
+  return "bash";
 }
 
 /**
@@ -151,26 +151,39 @@ function getVivliostyleBin(): string {
  */
 export async function checkVivliostyleInstalled(): Promise<boolean> {
   return new Promise((resolve) => {
-    const checkProcess = spawn('npx', ['vivliostyle', '--version'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
+    const vivPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@vivliostyle",
+      "cli",
+      "dist",
+      "cli.js"
+    );
+    // Source nvm to use Node 22 which supports import assertions
+    const checkProcess = spawn(
+      "bash",
+      ["-lc", `source ~/.nvm/nvm.sh && nvm use 22 >/dev/null 2>&1 && node "${vivPath}" --version`],
+      {
+        stdio: ["ignore", "pipe", "pipe"],
+      }
+    );
 
-    let output = '';
-    checkProcess.stdout.on('data', (data) => {
+    let output = "";
+    checkProcess.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    checkProcess.on('close', (code) => {
+    checkProcess.on("close", (code) => {
       // Vivliostyle version output looks like "cli: 10.2.1\ncore: 2.39.1"
-      if (code === 0 && (output.includes('cli:') || output.includes('vivliostyle'))) {
-        debug(`Vivliostyle detected: ${output.trim().split('\n')[0]}`);
+      if (code === 0 && (output.includes("cli:") || output.includes("vivliostyle"))) {
+        debug(`Vivliostyle detected: ${output.trim().split("\n")[0]}`);
         resolve(true);
       } else {
         resolve(false);
       }
     });
 
-    checkProcess.on('error', () => {
+    checkProcess.on("error", () => {
       resolve(false);
     });
   });
@@ -181,23 +194,32 @@ export async function checkVivliostyleInstalled(): Promise<boolean> {
  */
 export async function getVivliostyleVersion(): Promise<string | null> {
   return new Promise((resolve) => {
-    const versionProcess = spawn('npx', ['vivliostyle', '--version'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const vivPath = path.join(
+      process.cwd(),
+      "node_modules",
+      "@vivliostyle",
+      "cli",
+      "dist",
+      "cli.js"
+    );
+    const cmd = `source ~/.nvm/nvm.sh && nvm use 22 >/dev/null 2>&1 && node "${vivPath}" --version`;
+    const versionProcess = spawn("bash", ["-lc", cmd], {
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
-    let output = '';
-    versionProcess.stdout.on('data', (data) => {
+    let output = "";
+    versionProcess.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    versionProcess.on('close', (code) => {
+    versionProcess.on("close", (code) => {
       if (code === 0) {
         // Parse "cli: 10.2.1\ncore: 2.39.1" format
         const cliMatch = output.match(/cli:\s*([\d.]+)/);
         if (cliMatch?.[1]) {
           resolve(`Vivliostyle CLI ${cliMatch[1]}`);
         } else {
-          const firstLine = output.trim().split('\n')[0];
+          const firstLine = output.trim().split("\n")[0];
           resolve(firstLine || null);
         }
       } else {
@@ -205,7 +227,7 @@ export async function getVivliostyleVersion(): Promise<string | null> {
       }
     });
 
-    versionProcess.on('error', () => {
+    versionProcess.on("error", () => {
       resolve(null);
     });
   });
@@ -219,107 +241,107 @@ function buildVivliostyleArgs(
   outputPath: string,
   options: VivliostylePdfOptions
 ): string[] {
-  const args: string[] = ['vivliostyle', 'build'];
+  const args: string[] = ["build"];
 
   // Input file
   args.push(inputPath);
 
   // Output file
-  args.push('-o', outputPath);
+  args.push("-o", outputPath);
 
   // Page size
   if (options.size) {
-    args.push('-s', options.size);
+    args.push("-s", options.size);
   }
 
   // Crop marks
   if (options.cropMarks) {
-    args.push('--crop-marks');
+    args.push("--crop-marks");
   }
 
   // Bleed
   if (options.bleed) {
-    args.push('--bleed', options.bleed);
+    args.push("--bleed", options.bleed);
   }
 
   // Crop offset
   if (options.cropOffset) {
-    args.push('--crop-offset', options.cropOffset);
+    args.push("--crop-offset", options.cropOffset);
   }
 
   // Custom CSS
   if (options.css) {
-    args.push('--css', options.css);
+    args.push("--css", options.css);
   }
 
   // Additional stylesheets
   if (options.stylesheets) {
     for (const stylesheet of options.stylesheets) {
-      args.push('--style', stylesheet);
+      args.push("--style", stylesheet);
     }
   }
 
   // User stylesheets
   if (options.userStylesheets) {
     for (const stylesheet of options.userStylesheets) {
-      args.push('--user-style', stylesheet);
+      args.push("--user-style", stylesheet);
     }
   }
 
   // Press-ready (PDF/X-1a)
   if (options.pressReady) {
-    args.push('--press-ready');
+    args.push("--press-ready");
   }
 
   // Preflight mode
   if (options.preflight) {
-    args.push('--preflight', options.preflight);
+    args.push("--preflight", options.preflight);
   }
 
   // Preflight options
   if (options.preflightOptions) {
     for (const opt of options.preflightOptions) {
-      args.push('--preflight-option', opt);
+      args.push("--preflight-option", opt);
     }
   }
 
   // Themes
   if (options.themes) {
     for (const theme of options.themes) {
-      args.push('-T', theme);
+      args.push("-T", theme);
     }
   }
 
   // Title
   if (options.title) {
-    args.push('--title', options.title);
+    args.push("--title", options.title);
   }
 
   // Author
   if (options.author) {
-    args.push('--author', options.author);
+    args.push("--author", options.author);
   }
 
   // Language
   if (options.language) {
-    args.push('-l', options.language);
+    args.push("-l", options.language);
   }
 
   // Reading progression
   if (options.readingProgression) {
-    args.push('--reading-progression', options.readingProgression);
+    args.push("--reading-progression", options.readingProgression);
   }
 
   // Timeout (in seconds)
   if (options.timeout) {
     // Convert ms to seconds for vivliostyle
     const timeoutSeconds = Math.ceil(options.timeout / 1000);
-    args.push('-t', String(timeoutSeconds));
+    args.push("-t", String(timeoutSeconds));
   }
 
   // Executable browser path
   if (options.executableBrowser) {
-    args.push('--executable-browser', options.executableBrowser);
+    args.push("--executable-browser", options.executableBrowser);
   }
 
   return args;
@@ -341,9 +363,7 @@ export async function generatePdfWithVivliostyle(
   // Check if Vivliostyle is available
   const isInstalled = await checkVivliostyleInstalled();
   if (!isInstalled) {
-    throw new BuildError(
-      'Vivliostyle CLI is not available. Try reinstalling pagedmd: bun install'
-    );
+    throw new BuildError("Vivliostyle CLI is not available. Try reinstalling pagedmd: bun install");
   }
 
   const startTime = Date.now();
@@ -351,26 +371,28 @@ export async function generatePdfWithVivliostyle(
   const timeoutMs = options.timeout || 300000;
 
   const args = buildVivliostyleArgs(inputPath, outputPath, { ...options, timeout: timeoutMs });
+  const vivPath = path.join(process.cwd(), "node_modules", "@vivliostyle", "cli", "dist", "cli.js");
+  const cmd = `source ~/.nvm/nvm.sh && nvm use 22 >/dev/null 2>&1 && node "${vivPath}" ${args.join(" ")}`;
 
-  debug(`Running: npx ${args.join(' ')}`);
+  debug(`Running: ${cmd}`);
 
   return new Promise((resolve, reject) => {
-    const vivliostyleProcess = spawn('npx', args, {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const vivliostyleProcess = spawn("bash", ["-lc", cmd], {
+      stdio: ["ignore", "pipe", "pipe"],
       cwd: path.dirname(inputPath),
     });
 
-    let stdout = '';
-    let stderr = '';
+    let stdout = "";
+    let stderr = "";
 
-    vivliostyleProcess.stdout.on('data', (data) => {
+    vivliostyleProcess.stdout.on("data", (data) => {
       stdout += data.toString();
       if (options.debug || options.verbose) {
         console.log(data.toString());
       }
     });
 
-    vivliostyleProcess.stderr.on('data', (data) => {
+    vivliostyleProcess.stderr.on("data", (data) => {
       stderr += data.toString();
       if (options.debug || options.verbose) {
         console.error(data.toString());
@@ -379,11 +401,11 @@ export async function generatePdfWithVivliostyle(
 
     // Timeout handling (internal, in case vivliostyle's own timeout fails)
     const timeoutId = setTimeout(() => {
-      vivliostyleProcess.kill('SIGTERM');
+      vivliostyleProcess.kill("SIGTERM");
       reject(new BuildError(`Vivliostyle PDF generation timed out after ${timeoutMs}ms`));
     }, timeoutMs + 10000); // Give extra 10s buffer beyond vivliostyle's timeout
 
-    vivliostyleProcess.on('close', (code) => {
+    vivliostyleProcess.on("close", (code) => {
       clearTimeout(timeoutId);
       const duration = Date.now() - startTime;
 
@@ -403,13 +425,13 @@ export async function generatePdfWithVivliostyle(
           pageCount,
         });
       } else {
-        reject(new BuildError(
-          `Vivliostyle PDF generation failed with code ${code}: ${stderr || stdout}`
-        ));
+        reject(
+          new BuildError(`Vivliostyle PDF generation failed with code ${code}: ${stderr || stdout}`)
+        );
       }
     });
 
-    vivliostyleProcess.on('error', (err) => {
+    vivliostyleProcess.on("error", (err) => {
       clearTimeout(timeoutId);
       reject(new BuildError(`Failed to run Vivliostyle: ${err.message}`));
     });

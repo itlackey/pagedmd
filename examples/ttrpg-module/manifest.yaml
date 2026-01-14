@@ -1,0 +1,8 @@
+title: "Fantasy Adventure Module"
+authors:
+  - "Jane Doe"
+  - "John Smith"
+extensions:
+  - ttrpg
+styles:
+  - themes/classic.css

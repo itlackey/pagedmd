@@ -7,7 +7,7 @@ files:
   - 02-chapter.md
   - 99-skill-trees.md
 extensions:
-  - dimm-city
+  - dimmCity
 styles:
   - plugins/dimm-city-components.css
   - themes/bw.css

@@ -1,5 +1,5 @@
 {
-  "name": "@dimm-city/pagedmd",
+  "name": "@itlackey/pagedmd",
   "version": "1.0.0",
   "description": "Markdown-to-PDF converter for professional print layout with Vivliostyle (bundled) and optional Prince XML support",
   "author": "itlackey",
@@ -16,11 +16,11 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/dimm-city/pagedmd.git"
+    "url": "https://github.com/itlackey/pagedmd.git"
   },
-  "homepage": "https://github.com/dimm-city/pagedmd#readme",
+  "homepage": "https://github.com/itlackey/pagedmd#readme",
   "bugs": {
-    "url": "https://github.com/dimm-city/pagedmd/issues"
+    "url": "https://github.com/itlackey/pagedmd/issues"
   },
   "module": "src/index.ts",
   "type": "module",
@@ -48,7 +48,8 @@
     "test:coverage": "bun test --coverage --coverage-reporter=text"
   },
   "engines": {
-    "bun": ">=1.0.0"
+    "bun": ">=1.0.0",
+    "node": ">=22.0.0"
   },
   "config": {
     "puppeteer_skip_download": "true"
@@ -68,11 +69,12 @@
     "@mdit/plugin-img-size": "^0.22.2",
     "@types/markdown-it-attrs": "^4.1.3",
     "@types/markdown-it-container": "^2.0.10",
-    "@vivliostyle/cli": "^10.2.1",
+    "@vivliostyle/cli": "^10.3.0",
     "@vivliostyle/viewer": "^2.39.1",
     "chokidar": "^4.0.3",
     "commander": "^12.1.0",
     "js-yaml": "^4.1.0",
+    "lcid": "3",
     "markdown-it": "^14.1.0",
     "markdown-it-anchor": "^9.2.0",
     "markdown-it-attrs": "^4.3.0",
