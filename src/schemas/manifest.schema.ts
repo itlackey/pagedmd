@@ -26,9 +26,9 @@ const PageSchema = z.object({
 /**
  * Markdown extension options
  */
-const ExtensionSchema = z.enum(['ttrpg', 'dimmCity', 'containers'], {
+const ExtensionSchema = z.enum(['ttrpg', 'dimmCity', 'dimm-city', 'containers'], {
   errorMap: () => ({
-    message: "Extension must be one of: 'ttrpg', 'dimmCity', 'containers'",
+    message: "Extension must be one of: 'ttrpg', 'dimmCity', 'dimm-city', 'containers'",
   }),
 });
 

@@ -1,13 +1,16 @@
 // Bun text loader imports - CSS content inlined at build time
 // Core styles (universal for any book)
-import coreVariables from '../../assets/core/core-variables.css' with { type: 'text' };
-import coreTypography from '../../assets/core/core-typography.css' with { type: 'text' };
-import coreLayout from '../../assets/core/core-layout.css' with { type: 'text' };
-import coreComponents from '../../assets/core/core-components.css' with { type: 'text' };
-
+import coreVariables from "../../assets/core/core-variables.css" with { type: "text" };
+import coreTypography from "../../assets/core/core-typography.css" with { type: "text" };
+import coreLayout from "../../assets/core/core-layout.css" with { type: "text" };
+import coreComponents from "../../assets/core/core-components.css" with { type: "text" };
 
 // Utility styles
-import bookReset from '../../assets/core/book-reset.css' with { type: 'text' };
+import bookReset from "../../assets/core/book-reset.css" with { type: "text" };
+
+// Plugin styles (TTRPG and Dimm City)
+import ttrpgComponents from "../../assets/plugins/ttrpg-components.css" with { type: "text" };
+import dimmCityComponents from "../../assets/plugins/dimm-city-components.css" with { type: "text" };
 
 /**
  * Default styles for DC Book CLI

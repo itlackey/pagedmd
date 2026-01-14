@@ -8,12 +8,12 @@
  * - Remote URLs (with integrity verification)
  */
 
-import path from 'path';
-import { pathToFileURL } from 'url';
-import type MarkdownIt from 'markdown-it';
-import { fileExists, readFile } from '../utils/file-utils.js';
-import { validateStaticPath } from '../utils/path-security.js';
-import { info, warn, debug } from '../utils/logger.js';
+import path from "path";
+import { pathToFileURL } from "url";
+import type MarkdownIt from "markdown-it";
+import { fileExists, readFile } from "../utils/file-utils.js";
+import { validateStaticPath } from "../utils/path-security.js";
+import { info, warn, debug } from "../utils/logger.js";
 import type {
   PluginConfig,
   PluginType,
@@ -24,12 +24,12 @@ import type {
   MarkdownItPlugin,
   PluginMetadata,
   PluginPackageConfig,
-} from '../types/plugin-types.js';
-import { PluginError, PluginSecurityError } from '../types/plugin-types.js';
+} from "../types/plugin-types.js";
+import { PluginError, PluginSecurityError } from "../types/plugin-types.js";
 
 // Import built-in plugins
-import ttrpgPlugin from './plugins/ttrpg-directives-plugin.js';
-import dimmCityPlugin from './plugins/dimm-city-plugin.js';
+import ttrpgPlugin from "./plugins/ttrpg-directives-plugin.js";
+import dimmCityPlugin from "./plugins/dimm-city-plugin.js";
 
 /**
  * Plugin loader class
@@ -53,8 +53,9 @@ export class PluginLoader {
 
     // Register built-in plugins (cast to MarkdownItPlugin to allow different option types)
     this.builtinPlugins = new Map<string, MarkdownItPlugin>([
-      ['ttrpg', ttrpgPlugin as MarkdownItPlugin],
-      ['dimmCity', dimmCityPlugin as MarkdownItPlugin],
+      ["ttrpg", ttrpgPlugin as MarkdownItPlugin],
+      ["dimmCity", dimmCityPlugin as MarkdownItPlugin],
+      ["dimm-city", dimmCityPlugin as MarkdownItPlugin], // Also accept kebab-case
     ]);
   }
 
@@ -89,19 +90,19 @@ export class PluginLoader {
       let loaded: LoadedPlugin;
 
       switch (type) {
-        case 'local':
+        case "local":
           loaded = await this.loadLocalPlugin(normalized);
           break;
 
-        case 'package':
+        case "package":
           loaded = await this.loadPackagePlugin(normalized);
           break;
 
-        case 'builtin':
+        case "builtin":
           loaded = await this.loadBuiltinPlugin(normalized);
           break;
 
-        case 'remote':
+        case "remote":
           loaded = await this.loadRemotePlugin(normalized);
           break;
 
@@ -123,7 +124,7 @@ export class PluginLoader {
       return loaded;
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);
-      const pluginName = normalized.name || normalized.path || normalized.url || 'unknown';
+      const pluginName = normalized.name || normalized.path || normalized.url || "unknown";
 
       if (this.strict) {
         throw new PluginError(
@@ -146,9 +147,7 @@ export class PluginLoader {
    * @returns Array of loaded plugins (nulls filtered out)
    */
   async loadPlugins(configs: PluginConfig[]): Promise<LoadedPlugin[]> {
-    const results = await Promise.all(
-      configs.map((config) => this.loadPlugin(config))
-    );
+    const results = await Promise.all(configs.map((config) => this.loadPlugin(config)));
 
     // Filter out nulls and sort by priority (higher first)
     return results
@@ -160,7 +159,7 @@ export class PluginLoader {
    * Normalize plugin configuration
    */
   private normalizeConfig(config: PluginConfig): NormalizedPluginConfig {
-    if (typeof config === 'string') {
+    if (typeof config === "string") {
       return {
         type: undefined,
         path: config,
@@ -189,35 +188,30 @@ export class PluginLoader {
    */
   private detectType(config: NormalizedPluginConfig): PluginType {
     // Local file - starts with ./ or ../ or ends with .js/.ts
-    if (
-      config.path?.match(/^\.\.?\//) ||
-      config.path?.match(/\.(m?js|ts)$/)
-    ) {
-      return 'local';
+    if (config.path?.match(/^\.\.?\//) || config.path?.match(/\.(m?js|ts)$/)) {
+      return "local";
     }
 
     // Remote URL
-    if (config.url || config.path?.startsWith('http')) {
-      return 'remote';
+    if (config.url || config.path?.startsWith("http")) {
+      return "remote";
     }
 
     // Built-in plugin
     if (config.name && this.builtinPlugins.has(config.name)) {
-      return 'builtin';
+      return "builtin";
     }
 
     // Default to npm package
-    return 'package';
+    return "package";
   }
 
   /**
    * Load plugin from local file
    */
-  private async loadLocalPlugin(
-    config: NormalizedPluginConfig
-  ): Promise<LoadedPlugin> {
+  private async loadLocalPlugin(config: NormalizedPluginConfig): Promise<LoadedPlugin> {
     if (!config.path) {
-      throw new Error('Local plugin requires path');
+      throw new Error("Local plugin requires path");
     }
 
     const pluginPath = path.resolve(this.baseDir, config.path);
@@ -227,16 +221,16 @@ export class PluginLoader {
       const validation = await validateStaticPath(pluginPath, this.baseDir);
       if (!validation.valid) {
         throw new PluginSecurityError(
-          validation.error || 'Path validation failed',
+          validation.error || "Path validation failed",
           config.path,
-          'local'
+          "local"
         );
       }
     } catch (error) {
       throw new PluginSecurityError(
         error instanceof Error ? error.message : String(error),
         config.path,
-        'local'
+        "local"
       );
     }
 
@@ -251,24 +245,23 @@ export class PluginLoader {
 
     try {
       // Dynamic import (Bun supports .ts files natively)
+      // Always add cache-busting query for local plugins to ensure fresh content
+      // This is important for development and testing where plugin files can change
       const fileUrl = pathToFileURL(pluginPath).href;
-      const module: PluginModule = await import(fileUrl);
+      const cacheBustUrl = `${fileUrl}?t=${Date.now()}`;
+      const module: PluginModule = await import(cacheBustUrl);
 
       // Extract plugin function
       const pluginFn = module.default || module.plugin;
-      if (!pluginFn || typeof pluginFn !== 'function') {
-        throw new Error(
-          'Plugin must export a default function or named "plugin" function'
-        );
+      if (!pluginFn || typeof pluginFn !== "function") {
+        throw new Error('Plugin must export a default function or named "plugin" function');
       }
 
       // Extract metadata
       const metadata: PluginMetadata = {
-        name:
-          module.metadata?.name ||
-          path.basename(pluginPath, path.extname(pluginPath)),
-        version: module.metadata?.version || '0.0.0',
-        description: module.metadata?.description || 'Local plugin',
+        name: module.metadata?.name || path.basename(pluginPath, path.extname(pluginPath)),
+        version: module.metadata?.version || "0.0.0",
+        description: module.metadata?.description || "Local plugin",
         author: module.metadata?.author,
         homepage: module.metadata?.homepage,
         keywords: module.metadata?.keywords,
@@ -279,11 +272,12 @@ export class PluginLoader {
         plugin: pluginFn,
         css: module.css,
         metadata,
-        type: 'local',
+        type: "local",
         priority: config.priority,
+        options: config.options,
       };
     } catch (error) {
-      if (error instanceof Error && error.message.includes('export')) {
+      if (error instanceof Error && error.message.includes("export")) {
         throw new Error(
           `Failed to load plugin ${config.path}: ${error.message}\n` +
             `Make sure your plugin exports a default function:\n` +
@@ -297,22 +291,16 @@ export class PluginLoader {
   /**
    * Load plugin from npm package
    */
-  private async loadPackagePlugin(
-    config: NormalizedPluginConfig
-  ): Promise<LoadedPlugin> {
+  private async loadPackagePlugin(config: NormalizedPluginConfig): Promise<LoadedPlugin> {
     if (!config.name) {
-      throw new Error('Package plugin requires name');
+      throw new Error("Package plugin requires name");
     }
 
     const packageName = config.name;
 
     try {
       // Resolve package path
-      const packagePath = path.join(
-        this.baseDir,
-        'node_modules',
-        packageName
-      );
+      const packagePath = path.join(this.baseDir, "node_modules", packageName);
 
       if (!(await fileExists(packagePath))) {
         throw new Error(
@@ -323,7 +311,7 @@ export class PluginLoader {
       }
 
       // Load package.json
-      const pkgJsonPath = path.join(packagePath, 'package.json');
+      const pkgJsonPath = path.join(packagePath, "package.json");
       const pkgJsonContent = await readFile(pkgJsonPath);
       const pkgJson = JSON.parse(pkgJsonContent);
 
@@ -339,24 +327,18 @@ export class PluginLoader {
       }
 
       // Import plugin
-      const pluginEntryPoint = path.join(
-        packagePath,
-        pkgJson.main || 'index.js'
-      );
+      const pluginEntryPoint = path.join(packagePath, pkgJson.main || "index.js");
       const fileUrl = pathToFileURL(pluginEntryPoint).href;
       const module: PluginModule = await import(fileUrl);
 
       // Extract plugin function
       const pluginFn = module.default || module.plugin;
-      if (!pluginFn || typeof pluginFn !== 'function') {
-        throw new Error(
-          `Package ${packageName} does not export a valid plugin function`
-        );
+      if (!pluginFn || typeof pluginFn !== "function") {
+        throw new Error(`Package ${packageName} does not export a valid plugin function`);
       }
 
       // Load CSS if specified in package.json
-      const pagedmdConfig: PluginPackageConfig | undefined =
-        pkgJson.pagedmd;
+      const pagedmdConfig: PluginPackageConfig | undefined = pkgJson.pagedmd;
       let css: string | undefined;
 
       if (pagedmdConfig?.css) {
@@ -370,11 +352,8 @@ export class PluginLoader {
       const metadata: PluginMetadata = {
         name: packageName,
         version: pkgJson.version,
-        description: pkgJson.description || '',
-        author:
-          typeof pkgJson.author === 'string'
-            ? pkgJson.author
-            : pkgJson.author?.name,
+        description: pkgJson.description || "",
+        author: typeof pkgJson.author === "string" ? pkgJson.author : pkgJson.author?.name,
         homepage: pkgJson.homepage,
         keywords: pkgJson.keywords,
         ...module.metadata,
@@ -385,8 +364,9 @@ export class PluginLoader {
         plugin: pluginFn,
         css,
         metadata,
-        type: 'package',
+        type: "package",
         priority: pagedmdConfig?.priority ?? config.priority,
+        options: config.options,
       };
     } catch (error) {
       throw new Error(
@@ -398,40 +378,41 @@ export class PluginLoader {
   /**
    * Load built-in plugin
    */
-  private async loadBuiltinPlugin(
-    config: NormalizedPluginConfig
-  ): Promise<LoadedPlugin> {
+  private async loadBuiltinPlugin(config: NormalizedPluginConfig): Promise<LoadedPlugin> {
     if (!config.name) {
-      throw new Error('Built-in plugin requires name');
+      throw new Error("Built-in plugin requires name");
     }
 
     const pluginName = config.name;
     const plugin = this.builtinPlugins.get(pluginName);
 
     if (!plugin) {
-      const available = Array.from(this.builtinPlugins.keys()).join(', ');
+      const available = Array.from(this.builtinPlugins.keys()).join(", ");
       throw new Error(
-        `Unknown built-in plugin: ${pluginName}\n` +
-          `Available built-in plugins: ${available}`
+        `Unknown built-in plugin: ${pluginName}\n` + `Available built-in plugins: ${available}`
       );
     }
 
     // Try to load CSS for built-in plugins
     let css: string | undefined;
-    const cssFileName = `${pluginName.toLowerCase()}-components.css`;
-    const cssPath = path.join(
-      this.baseDir,
-      'src/assets/plugins',
-      cssFileName
-    );
 
-    if (await fileExists(cssPath)) {
-      css = await readFile(cssPath);
+    // Try multiple file name variations (handle both "dimm-city" and "dimmCity")
+    const possibleCssFiles = [
+      `${pluginName.toLowerCase()}-components.css`,
+      `${pluginName.toLowerCase()}-components.css`.replace(/-/g, ""), // Handle "dimmcity" → "dimmcity"
+    ];
+
+    for (const cssFileName of possibleCssFiles) {
+      const cssPath = path.join(this.baseDir, "src/assets/plugins", cssFileName);
+      if (await fileExists(cssPath)) {
+        css = await readFile(cssPath);
+        break;
+      }
     }
 
     const metadata: PluginMetadata = {
       name: pluginName,
-      version: '1.0.0',
+      version: "1.0.0",
       description: `Built-in ${pluginName} plugin`,
     };
 
@@ -440,21 +421,20 @@ export class PluginLoader {
       plugin,
       css,
       metadata,
-      type: 'builtin',
+      type: "builtin",
       priority: config.priority,
+      options: config.options,
     };
   }
 
   /**
    * Load plugin from remote URL
    */
-  private async loadRemotePlugin(
-    config: NormalizedPluginConfig
-  ): Promise<LoadedPlugin> {
+  private async loadRemotePlugin(config: NormalizedPluginConfig): Promise<LoadedPlugin> {
     throw new Error(
-      'Remote plugins are not yet supported.\n' +
-        'This feature will be added in a future version.\n' +
-        'For now, please use local files or npm packages.'
+      "Remote plugins are not yet supported.\n" +
+        "This feature will be added in a future version.\n" +
+        "For now, please use local files or npm packages."
     );
   }
 
@@ -464,7 +444,7 @@ export class PluginLoader {
    */
   private satisfiesVersion(actual: string, expected: string): boolean {
     // Remove leading ^ or ~
-    const cleanExpected = expected.replace(/^[~^]/, '');
+    const cleanExpected = expected.replace(/^[~^]/, "");
 
     // For now, just do simple version comparison
     // This should be replaced with proper semver checking

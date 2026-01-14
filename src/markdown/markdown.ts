@@ -8,12 +8,7 @@ import ttrpgDirectivesPlugin from "./plugins/ttrpg-directives-plugin.ts";
 import coreDirectivesPlugin from "./core/core-directives-plugin.ts";
 import { BuildError, ConfigError } from "../utils/errors.ts";
 import path from "path";
-import {
-  readFile,
-  fileExists,
-  isDirectory,
-  readDirectory,
-} from "../utils/file-utils.ts";
+import { readFile, fileExists, isDirectory, readDirectory } from "../utils/file-utils.ts";
 import { debug, info, warn } from "../utils/logger.ts";
 import { type ResolvedConfig } from "../config/config-state.ts";
 import { resolveImports } from "../utils/css-utils.ts";
@@ -37,9 +32,7 @@ export interface MarkdownExtensionOptions {
 /**
  * Convert manifest.extensions array to MarkdownExtensionOptions
  */
-export function parseExtensionOptions(
-  extensions?: string[],
-): MarkdownExtensionOptions {
+export function parseExtensionOptions(extensions?: string[]): MarkdownExtensionOptions {
   if (!extensions || extensions.length === 0) {
     // Default: all extensions enabled
     return { ttrpg: false, dimmCity: false, containers: true };
@@ -64,16 +57,14 @@ export function parseExtensionOptions(
 export async function loadPluginsFromConfig(
   inputPath: string,
   pluginConfigs: PluginConfig[] | undefined,
-  verbose: boolean = false,
+  verbose: boolean = false
 ): Promise<LoadedPlugin[]> {
   if (!pluginConfigs || pluginConfigs.length === 0) {
     return [];
   }
 
   // Get base directory for plugin resolution
-  const baseDir = (await isDirectory(inputPath))
-    ? inputPath
-    : path.dirname(inputPath);
+  const baseDir = (await isDirectory(inputPath)) ? inputPath : path.dirname(inputPath);
 
   // Create plugin loader
   const loader = createPluginLoader(baseDir, {
@@ -87,7 +78,7 @@ export async function loadPluginsFromConfig(
   const loadedPlugins = await loader.loadPlugins(pluginConfigs);
 
   debug(
-    `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`,
+    `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`
   );
 
   return loadedPlugins;
@@ -101,16 +92,14 @@ export async function loadPluginsFromConfig(
  * @param extensions - Legacy extensions array (e.g., ['ttrpg', 'dimmCity'])
  * @returns Plugin configurations for built-in plugins
  */
-export function extensionsToPlugins(
-  extensions: string[] | undefined,
-): PluginConfig[] {
+export function extensionsToPlugins(extensions: string[] | undefined): PluginConfig[] {
   if (!extensions || extensions.length === 0) {
     return [];
   }
 
   return extensions.map((ext) => ({
     name: ext,
-    type: 'builtin' as const,
+    type: "builtin" as const,
     enabled: true,
   }));
 }
@@ -124,24 +113,29 @@ export function extensionsToPlugins(
  * @param loadedPlugins - Array of loaded plugins to apply
  * @returns Configured MarkdownIt instance
  */
-export function createMarkdownEngineWithPlugins(
-  loadedPlugins: LoadedPlugin[],
-): MarkdownIt {
+export function createMarkdownEngineWithPlugins(loadedPlugins: LoadedPlugin[]): MarkdownIt {
   const options: Options = {
     html: true,
   };
 
-  // Start with base markdown instance
-  let md = new MarkdownIt(options)
-    .use(imgSize)
-    .use(anchors)
-    .use(coreDirectivesPlugin);
+  // Start with base markdown instance with core plugins
+  let md = new MarkdownIt(options).use(imgSize).use(anchors).use(coreDirectivesPlugin);
+
+  // Register container syntax BEFORE other plugins (part of base engine)
+  // These are always available regardless of which plugins are loaded
+  md = md
+    .use(container, "page", {
+      validate: (params: string) => {
+        const match = params.trim().split(/\s+/)[0] || "";
+        return !match.startsWith("::");
+      },
+    })
+    .use(container, "wrapper")
+    .use(container, "container");
 
   // Apply loaded plugins in priority order (already sorted by PluginLoader)
   for (const loadedPlugin of loadedPlugins) {
-    debug(
-      `Applying plugin: ${loadedPlugin.metadata.name} (priority: ${loadedPlugin.priority})`,
-    );
+    debug(`Applying plugin: ${loadedPlugin.metadata.name} (priority: ${loadedPlugin.priority})`);
     md.use(loadedPlugin.plugin, loadedPlugin.options || {});
   }
 
@@ -165,9 +159,7 @@ export function createMarkdownEngineWithPlugins(
  * @param extensions - Optional configuration to enable/disable specific extensions
  * @deprecated Use createMarkdownEngineWithPlugins() with manifest.plugins instead
  */
-export function createPagedMarkdownEngine(
-  extensions?: MarkdownExtensionOptions,
-): MarkdownIt {
+export function createPagedMarkdownEngine(extensions?: MarkdownExtensionOptions): MarkdownIt {
   // Default: all extensions enabled
   const enableTtrpg = extensions?.ttrpg !== false;
   const enableDimmCity = extensions?.dimmCity !== false;
@@ -176,10 +168,7 @@ export function createPagedMarkdownEngine(
     html: true,
   };
 
-  let markdownLib = new MarkdownIt(options)
-    .use(imgSize)
-    .use(anchors)
-    .use(coreDirectivesPlugin);
+  let markdownLib = new MarkdownIt(options).use(imgSize).use(anchors).use(coreDirectivesPlugin);
 
   // Legacy container syntax (optional)
   if (enableContainers || enableDimmCity || enableTtrpg) {
@@ -244,10 +233,7 @@ function getGlobalMarkdownEngine(): MarkdownIt {
  * Configure markdown engine rules based on extension options
  * Uses enable/disable API to toggle rules without recreating the parser
  */
-function configureMarkdownRules(
-  md: MarkdownIt,
-  extensions?: MarkdownExtensionOptions,
-): void {
+function configureMarkdownRules(md: MarkdownIt, extensions?: MarkdownExtensionOptions): void {
   const enableTtrpg = extensions?.ttrpg !== false;
   const enableDimmCity = extensions?.dimmCity !== false;
 
@@ -287,7 +273,7 @@ function configureMarkdownRules(
  */
 export async function processMarkdownFiles(
   inputPath: string,
-  config: ResolvedConfig,
+  config: ResolvedConfig
 ): Promise<{
   content: Array<{ slug: string; html: string }>;
   pluginCSS: string[];
@@ -300,11 +286,7 @@ export async function processMarkdownFiles(
     info(`Loading ${config.plugins.length} plugin(s)...`);
 
     // Load plugins from configuration
-    const loadedPlugins = await loadPluginsFromConfig(
-      inputPath,
-      config.plugins,
-      config.verbose,
-    );
+    const loadedPlugins = await loadPluginsFromConfig(inputPath, config.plugins, config.verbose);
 
     // Create markdown engine with loaded plugins
     md = createMarkdownEngineWithPlugins(loadedPlugins);
@@ -315,7 +297,7 @@ export async function processMarkdownFiles(
       .map((p) => `/* Plugin: ${p.metadata.name} v${p.metadata.version} */\n${p.css}`);
 
     info(
-      `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`,
+      `Loaded ${loadedPlugins.length} plugin(s): ${loadedPlugins.map((p) => p.metadata.name).join(", ")}`
     );
   }
   // Backward compatibility: use extensions (legacy approach)
@@ -324,11 +306,7 @@ export async function processMarkdownFiles(
     const pluginConfigs = extensionsToPlugins(config.extensions);
 
     if (pluginConfigs.length > 0) {
-      const loadedPlugins = await loadPluginsFromConfig(
-        inputPath,
-        pluginConfigs,
-        config.verbose,
-      );
+      const loadedPlugins = await loadPluginsFromConfig(inputPath, pluginConfigs, config.verbose);
 
       md = createMarkdownEngineWithPlugins(loadedPlugins);
 
@@ -389,9 +367,7 @@ export async function processMarkdownFiles(
         content.push({ slug, html });
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error);
-        throw new BuildError(
-          `Failed to process markdown file ${file.path}: ${message}`,
-        );
+        throw new BuildError(`Failed to process markdown file ${file.path}: ${message}`);
       }
     }
   } else {
@@ -404,9 +380,7 @@ export async function processMarkdownFiles(
       content.push({ slug, html });
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error);
-      throw new BuildError(
-        `Failed to process markdown file ${inputPath}: ${message}`,
-      );
+      throw new BuildError(`Failed to process markdown file ${inputPath}: ${message}`);
     }
   }
 
@@ -416,7 +390,7 @@ export async function processMarkdownFiles(
 export async function generateHtmlFromMarkdown(
   inputPath: string,
   inputConfig: ResolvedConfig,
-  options?: { includePreviewAssets?: boolean },
+  options?: { includePreviewAssets?: boolean }
 ) {
   // Load manifest from input directory
   info(`Generating HTML from markdown in: ${inputPath}`);
@@ -433,9 +407,7 @@ export async function generateHtmlFromMarkdown(
   info(`Processed ${content.length} markdown file(s)`);
 
   // STAGE 6: Create HTML with concatenated articles
-  const htmlBody = content
-    .map((c) => `<article id="${c.slug}">${c.html}</article>`)
-    .join("\n");
+  const htmlBody = content.map((c) => `<article id="${c.slug}">${c.html}</article>`).join("\n");
 
   // STAGE 7: Build head content with CSS cascade
   /**
@@ -480,9 +452,7 @@ export async function generateHtmlFromMarkdown(
   // Two-tier resolution: bundled styles (themes/, plugins/) -> user custom styles
   // This matches preview mode behavior - all @imports are resolved and inlined
   if (config.styles && config.styles.length > 0) {
-    const inputDir = (await isDirectory(inputPath))
-      ? inputPath
-      : path.dirname(inputPath);
+    const inputDir = (await isDirectory(inputPath)) ? inputPath : path.dirname(inputPath);
 
     // Get bundled assets directory
     // When running from dist/cli.js: assets are in dist/assets/
@@ -491,9 +461,7 @@ export async function generateHtmlFromMarkdown(
     const thisFileDir = import.meta.dir;
     const assetsInSameDir = path.join(thisFileDir, "assets");
     const assetsInParent = path.join(thisFileDir, "../assets");
-    const bundledStylesDir = existsSync(assetsInSameDir)
-      ? assetsInSameDir
-      : assetsInParent;
+    const bundledStylesDir = existsSync(assetsInSameDir) ? assetsInSameDir : assetsInParent;
 
     for (const styleFile of config.styles) {
       let resolvedPath: string | null = null;
@@ -531,7 +499,7 @@ export async function generateHtmlFromMarkdown(
           const errorList = result.errors.map((e) => `  - ${e}`).join("\n");
           throw new ConfigError(
             `Failed to resolve CSS imports in ${styleFile}:\n${errorList}` +
-              "Check that all imported CSS files exist and there are no circular imports",
+              "Check that all imported CSS files exist and there are no circular imports"
           );
         }
 

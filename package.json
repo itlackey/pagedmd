@@ -36,7 +36,8 @@
   ],
   "scripts": {
     "build": "bun build src/cli.ts --target bun --external vite --outdir=dist/ && cp -r src/assets dist/",
-    "preview": "bun run src/cli.ts examples/dc-rules --verbose --debug",
+    "preview-old": "bun run src/cli.ts examples/dc-rules --verbose --debug",
+    "preview": "npx @vivliostyle/cli preview  ./examples/html/index.html",
     "prepublishOnly": "bun run build",
     "lint": "eslint . --ext .ts,.tsx",
     "lint:fix": "eslint . --ext .ts,.tsx --fix",

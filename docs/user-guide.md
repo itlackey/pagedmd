@@ -1144,7 +1144,7 @@ See [README.md - Troubleshooting](../README.md#troubleshooting) for common issue
 
 - **[Theme Customization Guide](./theme-customization.md)** - Deep dive into CSS styling
 - **[Examples](../examples/)** - Sample projects to learn from
-- **[Architecture](../ARCHITECTURE.md)** - How pagedmd works internally
+- **[Architecture](./ARCHITECTURE.md)** - How pagedmd works internally
 - **[Contributing](../CONTRIBUTING.md)** - Help improve pagedmd
 
 ---

@@ -34,21 +34,21 @@ describe('Markdown Processing - Edge Cases', () => {
     const mdPath = join(testDir, 'empty.md');
     await writeFile(mdPath, '');
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.slug).toBe('empty');
-    expect(result[0]?.html).toBeDefined();
+    expect(content).toHaveLength(1);
+    expect(content[0]?.slug).toBe('empty');
+    expect(content[0]?.html).toBeDefined();
   });
 
   test('handles markdown with only whitespace', async () => {
     const mdPath = join(testDir, 'whitespace.md');
     await writeFile(mdPath, '   \n\n  \t\n   ');
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.html).toBeDefined();
+    expect(content).toHaveLength(1);
+    expect(content[0]?.html).toBeDefined();
   });
 
   test('handles markdown with HTML entities', async () => {
@@ -58,10 +58,10 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Entities\n\n&lt; &gt; &amp; &quot; &copy; &trade;'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('&lt;');
-    expect(result[0]?.html).toContain('&amp;');
+    expect(content[0]?.html).toContain('&lt;');
+    expect(content[0]?.html).toContain('&amp;');
   });
 
   test('handles markdown with Unicode characters', async () => {
@@ -71,11 +71,11 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Unicode\n\n日本語 • Español • Emoji: 🎲 ⚔️ 🛡️'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('日本語');
-    expect(result[0]?.html).toContain('Español');
-    expect(result[0]?.html).toContain('🎲');
+    expect(content[0]?.html).toContain('日本語');
+    expect(content[0]?.html).toContain('Español');
+    expect(content[0]?.html).toContain('🎲');
   });
 
   test('handles markdown with nested formatting', async () => {
@@ -85,10 +85,10 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Nested\n\n**Bold with _italic_ inside**\n\n_Italic with **bold** inside_'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<strong>');
-    expect(result[0]?.html).toContain('<em>');
+    expect(content[0]?.html).toContain('<strong>');
+    expect(content[0]?.html).toContain('<em>');
   });
 
   test('handles markdown with deeply nested lists', async () => {
@@ -105,11 +105,11 @@ describe('Markdown Processing - Edge Cases', () => {
 `
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<ul>');
-    expect(result[0]?.html).toContain('<li>');
-    expect(result[0]?.html).toContain('Level 5');
+    expect(content[0]?.html).toContain('<ul>');
+    expect(content[0]?.html).toContain('<li>');
+    expect(content[0]?.html).toContain('Level 5');
   });
 
   test('handles markdown with mixed list types', async () => {
@@ -127,10 +127,10 @@ describe('Markdown Processing - Edge Cases', () => {
 `
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<ol>');
-    expect(result[0]?.html).toContain('<ul>');
+    expect(content[0]?.html).toContain('<ol>');
+    expect(content[0]?.html).toContain('<ul>');
   });
 
   test('handles markdown with inline HTML', async () => {
@@ -140,10 +140,10 @@ describe('Markdown Processing - Edge Cases', () => {
       '# HTML\n\nThis is <span class="custom">inline HTML</span> in markdown.'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<span class="custom">');
-    expect(result[0]?.html).toContain('inline HTML');
+    expect(content[0]?.html).toContain('<span class="custom">');
+    expect(content[0]?.html).toContain('inline HTML');
   });
 
   test('handles markdown with blockquotes', async () => {
@@ -153,20 +153,20 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Quotes\n\n> This is a quote\n> \n> With multiple lines'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<blockquote>');
-    expect(result[0]?.html).toContain('This is a quote');
+    expect(content[0]?.html).toContain('<blockquote>');
+    expect(content[0]?.html).toContain('This is a quote');
   });
 
   test('handles markdown with horizontal rules (converted to page break by core directives)', async () => {
     const mdPath = join(testDir, 'hr.md');
     await writeFile(mdPath, '# Section 1\n\n---\n\n# Section 2');
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
     // Core directives convert --- to page breaks
-    expect(result[0]?.html).toContain('page-break');
+    expect(content[0]?.html).toContain('page-break');
   });
 
   test('handles markdown with standard image syntax', async () => {
@@ -176,11 +176,11 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Images\n\n![Alt text](image.png)'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('<img');
-    expect(result[0]?.html).toContain('alt="Alt text"');
-    expect(result[0]?.html).toContain('image.png');
+    expect(content[0]?.html).toContain('<img');
+    expect(content[0]?.html).toContain('alt="Alt text"');
+    expect(content[0]?.html).toContain('image.png');
   });
 
   test('handles markdown with footnotes (if supported)', async () => {
@@ -190,11 +190,11 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Text\n\nHere is a sentence[^1].\n\n[^1]: This is a footnote.'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
     // Basic check - footnote syntax should be in output somewhere
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html.length).toBeGreaterThan(0);
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html.length).toBeGreaterThan(0);
   });
 
   test('handles markdown with task lists', async () => {
@@ -204,10 +204,10 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Tasks\n\n- [x] Completed task\n- [ ] Incomplete task'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html).toContain('task');
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html).toContain('task');
   });
 
   test('handles markdown with escaped characters', async () => {
@@ -217,11 +217,11 @@ describe('Markdown Processing - Edge Cases', () => {
       '# Escaped\n\n\\* Not a list item\n\n\\# Not a heading'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
     // Should contain literal asterisk and hash, not HTML elements
-    expect(result[0]?.html).toContain('*');
-    expect(result[0]?.html).toContain('#');
+    expect(content[0]?.html).toContain('*');
+    expect(content[0]?.html).toContain('#');
   });
 
   test('handles very long content efficiently', async () => {
@@ -236,11 +236,11 @@ describe('Markdown Processing - Edge Cases', () => {
     await writeFile(mdPath, `# Long Document\n\n${longContent}`);
 
     const startTime = Date.now();
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
     const duration = Date.now() - startTime;
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.html.length).toBeGreaterThan(10000);
+    expect(content).toHaveLength(1);
+    expect(content[0]?.html.length).toBeGreaterThan(10000);
     expect(duration).toBeLessThan(5000); // Should complete in under 5 seconds
   });
 
@@ -264,11 +264,11 @@ Two-page spread content.
 `
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('chapter');
+    expect(content[0]?.html).toContain('chapter');
     // Directives should be processed and removed or converted to HTML
-    expect(result[0]?.html).toBeDefined();
+    expect(content[0]?.html).toBeDefined();
   });
 
   test('handles invalid core directive syntax gracefully', async () => {
@@ -278,10 +278,10 @@ Two-page spread content.
       '# Content\n\n@invalid:directive\n\nThis should still process.'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html).toContain('This should still process');
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html).toContain('This should still process');
   });
 
   test('handles TTRPG stat blocks with edge cases', async () => {
@@ -303,10 +303,10 @@ Two-page spread content.
       extensions: ['ttrpg'],
     };
 
-    const result = await processMarkdownFiles(testDir, configWithTtrpg);
+    const { content } = await processMarkdownFiles(testDir, configWithTtrpg);
 
-    expect(result[0]?.html).toContain('HP');
-    expect(result[0]?.html).toContain('100');
+    expect(content[0]?.html).toContain('HP');
+    expect(content[0]?.html).toContain('100');
   });
 
   test('handles multiple extensions enabled together', async () => {
@@ -328,10 +328,10 @@ Two-page spread content.
       extensions: ['ttrpg', 'dimmCity'],
     };
 
-    const result = await processMarkdownFiles(testDir, configWithMultiple);
+    const { content } = await processMarkdownFiles(testDir, configWithMultiple);
 
-    expect(result[0]?.html).toContain('HP');
-    expect(result[0]?.html).toContain('TechD');
+    expect(content[0]?.html).toContain('HP');
+    expect(content[0]?.html).toContain('TechD');
   });
 
   test('handles markdown attrs plugin syntax', async () => {
@@ -341,11 +341,11 @@ Two-page spread content.
       '# Heading {#custom-id .custom-class}\n\nParagraph {.highlight}'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
     // Check if attrs are processed (markdown-it-attrs plugin)
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html.length).toBeGreaterThan(0);
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html.length).toBeGreaterThan(0);
   });
 
   test('handles markdown with anchor links', async () => {
@@ -355,10 +355,10 @@ Two-page spread content.
       '# Section One\n\nSee [Section Two](#section-two)\n\n# Section Two\n\nContent'
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('href');
-    expect(result[0]?.html).toContain('section');
+    expect(content[0]?.html).toContain('href');
+    expect(content[0]?.html).toContain('section');
   });
 
   test('handles relative and absolute image paths', async () => {
@@ -375,21 +375,21 @@ No path: ![None](image.png)
 `
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toContain('./assets/image.png');
-    expect(result[0]?.html).toContain('/assets/image.png');
-    expect(result[0]?.html).toContain('image.png');
+    expect(content[0]?.html).toContain('./assets/image.png');
+    expect(content[0]?.html).toContain('/assets/image.png');
+    expect(content[0]?.html).toContain('image.png');
   });
 
   test('handles special characters in filenames', async () => {
     const mdPath = join(testDir, 'file-with-special_chars-2024.md');
     await writeFile(mdPath, '# Special File\n\nContent');
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result).toHaveLength(1);
-    expect(result[0]?.slug).toBe('file-with-special_chars-2024');
+    expect(content).toHaveLength(1);
+    expect(content[0]?.slug).toBe('file-with-special_chars-2024');
   });
 
   test('handles markdown with definition lists (if supported)', async () => {
@@ -407,10 +407,10 @@ Term 2
 `
     );
 
-    const result = await processMarkdownFiles(testDir, config);
+    const { content } = await processMarkdownFiles(testDir, config);
 
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html).toContain('Term');
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html).toContain('Term');
   });
 
   test('generates HTML with proper DOCTYPE and structure', async () => {
@@ -447,9 +447,9 @@ This is a warning
       extensions: ['containers'],
     };
 
-    const result = await processMarkdownFiles(testDir, configWithContainers);
+    const { content } = await processMarkdownFiles(testDir, configWithContainers);
 
-    expect(result[0]?.html).toBeDefined();
-    expect(result[0]?.html.length).toBeGreaterThan(0);
+    expect(content[0]?.html).toBeDefined();
+    expect(content[0]?.html.length).toBeGreaterThan(0);
   });
 });

@@ -435,7 +435,7 @@ When starting work on an item:
 - **Code Review:** [CODE_REVIEW.md](./CODE_REVIEW.md)
 - **Contributing Guide:** [CONTRIBUTING.md](./CONTRIBUTING.md)
 - **Security Policy:** [SECURITY.md](./SECURITY.md)
-- **Architecture:** [ARCHITECTURE.md](./ARCHITECTURE.md)
+- **Architecture:** [ARCHITECTURE.md](./docs/ARCHITECTURE.md)
 - **GitHub Issues:** [GITHUB_ISSUES.md](./GITHUB_ISSUES.md)
 
 ---
