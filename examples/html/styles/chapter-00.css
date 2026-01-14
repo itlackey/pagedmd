@@ -1,0 +1,86 @@
+.cover,
+.back-cover {
+    page: full;
+    margin: 0;
+}
+
+img[alt=fg-cover] {
+    height: 11in;
+    width: 8.5in;
+    display: block;
+}
+
+.credits {
+    page: full;
+    margin: var(--default-gap);
+}
+
+.toc {
+
+    page: full;
+    margin: var(--default-gap);
+    margin-inline: var(--page-margin);
+    columns: 2;
+    column-gap: var(--page-margin);
+}
+
+.toc>div {
+    --aug-border-all: 1px;
+    padding: var(--small-gap);
+}
+
+.toc h1,
+.toc hr {
+    column-span: all;
+    margin-bottom: var(--default-gap);
+}
+
+.toc h2 {
+    font-size: var(--base-font-size);
+    margin-bottom: var(--small-gap);
+    text-wrap: balance;
+}
+
+.toc p {
+    margin: 0;
+}
+
+.toc ol {
+    margin-bottom: var(--default-gap);
+}
+
+.toc ul li {
+   line-height: 1.8;
+}
+
+img[alt=founders-house] {
+    z-index: -1;
+}
+
+img[alt="pivot-bomb"] {
+    position: absolute;
+    bottom: 0.1in;
+    right: 0.1in;
+    right: var(--page-margin);
+    height: 5in;
+
+}
+
+img[alt="intro-image"] {
+    float: right;
+    height: 4.5in;
+    shape-outside: url('../images/chapter-00/neonrabbit.png');
+    shape-rendering: crispEdges;
+    margin-top: 0.5in;
+    /*transform: rotateY(180deg); */
+}
+
+.page.intro {
+    page: clean;
+}
+
+img[alt="cat-portrait"] {
+    object-fit: cover;
+    height: 6.95in;
+    margin: -20px;
+}

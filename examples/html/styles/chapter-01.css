@@ -1,0 +1,172 @@
+img[alt="01-street-sign"] {
+    float: right;
+    height: 6in;
+    shape-outside: url("../images/chapter-01/street-sign-01.png");
+    shape-rendering: crispEdges;
+    shape-margin: 0.25in;
+    margin-top: 0.75in;
+}
+
+p:has(img[alt=adventure-party]) {
+    margin: 0;
+}
+
+img[alt=adventure-party] {
+    height: 11in;
+}
+
+.things-you-need h3 {
+    font-size: 2em;
+}
+
+img[alt="things-you-need"] {
+    height: 4in;
+    margin: auto;
+    display: flex;
+}
+
+img[alt="01-rabbit-portrait"] {
+    max-width: 8in;
+    aspect-ratio: 3/2;
+    object-fit: cover;
+    object-position: bottom center;
+    margin: -25px;
+}
+
+
+img[alt="01-cat-dm"] {
+    height: auto;
+    width: 100%;
+    object-fit: cover;
+    bottom: 0in;
+}
+
+
+.action-img {
+
+    background-image: url('../images/chapter-01/rat-vs-rabbit.png');
+
+    position: absolute;
+    bottom: 0in;
+
+    height: 3.5in;
+    width: 100%;
+
+    background-repeat: no-repeat;
+    background-size: contain;
+    background-color: transparent;
+    background-position-x: 1.5in;
+}
+
+.rolling-die {
+    height: 10.4in;
+    width: 3.75in;
+    /* columns: 2;
+    column-gap: var(--page-margin);  */
+    --container-background-color: var(--page-background-color);
+}
+
+.rolling-die img {
+    width: auto;
+    position: absolute;
+    bottom: 0;
+    left: 0.25in;
+    height: 3in;
+}
+
+.rolling-die .sidebar {
+    position: absolute;
+    padding: 0;
+    padding-inline: 0.25in;
+    height: 100%;
+    width: 3.25in;
+    right: 0;
+
+}
+
+.rolling-die .sidebar h3 {
+    margin-top: var(--small-gap);
+    font-size: 0.9em;
+}
+
+.outcome-table {
+    margin-top: var(--default-gap);
+    --container-background-color: var(--page-background-color);
+}
+
+.outcome-table h3 {
+    margin-bottom: var(--default-gap);
+    border-bottom: 0px;
+}
+
+.outcome-table table tr>td:first-of-type {
+    color: var(--secondary-color);
+}
+
+img[alt="tea-party"] {
+    float: right;
+    height: 2.75in;
+    shape-outside: url('../images/chapter-01/tea-party2.png');
+}
+
+
+.wrapper:has(img[alt=proxy]) {
+    width: 8in;
+    height: 6in;
+    --aug-tl: 0.5in;
+    --aug-tr: 0.5in;
+    --aug-bl: 0.5in;
+    --aug-br: 0.5in;
+}
+
+img[alt=proxy] {
+    max-width: 9in;
+    margin: -20px;
+    margin-top: -2.25in;
+}
+
+img[alt="distances-image"] {
+    object-fit: cover;
+    object-position: top;
+    height: 3in;
+    width: 7.25in;
+    bottom: 0in;
+    shape-outside: url('../images/chapter-01/distance-storyboard.png');
+
+}
+
+.upgrading img {
+    position: absolute;
+    bottom: 0px;
+    left: 50%;
+    height: 8.25in;
+    display: block;
+    transform: translateX(-50%) translateY(100px);
+}
+
+.dream-economy img {
+    float: right;
+    height: 3.25in;
+}
+
+img[alt=dream-together] {
+    float: right;
+    height: 4in;
+    shape-outside: url('../images/chapter-01/dream-together.png');
+}
+
+
+
+.wrapper:has(img[alt="Tech District"]) {
+
+    height: 4.25in;
+    width: 7.75in;
+    --aug-tl: 0px;
+
+}
+
+img[alt="Tech District"] {
+    max-width: 7.75in; 
+    /* object-fit: contain; */
+    object-position: center bottom;
+}

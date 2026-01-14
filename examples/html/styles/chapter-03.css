@@ -1,0 +1,81 @@
+#chapter-03 .monoverse {
+    height: 6.25in;
+    shape-outside: url('../images/chapter-03/nonamesplat.png');
+}
+
+#chapter-03 .watch {
+    height: 1.75in;
+}
+
+img.augmerc {
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    height: 7.9in;
+    display: block;
+    transform: translateX(-50%) translateY(50px);
+}
+
+img.gutterdruid {
+    float: right;
+    width: 3.75in;
+    padding-right: 0.1in;
+    shape-outside: url('../images/chapter-03/gutterdruid.png');
+}
+
+img.gutterdruid::after {
+    clear: both;
+}
+
+img.technosorcerer {
+    height: 7in;
+    shape-margin: var(--small-gap);
+}
+
+img.wirephreak {
+    width: 4in;
+    padding-right: 0.1in;
+    shape-outside: url('../images/chapter-03/wirefreak.png');
+}
+
+.page.cosmology h4 {
+    font-size: larger;
+    color: var(--secondary-color);
+    border-bottom: thin var(--accent-color1) solid;
+}
+
+/* terms */
+#chapter-03 .page .terms .item {
+    --container-border-color: none;
+    break-inside: avoid;
+}
+
+#chapter-03 .page .terms .item strong {
+    color: var(--secondary-color);
+}
+
+#chapter-03 .page .terms .item p {
+    padding-block: var(--small-gap);
+}
+
+#chapter-03 .page .terms .item p:first-of-type {
+    padding-block: 0;
+    border-bottom: 1px var(--accent-color1) solid;
+}
+
+#chapter-03 .page.learning-paths .learning-path {
+    page-break-before: avoid;
+}
+
+#chapter-03 .battle-buddy img {
+    height: 4.5in;
+    float: right;
+}
+
+#chapter-03 .page.time .item strong {
+    color: var(--accent-color2-dark);
+}
+
+#chapter-03 .page.time .item li strong {
+    color: var(--accent-color2-darker);
+}

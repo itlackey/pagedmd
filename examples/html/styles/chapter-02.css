@@ -1,0 +1,255 @@
+/*chapter 02*/
+
+#chapter-02 {
+    --container-path: var(--shape-top-right-clip);
+}
+
+.call-home {
+    padding-top: 4in;
+}
+
+.call-home-img {
+    position: absolute;
+    top: -0.45in;
+    left: -0.5in;
+    height: 4.75in;
+    width: 8.65in;
+    /* z-index: -1; */
+    background-image: url("../images/chapter-02/the-archive-district.png");
+    --container-border-size: 1px;
+    background-position-y: -0.65in;
+    background-repeat: no-repeat;
+    background-size: cover;
+
+}
+
+.citizen-file img {
+    float: left;
+    width: 4.5in;
+    shape-outside: url('../images/chapter-02/daggercat.png');
+}
+
+.citizen-intro img {
+    height: 6.75in;
+    shape-outside: url('../images/chapter-02/monkey-gunner.png');
+}
+
+.init {
+    page: blood-border;
+
+    padding: var(--page-margin);
+
+}
+
+#chapter-02 img[alt=generalist] {
+    height: 6.75in;
+    shape-outside: url('../images/chapter-02/the-generalist.png');
+}
+
+/* .init-background{
+    position: absolute;
+    top: -0.45in;
+    left: -0.45in;
+    right: -0.45in;
+    bottom: -0.45in;
+    background-image: url('../images/blood-border.png');
+    background-repeat: no-repeat;
+    background-size: cover;
+} */
+.ideal,
+.flaw {
+    --container-path: var(--shape-left-chevron);
+    --item-container-height: 1.4in;
+    --item-font-size: var(--small-font-size);
+    --container-border-color: transparent;
+    --container-header-color: var(--primary-color);
+    --container-header-background-color: var(--accent-color2);
+}
+
+.flaw {
+    --item-container-height: 1in;
+}
+
+.ideal .header {
+    page-break-after: always;
+    height: 8in;
+    width: 100%;
+}
+
+.flaw .header {
+    page-break-after: avoid;
+    height: 1.6in;
+    width: 100%;
+}
+
+.ideal .wrapper.items h3,
+.flaw .wrapper.items h3 {
+    font-size: 0.75em;
+    height: 3.25em;
+    display: flex;
+    text-align: center;
+    justify-content: center;
+    align-items: center;
+}
+
+.ideal .wrapper.items h3+p,
+.flaw .wrapper.items h3+p {
+    padding-inline: 2em !important;
+    padding-bottom: 0;
+}
+
+.useful-items h3,
+.tech-cybernetics h3,
+.blasters h3 {
+    text-align: center;
+    text-transform: capitalize;
+    border-bottom: 1px solid var(--secondary-color);
+    margin-bottom: var(--default-gap);
+}
+
+img[alt=scavenger] {
+    height: 4.75in;
+    shape-outside: url('../images/chapter-02/scavenger.png');
+}
+
+/* useful items */
+
+.useful-items>.grid {
+    display: grid;
+    gap: 1em;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr 1fr;
+}
+
+.useful-items .aug {
+    --aug-border: initial;
+    --aug-clip-tl1: initial;
+    --aug-tl: 25px;
+    --aug-tl1: var(--aug-tl);    
+    --aug-clip-tr1: initial;
+    --aug-tr: 25px;
+    --aug-tr1: var(--aug-tr);
+    page-break-inside: avoid;
+}
+
+.useful-items .aug h4 {
+    color: var(--container-header-color);
+    font-size: medium;
+    text-align: center;
+    padding-top: 0.5em;
+    background-color: var(--container-header-background-color);
+}
+
+.useful-items .aug p {
+    padding-inline: 1em;
+    font-size: var(--small-font-size);
+}
+
+.useful-items.useful-items.second-page .aug {
+    height: auto;
+    padding-bottom: 1em;
+    margin-bottom: 1em;
+}
+
+
+
+.useful-items.useful-items.second-page img {
+    height: 2.5in;
+}
+
+/* tech-cybernetics */
+.tech-cybernetics {
+    --container-path: var(--shape-top-left-clip);
+    --item-container-height: max-content;
+    --item-font-size: var(--small-font-size);
+}
+
+.tech-cybernetics>.grid {
+    display: grid;
+    column-gap: var(--default-gap);
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+
+}
+
+.tech-cybernetics>.grid>.right-side {
+    grid-area: 1 / 2 / 3 / 3;
+    height: 8.75in;
+}
+
+.tech-cybernetics img {
+    height: 2.5in;
+    bottom: var(--default-gap);
+    shape-outside: url('../images/chapter-02/gorilla.png');
+}
+
+.tech-cybernetics.tech-cybernetics.second-page>.grid {
+    display: grid;
+    column-gap: var(--default-gap);
+    grid-template-columns: repeat(2, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+}
+
+
+/*blasters*/
+
+.blasters {
+    --container-path: var(--shape-top-left-clip);
+    --item-container-height: auto;
+    --item-font-size: var(--small-font-size);
+}
+
+.blasters .wrapper.item {
+    margin-bottom: calc(var(--default-gap) - 8px);
+}
+
+/* .blasters.second-page {
+    margin-top: 0.475in;
+} */
+
+.weapon-01 {
+    text-align: center;
+    height: 1.75in;
+}
+
+.weapon-01 img {
+    padding: 0.1in;
+    height: 1.25in;
+    text-align: center;
+    /* 
+    -epubx-shape-outside: url("../images/chapter-00/street-sign-01.png");
+    shape-outside: url("../images/chapter-00/street-sign-01.png"); */
+}
+
+img[alt=large-weapon] {
+    position: absolute;
+    background-color: transparent;
+    padding: 0.1in;
+    height: 6in;
+    margin-inline: auto;
+    bottom: 0in;
+    background-position: top top;
+    background-size: contain;
+    transform: translateX(-50%) translateY(10px) rotate(0deg);
+}
+
+.large-weapon span {
+
+    background-position: top top;
+    background-size: contain;
+}
+
+.wrapper.item.schraphose table {
+    margin-bottom: 0.225in;
+    /* var(--small-gap); */
+}
+
+/* .blasters .bottom-center img {
+    -epubx-shape-outside: url("../images/chapter-00/street-sign-01.png");
+    shape-outside: url("../images/chapter-00/street-sign-01.png");
+} */
+
+img[alt=grenades]{
+    height: 3in;
+    float: left;
+}
