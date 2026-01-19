@@ -1,0 +1,81 @@
+# DriveThruRPG 8.5" x 11" US Letter Premium Color Preset
+#
+# Use this preset for TTRPG books printed on DriveThruRPG with:
+# - 8.5" x 11" US Letter trim size (classic RPG format)
+# - Premium color interior (highest quality)
+# - Softcover perfect bound
+#
+# This matches the format of major TTRPG publishers.
+# Compatible with: DriveThruRPG, Lightning Source, IngramSpark
+
+title: "Your Premium TTRPG Sourcebook"
+authors:
+  - "Your Name"
+
+description: |
+  A professional-quality TTRPG sourcebook with full-color artwork.
+
+# Page format for DTRPG US Letter premium color
+format:
+  # US Letter - the standard for D&D, Pathfinder, etc.
+  size: 8.5in 11in
+
+  # Standard POD bleed
+  bleed: 0.125in
+
+  # Professional margins for RPG layout
+  margins:
+    top: 0.75in
+    bottom: 0.75in
+    inside: 0.875in # Generous gutter for 200+ page books
+    outside: 0.625in
+
+# PDF settings for highest quality
+pdf:
+  # Prince XML produces highest quality if available
+  engine: auto
+
+  # No crop marks for POD
+  cropMarks: false
+
+  bleed: 0.125in
+
+  # Optional: Enable for professional print shops
+  # pressReady: true
+  # profile: PDF/X-1a
+
+# Styles for premium TTRPG printing
+styles:
+  # - themes/ttrpg-print.css
+  # - plugins/stat-blocks.css
+  # - styles/custom.css
+
+# TTRPG extensions
+plugins:
+  - ttrpg # Stat blocks, dice notation, cross-refs
+
+
+# Notes for premium color printing:
+# - Highest color quality available on DTRPG
+# - Best for art-heavy books, full-page illustrations
+# - Higher cost per page than standard color
+#
+# Professional TTRPG layout tips:
+# - Use consistent grid system (12 or 16 column)
+# - Stat blocks need breathing room (padding)
+# - Maps and art can bleed off page edges
+# - Running headers/footers aid navigation
+# - Chapter opener pages can be more decorative
+# - Consider reader spread vs printer spread
+#
+# Color management:
+# - Work in sRGB or CMYK from the start
+# - Embed ICC profiles
+# - Rich black: C:40 M:40 Y:40 K:100
+# - Total ink coverage: max 270%
+# - Test dark images - detail can be lost in print
+#
+# Page count optimization:
+# - US Letter books: divisible by 4 is optimal
+# - Blank pages added at back if needed
+# - Consider page count when pricing

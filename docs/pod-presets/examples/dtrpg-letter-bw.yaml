@@ -1,0 +1,62 @@
+# DriveThruRPG 8.5" x 11" US Letter Black & White Preset
+#
+# Use this preset for TTRPG books printed on DriveThruRPG with:
+# - 8.5" x 11" US Letter trim size (classic RPG format)
+# - Black & white interior (lowest cost)
+# - Softcover perfect bound
+#
+# This is the traditional D&D/Pathfinder book format.
+# Compatible with: DriveThruRPG, Lightning Source, IngramSpark
+
+title: "Your RPG Rulebook"
+authors:
+  - "Your Name"
+
+description: |
+  A classic-format TTRPG rulebook in US Letter size.
+
+# Page format optimized for DTRPG US Letter B&W
+format:
+  # US Letter trim size - classic RPG format
+  size: 8.5in 11in
+
+  # Standard POD bleed
+  bleed: 0.125in
+
+  # Generous margins for easy reading
+  # Two-column layout works well at this size
+  margins:
+    top: 0.75in
+    bottom: 0.75in
+    inside: 0.75in # Larger gutter for big books
+    outside: 0.625in
+
+# PDF generation settings
+pdf:
+  engine: auto
+  cropMarks: false
+  bleed: 0.125in
+
+# Styles optimized for B&W printing
+styles:
+  # Use B&W optimized styles - no color gradients
+  # - themes/ttrpg-print-bw.css
+
+  # Your custom styles
+  # - styles/custom.css
+
+# Markdown extensions
+plugins:
+  - ttrpg
+
+# Notes for B&W printing:
+# - Convert all images to grayscale for consistent results
+# - Use high-contrast designs (no light grays that may not print well)
+# - Rich black for headers: use true black in CSS
+# - Consider using textures/patterns instead of color fills
+# - Line art reproduces better than photos in B&W
+#
+# Gutter recommendations for US Letter:
+# - 100-200 pages: 0.625" - 0.75"
+# - 200-400 pages: 0.75" - 0.875"
+# - 400+ pages: 0.875" - 1.0"

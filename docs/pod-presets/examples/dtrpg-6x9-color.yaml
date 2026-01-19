@@ -1,0 +1,74 @@
+# DriveThruRPG 6" x 9" Premium Color Preset
+#
+# Use this preset for TTRPG books printed on DriveThruRPG with:
+# - 6" x 9" US Trade trim size
+# - Premium color interior
+# - Softcover perfect bound
+#
+# Compatible with: DriveThruRPG, Lightning Source, IngramSpark
+
+title: "Your Book Title"
+authors:
+  - "Your Name"
+
+description: |
+  A brief description of your book for metadata purposes.
+
+# Page format optimized for DTRPG 6" x 9" color
+format:
+  # Trim size (final book dimensions after cutting)
+  size: 6in 9in
+
+  # Standard POD bleed - required for all DriveThruRPG books
+  bleed: 0.125in
+
+  # Margins - safe zones for content
+  # Gutter (inside) adjusted for ~200 page book
+  margins:
+    top: 0.5in
+    bottom: 0.5in
+    inside: 0.5in # Gutter - increase for 300+ pages
+    outside: 0.5in
+
+# PDF generation settings
+pdf:
+  # Auto-selects best available engine (Prince > DocRaptor > Vivliostyle)
+  engine: auto
+
+  # DTRPG does not want crop marks in the PDF
+  cropMarks: false
+
+  # Match the format bleed setting
+  bleed: 0.125in
+
+  # Optional: Generate press-ready PDF for highest quality
+  # pressReady: true
+
+# Styles for print output
+# Uncomment and customize as needed
+styles:
+  # Base print styles
+  # - themes/print-base.css
+
+  # TTRPG-specific styles (stat blocks, tables, etc.)
+  # - themes/ttrpg-print.css
+
+  # Your custom styles
+  # - styles/custom.css
+
+# Markdown extensions for TTRPG content
+plugins:
+  - ttrpg # Stat blocks, dice notation
+  # - dimmCity     # Dimm City specific features
+
+# File ordering (optional - defaults to alphabetical)
+# files:
+#   - 01-introduction.md
+#   - 02-character-creation.md
+#   - 03-rules.md
+
+# Notes:
+# - Page count should be divisible by 2 (minimum)
+# - For optimal printing, aim for divisible by 6
+# - Increase inside margin (gutter) for books over 300 pages
+# - Cover must be created from DTRPG's template generator

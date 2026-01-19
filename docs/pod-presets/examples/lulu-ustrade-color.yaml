@@ -1,0 +1,54 @@
+# Lulu US Trade 6" x 9" Premium Color Preset
+#
+# Use this preset for books printed on Lulu with:
+# - 6" x 9" US Trade trim size
+# - Premium color interior (70lb paper)
+# - Paperback perfect bound
+#
+# Compatible with: Lulu
+
+title: "Your Book Title"
+authors:
+  - "Your Name"
+
+description: |
+  A beautiful color book printed on Lulu's premium color stock.
+
+# Page format for Lulu US Trade color
+format:
+  # US Trade - most popular self-publishing size
+  size: 6in 9in
+
+  # Lulu standard bleed
+  bleed: 0.125in
+
+  # Lulu requires 0.5" safety margin
+  # Gutter minimum 0.2", but more recommended
+  margins:
+    top: 0.5in
+    bottom: 0.5in
+    inside: 0.4in # Adequate for ~200 pages
+    outside: 0.5in
+
+# PDF settings
+pdf:
+  engine: auto
+  cropMarks: false
+  bleed: 0.125in
+
+# Styles
+styles:
+  # - themes/book-print.css
+  # - styles/custom.css
+
+# Notes for Lulu:
+# - Lulu prefers sRGB color space (they convert to CMYK)
+# - Premium color uses 70lb/104gsm paper
+# - Cover template generated during Lulu publishing process
+# - Interior PDF should be single-page layout (not spreads)
+#
+# Gutter recommendations:
+# - Under 100 pages: 0.2" - 0.3"
+# - 100-200 pages: 0.3" - 0.4"
+# - 200-400 pages: 0.4" - 0.5"
+# - 400+ pages: 0.5" - 0.75"

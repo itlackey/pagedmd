@@ -1,0 +1,64 @@
+# Amazon KDP 6" x 9" Cream Paper Preset
+#
+# Use this preset for books printed on Amazon KDP with:
+# - 6" x 9" US Trade trim size
+# - Black ink on cream paper
+# - Paperback
+#
+# Cream paper is ideal for: Novels, fiction, text-heavy non-fiction
+# The warm cream tone reduces eye strain for extended reading.
+# Compatible with: Amazon KDP
+
+title: "Your Novel or Non-Fiction Book"
+authors:
+  - "Your Name"
+
+description: |
+  A professional book formatted for Amazon KDP on cream paper.
+
+# Page format for KDP 6" x 9" cream
+format:
+  # US Trade - KDP's most popular size
+  size: 6in 9in
+
+  # KDP standard bleed
+  bleed: 0.125in
+
+  # Comfortable reading margins
+  margins:
+    top: 0.5in
+    bottom: 0.5in
+    inside: 0.5in # Gutter for ~200 pages
+    outside: 0.5in
+
+# PDF settings
+pdf:
+  engine: auto
+  cropMarks: false
+  bleed: 0.125in
+
+# Styles for cream paper
+# Note: Consider warmer tones in your design to complement cream
+styles:
+  # - themes/book-print-cream.css
+  # - styles/custom.css
+
+# Notes for KDP cream paper:
+# - Cream paper only available with black ink
+# - Maximum page count: 776 pages
+# - Minimum page count: 24 pages
+# - Paper weight: 50-61lb (74-90 GSM)
+# - Ideal for text-heavy books (less harsh than white)
+#
+# Design tips for cream paper:
+# - Pure black text (K:100) works best
+# - Avoid light gray tones (may not show well on cream)
+# - Test graphics/images on cream background
+# - Headers can use bold weights for hierarchy
+#
+# Gutter by page count (KDP requirements):
+# - 24-150: 0.375" minimum
+# - 151-300: 0.5" minimum
+# - 301-500: 0.625" minimum
+# - 501-700: 0.75" minimum
+# - 701+: 0.875" minimum

@@ -1,0 +1,75 @@
+# Amazon KDP 8.5" x 11" US Letter Premium Color Preset
+#
+# Use this preset for books printed on Amazon KDP with:
+# - 8.5" x 11" US Letter trim size
+# - Premium color ink
+# - White paper (60-71lb)
+# - Paperback
+#
+# This is the classic TTRPG/RPG rulebook format.
+# Premium color uses higher quality ink and paper than standard color.
+# Compatible with: Amazon KDP
+
+title: "Your TTRPG Rulebook"
+authors:
+  - "Your Name"
+
+description: |
+  A full-color RPG rulebook in classic US Letter format.
+
+# Page format for KDP US Letter premium color
+format:
+  # US Letter - classic RPG format
+  size: 8.5in 11in
+
+  # Standard bleed for full-bleed pages
+  bleed: 0.125in
+
+  # Generous margins for dense RPG content
+  margins:
+    top: 0.75in
+    bottom: 0.75in
+    inside: 0.75in # Large gutter for big books
+    outside: 0.5in
+
+# PDF settings
+pdf:
+  engine: auto
+  cropMarks: false
+  bleed: 0.125in
+
+# Styles for TTRPG color printing
+styles:
+  # - themes/ttrpg-print.css
+  # - styles/custom.css
+
+# TTRPG markdown extensions
+plugins:
+  - ttrpg # Stat blocks, dice notation, etc.
+
+
+# Notes for KDP Premium Color:
+# - Paper weight: 60-71lb (88-105 GSM)
+# - Uses white paper only
+# - Higher cost than standard color
+# - Better color saturation and vibrancy
+# - Page count: 24-828 pages
+#
+# Color guidelines:
+# - sRGB color space preferred
+# - KDP will convert to CMYK for printing
+# - Expect slight color variation from screen
+# - Rich black for large areas: C:30 M:30 Y:30 K:100
+# - Pure black for text: K:100
+#
+# Layout tips for RPG books:
+# - Two-column layout works well at this size
+# - Stat blocks should have adequate padding
+# - Maps and full-page art: extend into bleed
+# - Running headers help navigation
+# - Page numbers in consistent location
+#
+# Gutter for US Letter RPG books:
+# - 100-200 pages: 0.625" - 0.75"
+# - 200-400 pages: 0.75" - 0.875"
+# - 400-600 pages: 0.875" - 1.0"
