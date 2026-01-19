@@ -42,3 +42,10 @@ dist/
 # Code index and reference files (can be regenerated)
 .references/
 examples/field-guide/
+tests/field-guide-bak/
+tests/field-guide/
+tests/field-guide-output/
+tests/field-guide-input/
+*.pdf
+.reviews/
+.opencode/
