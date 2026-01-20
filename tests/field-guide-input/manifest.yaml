@@ -7,3 +7,7 @@ extensions:
 styles:
   - themes/dimm-city.css
   - styles/index.css
+
+pdf:
+  engine: vivliostyle
+  pressReady: true

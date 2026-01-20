@@ -14,17 +14,34 @@
  *    c. Vivliostyle (always available as bundled fallback)
  */
 
-import { spawn } from 'child_process';
-import { checkPrinceInstalled, getPrinceVersion, generatePdfWithPrince, type PrincePdfOptions, type PrincePdfResult } from './prince-wrapper.ts';
-import { checkVivliostyleInstalled, getVivliostyleVersion, generatePdfWithVivliostyle, type VivliostylePdfOptions, type VivliostylePdfResult } from './vivliostyle-wrapper.ts';
-import { isDocRaptorConfigured, generatePdfWithDocRaptor, type DocRaptorPdfOptions, type DocRaptorPdfResult } from './docraptor-wrapper.ts';
-import { BuildError } from '../../utils/errors.ts';
-import { debug, info, warn } from '../../utils/logger.ts';
+import { spawn } from "child_process";
+import {
+  checkPrinceInstalled,
+  getPrinceVersion,
+  generatePdfWithPrince,
+  type PrincePdfOptions,
+  type PrincePdfResult,
+} from "./prince-wrapper.ts";
+import {
+  checkVivliostyleInstalled,
+  getVivliostyleVersion,
+  generatePdfWithVivliostyle,
+  type VivliostylePdfOptions,
+  type VivliostylePdfResult,
+} from "./vivliostyle-wrapper.ts";
+import {
+  isDocRaptorConfigured,
+  generatePdfWithDocRaptor,
+  type DocRaptorPdfOptions,
+  type DocRaptorPdfResult,
+} from "./docraptor-wrapper.ts";
+import { BuildError } from "../../utils/errors.ts";
+import { debug, info, warn } from "../../utils/logger.ts";
 
 /**
  * Supported PDF engines
  */
-export type PdfEngine = 'auto' | 'vivliostyle' | 'prince' | 'docraptor';
+export type PdfEngine = "auto" | "vivliostyle" | "prince" | "docraptor";
 
 /**
  * PDF engine availability status
@@ -91,7 +108,9 @@ export interface PdfEngineOptions {
   bleed?: string;
 
   /**
-   * Make press-ready (PDF/X)
+   * Make press-ready (PDF/X-1a compatible)
+   * Defaults to true for print-ready output
+   * @default true
    */
   pressReady?: boolean;
 
@@ -160,20 +179,20 @@ async function checkPrinceAtPath(princePath?: string): Promise<boolean> {
   }
 
   return new Promise((resolve) => {
-    const checkProcess = spawn(princePath, ['--version'], {
-      stdio: ['ignore', 'pipe', 'pipe'],
+    const checkProcess = spawn(princePath, ["--version"], {
+      stdio: ["ignore", "pipe", "pipe"],
     });
 
-    let output = '';
-    checkProcess.stdout.on('data', (data) => {
+    let output = "";
+    checkProcess.stdout.on("data", (data) => {
       output += data.toString();
     });
 
-    checkProcess.on('close', (code) => {
-      resolve(code === 0 && output.includes('Prince'));
+    checkProcess.on("close", (code) => {
+      resolve(code === 0 && output.includes("Prince"));
     });
 
-    checkProcess.on('error', () => {
+    checkProcess.on("error", () => {
       resolve(false);
     });
   });
@@ -182,35 +201,41 @@ async function checkPrinceAtPath(princePath?: string): Promise<boolean> {
 /**
  * Detect all available PDF engines
  */
-export async function detectAvailableEngines(options: PdfEngineOptions = {}): Promise<PdfEngineStatus[]> {
+export async function detectAvailableEngines(
+  options: PdfEngineOptions = {}
+): Promise<PdfEngineStatus[]> {
   const results: PdfEngineStatus[] = [];
 
   // Check Vivliostyle (bundled, should always work)
   const vivliostyleAvailable = await checkVivliostyleInstalled();
   const vivliostyleVersion = vivliostyleAvailable ? await getVivliostyleVersion() : undefined;
   results.push({
-    engine: 'vivliostyle',
+    engine: "vivliostyle",
     available: vivliostyleAvailable,
     version: vivliostyleVersion || undefined,
-    reason: vivliostyleAvailable ? undefined : 'Vivliostyle CLI not found. Try: bun install',
+    reason: vivliostyleAvailable ? undefined : "Vivliostyle CLI not found. Try: bun install",
   });
 
   // Check Prince
   const princeAvailable = await checkPrinceAtPath(options.princePath);
   const princeVersion = princeAvailable ? await getPrinceVersion() : undefined;
   results.push({
-    engine: 'prince',
+    engine: "prince",
     available: princeAvailable,
     version: princeVersion || undefined,
-    reason: princeAvailable ? undefined : 'Prince not installed. Download from https://www.princexml.com/',
+    reason: princeAvailable
+      ? undefined
+      : "Prince not installed. Download from https://www.princexml.com/",
   });
 
   // Check DocRaptor
   const docraptorAvailable = isDocRaptorConfigured(options.docraptorApiKey);
   results.push({
-    engine: 'docraptor',
+    engine: "docraptor",
     available: docraptorAvailable,
-    reason: docraptorAvailable ? undefined : 'DocRaptor API key not configured. Set DOCRAPTOR_API_KEY environment variable.',
+    reason: docraptorAvailable
+      ? undefined
+      : "DocRaptor API key not configured. Set DOCRAPTOR_API_KEY environment variable.",
   });
 
   return results;
@@ -226,16 +251,16 @@ export async function detectAvailableEngines(options: PdfEngineOptions = {}): Pr
  * 4. Vivliostyle (always available as fallback)
  */
 export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<PdfEngine> {
-  const requestedEngine = options.engine || 'auto';
+  const requestedEngine = options.engine || "auto";
 
   // If specific engine requested, validate it's available
-  if (requestedEngine !== 'auto') {
+  if (requestedEngine !== "auto") {
     const engines = await detectAvailableEngines(options);
     const engineStatus = engines.find((e) => e.engine === requestedEngine);
 
     if (!engineStatus?.available) {
       throw new BuildError(
-        `Requested PDF engine '${requestedEngine}' is not available: ${engineStatus?.reason || 'Unknown reason'}`
+        `Requested PDF engine '${requestedEngine}' is not available: ${engineStatus?.reason || "Unknown reason"}`
       );
     }
 
@@ -247,28 +272,28 @@ export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<P
   const engines = await detectAvailableEngines(options);
 
   // Priority 1: Prince (if available)
-  const prince = engines.find((e) => e.engine === 'prince');
+  const prince = engines.find((e) => e.engine === "prince");
   if (prince?.available) {
-    info(`PDF engine: Prince (${prince.version || 'version unknown'})`);
-    return 'prince';
+    info(`PDF engine: Prince (${prince.version || "version unknown"})`);
+    return "prince";
   }
 
   // Priority 2: DocRaptor (if configured)
-  const docraptor = engines.find((e) => e.engine === 'docraptor');
+  const docraptor = engines.find((e) => e.engine === "docraptor");
   if (docraptor?.available) {
-    info('PDF engine: DocRaptor (cloud-based Prince)');
-    return 'docraptor';
+    info("PDF engine: DocRaptor (cloud-based Prince)");
+    return "docraptor";
   }
 
   // Priority 3: Vivliostyle (bundled fallback)
-  const vivliostyle = engines.find((e) => e.engine === 'vivliostyle');
+  const vivliostyle = engines.find((e) => e.engine === "vivliostyle");
   if (vivliostyle?.available) {
-    info(`PDF engine: Vivliostyle (${vivliostyle.version || 'version unknown'})`);
-    return 'vivliostyle';
+    info(`PDF engine: Vivliostyle (${vivliostyle.version || "version unknown"})`);
+    return "vivliostyle";
   }
 
   // Should never happen since Vivliostyle is bundled
-  throw new BuildError('No PDF engine available. This is unexpected - please reinstall pagedmd.');
+  throw new BuildError("No PDF engine available. This is unexpected - please reinstall pagedmd.");
 }
 
 /**
@@ -279,7 +304,7 @@ function toPrinceOptions(options: PdfEngineOptions): PrincePdfOptions {
     timeout: options.timeout,
     debug: options.debug,
     verbose: options.verbose,
-    pdfProfile: options.pdfProfile as PrincePdfOptions['pdfProfile'],
+    pdfProfile: options.pdfProfile as PrincePdfOptions["pdfProfile"],
     outputIntent: options.outputIntent,
     convertColors: options.convertColors,
     stylesheets: options.stylesheets,
@@ -289,6 +314,7 @@ function toPrinceOptions(options: PdfEngineOptions): PrincePdfOptions {
 
 /**
  * Convert unified options to Vivliostyle-specific options
+ * Note: pressReady defaults to true for PDF/X-1a output
  */
 function toVivliostyleOptions(options: PdfEngineOptions): VivliostylePdfOptions {
   return {
@@ -298,7 +324,8 @@ function toVivliostyleOptions(options: PdfEngineOptions): VivliostylePdfOptions 
     size: options.size,
     cropMarks: options.cropMarks,
     bleed: options.bleed,
-    pressReady: options.pressReady,
+    // Default to true for PDF/X-1a output; user can opt-out with pressReady: false
+    pressReady: options.pressReady ?? true,
     stylesheets: options.stylesheets,
   };
 }
@@ -314,10 +341,12 @@ function toDocRaptorOptions(options: PdfEngineOptions): DocRaptorPdfOptions {
     debug: options.debug,
     verbose: options.verbose,
     javascript: options.javascript,
-    princeOptions: options.pdfProfile ? {
-      profile: options.pdfProfile,
-      convert_colors: options.convertColors,
-    } : undefined,
+    princeOptions: options.pdfProfile
+      ? {
+          profile: options.pdfProfile,
+          convert_colors: options.convertColors,
+        }
+      : undefined,
   };
 }
 
@@ -338,38 +367,54 @@ export async function generatePdf(
 ): Promise<PdfEngineResult> {
   const engine = await selectPdfEngine(options);
 
+  // Warn if PDF/X profile requested but using Vivliostyle (which doesn't support it)
+  if (engine === "vivliostyle" && options.pdfProfile?.toLowerCase().includes("pdf/x")) {
+    warn(
+      "PDF/X profile requested but Vivliostyle does not support native PDF/X output. " +
+        "The generated PDF will be standard PDF. For PDF/X-1a compliance, use Prince engine or post-process with Ghostscript."
+    );
+  }
+
   switch (engine) {
-    case 'prince': {
+    case "prince": {
       const result = await generatePdfWithPrince(inputPath, outputPath, toPrinceOptions(options));
       return {
         outputPath: result.outputPath,
         duration: result.duration,
-        engine: 'prince',
+        engine: "prince",
         pageCount: result.pageCount,
       };
     }
 
-    case 'vivliostyle': {
-      const result = await generatePdfWithVivliostyle(inputPath, outputPath, toVivliostyleOptions(options));
+    case "vivliostyle": {
+      const result = await generatePdfWithVivliostyle(
+        inputPath,
+        outputPath,
+        toVivliostyleOptions(options)
+      );
       return {
         outputPath: result.outputPath,
         duration: result.duration,
-        engine: 'vivliostyle',
+        engine: "vivliostyle",
         pageCount: result.pageCount,
       };
     }
 
-    case 'docraptor': {
+    case "docraptor": {
       if (!htmlContent) {
         // Read HTML content from file for DocRaptor
-        const fs = await import('fs/promises');
-        htmlContent = await fs.readFile(inputPath, 'utf-8');
+        const fs = await import("fs/promises");
+        htmlContent = await fs.readFile(inputPath, "utf-8");
       }
-      const result = await generatePdfWithDocRaptor(htmlContent, outputPath, toDocRaptorOptions(options));
+      const result = await generatePdfWithDocRaptor(
+        htmlContent,
+        outputPath,
+        toDocRaptorOptions(options)
+      );
       return {
         outputPath: result.outputPath,
         duration: result.duration,
-        engine: 'docraptor',
+        engine: "docraptor",
         testMode: result.testMode,
       };
     }
@@ -384,19 +429,19 @@ export async function generatePdf(
  */
 export async function getEngineInfo(options: PdfEngineOptions = {}): Promise<string> {
   const engines = await detectAvailableEngines(options);
-  const lines: string[] = ['Available PDF engines:'];
+  const lines: string[] = ["Available PDF engines:"];
 
   for (const engine of engines) {
-    const status = engine.available ? '✓' : '✗';
-    const version = engine.version ? ` (${engine.version})` : '';
-    const reason = engine.available ? '' : ` - ${engine.reason}`;
+    const status = engine.available ? "✓" : "✗";
+    const version = engine.version ? ` (${engine.version})` : "";
+    const reason = engine.available ? "" : ` - ${engine.reason}`;
     lines.push(`  ${status} ${engine.engine}${version}${reason}`);
   }
 
   // Add note about default
-  const selected = await selectPdfEngine(options).catch(() => 'vivliostyle');
-  lines.push('');
+  const selected = await selectPdfEngine(options).catch(() => "vivliostyle");
+  lines.push("");
   lines.push(`Default: ${selected}`);
 
-  return lines.join('\n');
+  return lines.join("\n");
 }

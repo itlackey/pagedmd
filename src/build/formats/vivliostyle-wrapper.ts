@@ -6,7 +6,7 @@
  *
  * Features:
  *   - Open-source CSS Paged Media implementation
- *   - PDF/X-1a support via press-ready option
+ *   - PDF/X-1a output by default (press-ready)
  *   - Custom page sizes and crop marks
  *   - Browser-based rendering (Chromium)
  */
@@ -67,6 +67,8 @@ export interface VivliostylePdfOptions {
 
   /**
    * Make PDF press-ready (PDF/X-1a compatible)
+   * Defaults to true for print-ready output
+   * @default true
    */
   pressReady?: boolean;
 
@@ -288,8 +290,9 @@ function buildVivliostyleArgs(
     }
   }
 
-  // Press-ready (PDF/X-1a)
-  if (options.pressReady) {
+  // Press-ready (PDF/X-1a) - enabled by default for print-ready output
+  // Users can opt-out by explicitly setting pressReady: false
+  if (options.pressReady !== false) {
     args.push("--press-ready");
   }
 
@@ -363,7 +366,14 @@ export async function generatePdfWithVivliostyle(
   // Check if Vivliostyle is available
   const isInstalled = await checkVivliostyleInstalled();
   if (!isInstalled) {
-    throw new BuildError("Vivliostyle CLI is not available. Try reinstalling pagedmd: bun install");
+    throw new BuildError(
+      "Vivliostyle CLI is not available.\n\n" +
+        "To fix this:\n" +
+        "  1. Run: npm install  (or: bun install)\n" +
+        "  2. Verify @vivliostyle/cli is in package.json\n" +
+        "  3. Check installation: npm list @vivliostyle/cli\n\n" +
+        "If the problem persists, try: npm install @vivliostyle/cli --save-dev"
+    );
   }
 
   const startTime = Date.now();

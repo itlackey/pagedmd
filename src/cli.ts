@@ -7,25 +7,25 @@
  * Directly calls simplified build and preview functions
  */
 
-import { program } from 'commander';
-import { readFileSync } from 'fs';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { build } from './build/build.ts';
-import { startWatchMode } from './build/watch.ts';
-import { startPreviewServer } from './server.ts';
-import { createBuildOptions, ensureManifest, validateFormatOption } from './utils/config.ts';
-import { fileExists } from './utils/file-utils.ts';
-import { BuildError, ConfigError } from './utils/errors.ts';
-import { setLogLevel, error as logError } from './utils/logger.ts';
-import { DEFAULTS, NETWORK } from './constants.ts';
-import { OutputFormat, type PdfEngineType } from './types.ts';
-import { getEngineInfo } from './build/formats/pdf-engine.ts';
+import { program } from "commander";
+import { readFileSync } from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
+import { build } from "./build/build.ts";
+import { startWatchMode } from "./build/watch.ts";
+import { startPreviewServer } from "./server.ts";
+import { createBuildOptions, ensureManifest, validateFormatOption } from "./utils/config.ts";
+import { fileExists } from "./utils/file-utils.ts";
+import { BuildError, ConfigError } from "./utils/errors.ts";
+import { setLogLevel, error as logError } from "./utils/logger.ts";
+import { DEFAULTS, NETWORK } from "./constants.ts";
+import { OutputFormat, type PdfEngineType } from "./types.ts";
+import { getEngineInfo } from "./build/formats/pdf-engine.ts";
 
 // Get package version
 const SOURCE_FOLDER = path.dirname(fileURLToPath(import.meta.url));
-const packageJsonPath = path.join(SOURCE_FOLDER, '..', 'package.json');
-const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as { version?: string };
+const packageJsonPath = path.join(SOURCE_FOLDER, "..", "package.json");
+const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8")) as { version?: string };
 
 /**
  * Commander option types for type safety
@@ -59,7 +59,7 @@ interface PreviewCommandOptions {
  */
 function setupLogging(verbose: boolean): void {
   if (verbose) {
-    setLogLevel('DEBUG');
+    setLogLevel("DEBUG");
   }
 }
 
@@ -67,22 +67,27 @@ function setupLogging(verbose: boolean): void {
  * Build command - Generate PDF from markdown
  */
 program
-  .command('build')
-  .description('Generate output from markdown file(s) in specified format (configure custom CSS via manifest.yaml)')
-  .argument('[input]', 'Input markdown file or directory (defaults to current directory)')
-  .option('-o, --output <path>', 'Output path (file for PDF, directory for HTML)')
-  .option('--html-output <path>', 'Save intermediate HTML to specified path (for debugging)')
-  .option('--format <format>', 'Output format: html or pdf (default: pdf)', 'pdf')
-  .option('--pdf-engine <engine>', 'PDF engine: auto, vivliostyle, prince, docraptor (default: auto)')
-  .option('--prince-path <path>', 'Path to Prince binary (if not in PATH)')
-  .option('--docraptor-api-key <key>', 'DocRaptor API key (or use DOCRAPTOR_API_KEY env var)')
-  .option('--docraptor-test-mode', 'Use DocRaptor test mode (watermarked, unlimited)')
-  .option('--watch', 'Watch for file changes and automatically rebuild', false)
-  .option('--force', 'Force overwrite existing output without validation', false)
-  .option('--timeout <ms>', 'Timeout for PDF generation in milliseconds', String(DEFAULTS.TIMEOUT))
-  .option('--verbose', 'Enable verbose output', false)
-  .option('--debug', 'Debug mode (preserve temporary files)', false)
-  .option('--profile', 'Enable detailed performance profiling', false)
+  .command("build")
+  .description(
+    "Generate output from markdown file(s) in specified format (configure custom CSS via manifest.yaml)"
+  )
+  .argument("[input]", "Input markdown file or directory (defaults to current directory)")
+  .option("-o, --output <path>", "Output path (file for PDF, directory for HTML)")
+  .option("--html-output <path>", "Save intermediate HTML to specified path (for debugging)")
+  .option("--format <format>", "Output format: html or pdf (default: pdf)", "pdf")
+  .option(
+    "--pdf-engine <engine>",
+    "PDF engine: auto, vivliostyle, prince, docraptor (default: auto)"
+  )
+  .option("--prince-path <path>", "Path to Prince binary (if not in PATH)")
+  .option("--docraptor-api-key <key>", "DocRaptor API key (or use DOCRAPTOR_API_KEY env var)")
+  .option("--docraptor-test-mode", "Use DocRaptor test mode (watermarked, unlimited)")
+  .option("--watch", "Watch for file changes and automatically rebuild", false)
+  .option("--force", "Force overwrite existing output without validation", false)
+  .option("--timeout <ms>", "Timeout for PDF generation in milliseconds", String(DEFAULTS.TIMEOUT))
+  .option("--verbose", "Enable verbose output", false)
+  .option("--debug", "Debug mode (preserve temporary files)", false)
+  .option("--profile", "Enable detailed performance profiling", false)
   .action(async (input: string | undefined, opts: BuildCommandOptions) => {
     await executeBuildProcess(opts, input);
   });
@@ -101,14 +106,17 @@ program
  *    - Prevents watching unwanted directories (test fixtures, etc.)
  */
 program
-  .command('preview', { isDefault: true })
-  .description('Start live preview server with automatic rebuild on file changes (default command)')
-  .argument('[input]', 'Input markdown file or directory (optional - if omitted, shows folder selector)')
-  .option('--port <number>', 'Port for live-server', String(NETWORK.DEFAULT_PORT))
-  .option('--no-watch', 'Disable file watching')
-  .option('--open <boolean>', 'Automatically open browser (default: true)', 'true')
-  .option('--verbose', 'Enable verbose output', false)
-  .option('--debug', 'Debug mode (preserve temporary files)', false)
+  .command("preview", { isDefault: true })
+  .description("Start live preview server with automatic rebuild on file changes (default command)")
+  .argument(
+    "[input]",
+    "Input markdown file or directory (optional - if omitted, shows folder selector)"
+  )
+  .option("--port <number>", "Port for live-server", String(NETWORK.DEFAULT_PORT))
+  .option("--no-watch", "Disable file watching")
+  .option("--open <boolean>", "Automatically open browser (default: true)", "true")
+  .option("--verbose", "Enable verbose output", false)
+  .option("--debug", "Debug mode (preserve temporary files)", false)
   .action(async (input: string | undefined, opts: PreviewCommandOptions) => {
     setupLogging(opts.verbose);
 
@@ -132,7 +140,7 @@ program
       }
 
       // Parse --open boolean flag (supports 'true'/'false' strings)
-      const openBrowser = opts.open === 'true' || opts.open === true;
+      const openBrowser = opts.open === "true" || opts.open === true;
 
       await startPreviewServer({
         input: inputPath,
@@ -151,9 +159,9 @@ program
  * PDF engines command - Show available PDF engines
  */
 program
-  .command('pdf-engines')
-  .description('Show available PDF engines and their status')
-  .option('--verbose', 'Enable verbose output', false)
+  .command("pdf-engines")
+  .description("Show available PDF engines and their status")
+  .option("--verbose", "Enable verbose output", false)
   .action(async (opts: { verbose: boolean }) => {
     setupLogging(opts.verbose);
     try {
@@ -168,11 +176,11 @@ program
  * Version and help
  */
 program
-  .name('pagedmd')
-  .description('CLI tool for converting markdown to print-ready PDFs with TTRPG-specific features')
-  .version(packageJson.version ?? '0.0.0')
+  .name("pagedmd")
+  .description("CLI tool for converting markdown to print-ready PDFs with TTRPG-specific features")
+  .version(packageJson.version ?? "0.0.0")
   .addHelpText(
-    'after',
+    "after",
     `
 Examples:
   $ pagedmd                                 # Preview current directory (default)
@@ -199,7 +207,7 @@ Custom CSS Configuration:
       - styles/extra.css
     pdf:
       engine: auto           # auto, vivliostyle, prince, docraptor
-      pressReady: true       # Generate press-ready PDF
+      pressReady: true       # Generate press-ready PDF/X-1a (default: true)
       cropMarks: true        # Add crop marks
       bleed: 3mm             # Bleed area
 `
@@ -234,7 +242,9 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
 
     // Validate output directory if provided
     if (opts.output) {
-      const outputPath = path.isAbsolute(opts.output) ? opts.output : path.join(process.cwd(), opts.output);
+      const outputPath = path.isAbsolute(opts.output)
+        ? opts.output
+        : path.join(process.cwd(), opts.output);
       const outputDir = path.dirname(outputPath);
       if (!(await fileExists(outputDir))) {
         throw new ConfigError(
@@ -245,7 +255,7 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
     }
 
     // Validate format option
-    const formatValue = opts.format || 'pdf';
+    const formatValue = opts.format || "pdf";
     const validatedFormat = validateFormatOption(formatValue);
 
     const buildOptions = createBuildOptions(input, {
@@ -264,11 +274,11 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
 
     // PDF engine options
     if (opts.pdfEngine) {
-      const validEngines = ['auto', 'vivliostyle', 'prince', 'docraptor'];
+      const validEngines = ["auto", "vivliostyle", "prince", "docraptor"];
       if (!validEngines.includes(opts.pdfEngine)) {
         throw new ConfigError(
           `Invalid PDF engine: "${opts.pdfEngine}"`,
-          `Valid engines: ${validEngines.join(', ')}`
+          `Valid engines: ${validEngines.join(", ")}`
         );
       }
       buildOptions.pdfEngine = opts.pdfEngine as PdfEngineType;
@@ -308,10 +318,10 @@ function handleError(error: unknown, verbose: boolean): never {
   } else if (error instanceof Error) {
     logError(`Unexpected error: ${error.message}`);
     if (verbose) {
-      console.error('\nStack trace:', error.stack);
+      console.error("\nStack trace:", error.stack);
     }
   } else {
-    logError('Unknown error:', error);
+    logError("Unknown error:", error);
   }
   process.exit(1);
 }
