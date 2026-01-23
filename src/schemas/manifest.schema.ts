@@ -35,9 +35,9 @@ const ExtensionSchema = z.enum(["ttrpg", "dimmCity", "dimm-city", "containers"],
 /**
  * PDF engine options
  */
-const PdfEngineSchema = z.enum(["auto", "vivliostyle", "prince", "docraptor"], {
+const PdfEngineSchema = z.enum(["auto", "vivliostyle", "prince", "docraptor", "weasyprint"], {
   errorMap: () => ({
-    message: "PDF engine must be one of: 'auto', 'vivliostyle', 'prince', 'docraptor'",
+    message: "PDF engine must be one of: 'auto', 'weasyprint', 'vivliostyle', 'prince', 'docraptor'",
   }),
 });
 
@@ -59,6 +59,7 @@ const DocRaptorConfigSchema = z.object({
 const PdfConfigSchema = z.object({
   engine: PdfEngineSchema.optional().default("auto").describe("PDF engine to use"),
   princePath: z.string().optional().describe("Path to Prince binary (if not in PATH)"),
+  weasyPrintPath: z.string().optional().describe("Path to WeasyPrint binary (if not in PATH)"),
   docraptor: DocRaptorConfigSchema.optional().describe("DocRaptor cloud API configuration"),
   pressReady: z
     .boolean()

@@ -2,7 +2,8 @@
  * PDF Engine Detection and Selection
  *
  * Provides a unified interface for PDF generation using multiple engines:
- * - Vivliostyle CLI (bundled, default)
+ * - WeasyPrint (default, if installed - DriveThru RPG compatible)
+ * - Vivliostyle CLI (bundled fallback)
  * - Prince XML (optional, if installed locally)
  * - DocRaptor API (optional, cloud-based Prince)
  *
@@ -11,7 +12,8 @@
  * 2. Auto-detection:
  *    a. Prince if available locally (highest quality)
  *    b. DocRaptor if API key configured
- *    c. Vivliostyle (always available as bundled fallback)
+ *    c. WeasyPrint if installed (NEW DEFAULT - DriveThru RPG compatible)
+ *    d. Vivliostyle (always available as bundled fallback)
  */
 
 import { spawn } from "child_process";
@@ -35,13 +37,20 @@ import {
   type DocRaptorPdfOptions,
   type DocRaptorPdfResult,
 } from "./docraptor-wrapper.ts";
+import {
+  checkWeasyPrintInstalled,
+  getWeasyPrintVersion,
+  generatePdfWithWeasyPrint,
+  type WeasyPrintPdfOptions,
+  type WeasyPrintPdfResult,
+} from "./weasyprint-wrapper.ts";
 import { BuildError } from "../../utils/errors.ts";
 import { debug, info, warn } from "../../utils/logger.ts";
 
 /**
  * Supported PDF engines
  */
-export type PdfEngine = "auto" | "vivliostyle" | "prince" | "docraptor";
+export type PdfEngine = "auto" | "vivliostyle" | "prince" | "docraptor" | "weasyprint";
 
 /**
  * PDF engine availability status
@@ -66,6 +75,11 @@ export interface PdfEngineOptions {
    * Path to Prince binary (if not in PATH)
    */
   princePath?: string;
+
+  /**
+   * Path to WeasyPrint binary (if not in PATH)
+   */
+  weasyPrintPath?: string;
 
   /**
    * DocRaptor API key
@@ -238,6 +252,18 @@ export async function detectAvailableEngines(
       : "DocRaptor API key not configured. Set DOCRAPTOR_API_KEY environment variable.",
   });
 
+  // Check WeasyPrint
+  const weasyPrintAvailable = await checkWeasyPrintInstalled(options.weasyPrintPath);
+  const weasyPrintVersion = weasyPrintAvailable ? await getWeasyPrintVersion(options.weasyPrintPath) : undefined;
+  results.push({
+    engine: "weasyprint",
+    available: weasyPrintAvailable,
+    version: weasyPrintVersion || undefined,
+    reason: weasyPrintAvailable
+      ? undefined
+      : "WeasyPrint v68.0+ not installed. Install: pip install 'weasyprint>=68.0'",
+  });
+
   return results;
 }
 
@@ -248,7 +274,8 @@ export async function detectAvailableEngines(
  * 1. If engine explicitly specified, use it (error if unavailable)
  * 2. Prince if available (highest quality, commercial features)
  * 3. DocRaptor if configured (Prince in the cloud)
- * 4. Vivliostyle (always available as fallback)
+ * 4. WeasyPrint if installed (NEW DEFAULT - DriveThru RPG compatible)
+ * 5. Vivliostyle (always available as bundled fallback)
  */
 export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<PdfEngine> {
   const requestedEngine = options.engine || "auto";
@@ -285,15 +312,22 @@ export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<P
     return "docraptor";
   }
 
-  // Priority 3: Vivliostyle (bundled fallback)
+  // Priority 3: WeasyPrint (NEW - DriveThru RPG compatible)
+  const weasyprint = engines.find((e) => e.engine === "weasyprint");
+  if (weasyprint?.available) {
+    info(`PDF engine: WeasyPrint (${weasyprint.version || "version unknown"})`);
+    return "weasyprint";
+  }
+
+  // Priority 4: Vivliostyle (bundled fallback)
   const vivliostyle = engines.find((e) => e.engine === "vivliostyle");
   if (vivliostyle?.available) {
-    info(`PDF engine: Vivliostyle (${vivliostyle.version || "version unknown"})`);
+    info(`PDF engine: Vivliostyle (${vivliostyle.version || "version unknown"}) [fallback]`);
     return "vivliostyle";
   }
 
   // Should never happen since Vivliostyle is bundled
-  throw new BuildError("No PDF engine available. This is unexpected - please reinstall pagedmd.");
+  throw new BuildError("No PDF engine available. Install WeasyPrint: pip install 'weasyprint>=68.0'");
 }
 
 /**
@@ -347,6 +381,20 @@ function toDocRaptorOptions(options: PdfEngineOptions): DocRaptorPdfOptions {
           convert_colors: options.convertColors,
         }
       : undefined,
+  };
+}
+
+/**
+ * Convert unified options to WeasyPrint-specific options
+ */
+function toWeasyPrintOptions(options: PdfEngineOptions): WeasyPrintPdfOptions {
+  return {
+    timeout: options.timeout,
+    debug: options.debug,
+    verbose: options.verbose,
+    stylesheets: options.stylesheets,
+    weasyPrintPath: options.weasyPrintPath,
+    optimizeSize: options.pressReady ? "all" : undefined,
   };
 }
 
@@ -416,6 +464,20 @@ export async function generatePdf(
         duration: result.duration,
         engine: "docraptor",
         testMode: result.testMode,
+      };
+    }
+
+    case "weasyprint": {
+      const result = await generatePdfWithWeasyPrint(
+        inputPath,
+        outputPath,
+        toWeasyPrintOptions(options)
+      );
+      return {
+        outputPath: result.outputPath,
+        duration: result.duration,
+        engine: "weasyprint",
+        pageCount: result.pageCount,
       };
     }
 

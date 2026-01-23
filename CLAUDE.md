@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents. The default PDF engine is **Vivliostyle CLI** (bundled), with optional support for **Prince XML** (commercial, highest quality) and **DocRaptor API** (cloud-based Prince). The preview mode uses Vivliostyle for in-browser rendering.
+**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents. The default PDF engine is **WeasyPrint** (if installed), with fallback to **Vivliostyle CLI** (bundled), and optional support for **Prince XML** (commercial, highest quality) and **DocRaptor API** (cloud-based Prince). The preview mode uses **Paged.js** for in-browser CSS Paged Media rendering.
 
 ## Architecture
 
@@ -39,12 +39,13 @@ The build pipeline uses a strategy pattern for different output formats:
 
 3. **PDF Engine System** (`src/build/formats/pdf-engine.ts`)
    - **Multi-engine support** with automatic detection and selection:
-     - **Vivliostyle CLI** (`vivliostyle-wrapper.ts`) - Bundled, always available (default)
-     - **Prince XML** (`prince-wrapper.ts`) - Optional, if installed locally
+     - **WeasyPrint** (`weasyprint-wrapper.ts`) - Default if installed (v68.0+), DriveThru RPG compatible
+     - **Vivliostyle CLI** (`vivliostyle-wrapper.ts`) - Bundled fallback, always available
+     - **Prince XML** (`prince-wrapper.ts`) - Optional, if installed locally (highest quality)
      - **DocRaptor API** (`docraptor-wrapper.ts`) - Optional, cloud-based Prince
-   - **Auto-selection priority**: Prince > DocRaptor > Vivliostyle
+   - **Auto-selection priority**: Prince > DocRaptor > WeasyPrint > Vivliostyle
    - **Configuration via manifest.yaml or CLI flags**
-   - **Engine-specific options**: crop marks, bleed, press-ready, PDF/X profiles
+   - **Engine-specific options**: crop marks, bleed, press-ready, PDF/X profiles, PDF/A variants
 
 4. **Build Orchestration** (`src/build/build.ts`)
    - Loads configuration from manifest.yaml and CLI options
@@ -66,7 +67,7 @@ The build pipeline uses a strategy pattern for different output formats:
   - Reverse proxies preview content and HMR to Vite
   - Static file serving with security validation
 - **Vite Server** (auto-assigned port) - Development server
-  - Serves preview.html with Vivliostyle viewer
+  - Serves preview.html with Paged.js polyfill for CSS Paged Media rendering
   - Provides Hot Module Replacement (HMR) for instant updates
   - Handles asset bundling and transformations
 
@@ -85,7 +86,7 @@ Vite Server (auto port) → Serves preview.html + assets with HMR
 **Preview Workflow**:
 1. Creates temporary directory (`/tmp/pagedmd-preview-*`)
 2. Copies input files and assets to temp directory
-3. Generates HTML from markdown with Vivliostyle viewer integration
+3. Generates HTML from markdown with Paged.js polyfill injection
 4. Starts Vite server on auto-assigned port
 5. Starts Bun server on user-specified port with reverse proxy
 6. Watches source files for changes and regenerates HTML automatically
@@ -101,8 +102,9 @@ Vite Server (auto port) → Serves preview.html + assets with HMR
   - preview.html loaded in iframe with previewAPI exposed
   - Parent window delegates operations to iframe API
   - Event-driven page change notifications
-- **Vivliostyle Integration** (`src/assets/preview/scripts/interface.js`)
-  - Custom handler exposes window.previewAPI
+- **Paged.js Integration** (`src/assets/preview/scripts/paged-interface.js`)
+  - Custom Paged.Handler class exposes window.previewAPI
+  - Scroll-based page detection for navigation
   - Supports page navigation, view modes, zoom levels, debug mode
 
 **API Endpoints**:
@@ -166,9 +168,9 @@ bun src/cli.ts preview [input] --port [number] --open [boolean] --no-watch
 - `plugins/` - CSS for markdown extensions
 - `fonts/` - Web fonts
 - `preview/` - Preview mode assets:
-  - `scripts/` - interface.js, preview.js, toast.js
+  - `scripts/` - paged.polyfill.js, paged-interface.js, preview.js, toast.js
   - `styles/` - interface.css, preview.css
-  - `index.html` - Preview UI shell (uses Vivliostyle viewer)
+  - `index.html` - Preview UI shell with Paged.js rendering
 
 Assets are bundled into HTML using Bun's text loader (`with { type: 'text' }`) for self-contained output.
 
@@ -191,9 +193,13 @@ bun src/cli.ts build --output my-book.pdf
 bun src/cli.ts build --format html
 
 # Build with specific PDF engine
-bun src/cli.ts build --pdf-engine vivliostyle  # Use bundled Vivliostyle (default)
+bun src/cli.ts build --pdf-engine weasyprint   # Use WeasyPrint (default if installed)
+bun src/cli.ts build --pdf-engine vivliostyle  # Use bundled Vivliostyle (fallback)
 bun src/cli.ts build --pdf-engine prince       # Use Prince XML (if installed)
 bun src/cli.ts build --pdf-engine docraptor    # Use DocRaptor API (needs API key)
+
+# Custom WeasyPrint path
+bun src/cli.ts build --weasyprint-path /usr/local/bin/weasyprint
 
 # Show available PDF engines
 bun src/cli.ts pdf-engines
@@ -435,19 +441,26 @@ The PDF engine system provides flexible PDF generation with multiple backend opt
 
 ### Available Engines
 
-1. **Vivliostyle CLI** (default, bundled)
+1. **WeasyPrint** (default if installed)
+   - Open-source Python HTML/CSS to PDF converter
+   - Requires WeasyPrint v68.0+ installed via pip: `pip install 'weasyprint>=68.0'`
+   - **DriveThru RPG compatible** output for print-on-demand
+   - Supports PDF/A variants (pdf/a-1b, pdf/a-2b, pdf/a-3b, pdf/ua-1)
+   - Size optimization for images and fonts
+
+2. **Vivliostyle CLI** (bundled fallback)
    - Open-source CSS Paged Media implementation
    - No additional installation required
    - Good quality output suitable for most use cases
    - Supports press-ready PDF and crop marks
 
-2. **Prince XML** (optional, commercial)
+3. **Prince XML** (optional, commercial)
    - Industry-leading CSS Paged Media support
    - Highest quality output for professional print
    - Requires separate installation from https://www.princexml.com/
    - Supports PDF/X profiles, ICC color profiles, CMYK output
 
-3. **DocRaptor API** (optional, cloud-based)
+4. **DocRaptor API** (optional, cloud-based)
    - Prince XML as a cloud service
    - No local installation required
    - Requires API key from https://docraptor.com/
@@ -457,16 +470,19 @@ The PDF engine system provides flexible PDF generation with multiple backend opt
 
 1. **Prince** - If installed locally (highest quality)
 2. **DocRaptor** - If API key configured
-3. **Vivliostyle** - Always available as fallback
+3. **WeasyPrint** - If v68.0+ installed (recommended default)
+4. **Vivliostyle** - Always available as fallback
 
 ### Configuration
 
 **Via CLI:**
 ```bash
-pagedmd build --pdf-engine vivliostyle
-pagedmd build --pdf-engine prince
+pagedmd build --pdf-engine weasyprint  # Use WeasyPrint (default)
+pagedmd build --pdf-engine vivliostyle # Use Vivliostyle
+pagedmd build --pdf-engine prince      # Use Prince XML
 pagedmd build --pdf-engine prince --prince-path /opt/prince/bin/prince
 pagedmd build --pdf-engine docraptor --docraptor-api-key YOUR_KEY
+pagedmd build --weasyprint-path /usr/local/bin/weasyprint  # Custom WeasyPrint path
 ```
 
 **Via manifest.yaml:**
@@ -475,7 +491,10 @@ title: My Book
 authors:
   - Author Name
 pdf:
-  engine: auto           # auto, vivliostyle, prince, docraptor
+  engine: auto           # auto, weasyprint, vivliostyle, prince, docraptor
+  weasyPrintPath: /usr/local/bin/weasyprint  # Optional custom path
+  pdfVariant: pdf/a-1b   # WeasyPrint PDF/A variant
+  optimizeSize: all      # WeasyPrint optimization: images, fonts, all, none
   princePath: /opt/prince/bin/prince  # Optional path to Prince
   docraptor:
     apiKey: YOUR_API_KEY  # Or use DOCRAPTOR_API_KEY env var
@@ -495,7 +514,8 @@ pagedmd build --pdf-engine docraptor
 ### Key Files
 
 - `src/build/formats/pdf-engine.ts` - Engine detection, selection, and unified interface
-- `src/build/formats/vivliostyle-wrapper.ts` - Vivliostyle CLI integration
+- `src/build/formats/weasyprint-wrapper.ts` - WeasyPrint CLI integration (default)
+- `src/build/formats/vivliostyle-wrapper.ts` - Vivliostyle CLI integration (fallback)
 - `src/build/formats/prince-wrapper.ts` - Prince XML integration
 - `src/build/formats/docraptor-wrapper.ts` - DocRaptor API integration
 - `src/build/formats/pdf-format.ts` - PDF format strategy using engine system
@@ -577,13 +597,14 @@ Preview mode uses a dual-process architecture:
 1. **Server Process** (`src/server.ts`):
    - Vite dev server serving temporary directory
    - Chokidar file watcher monitoring source files
-   - Regenerates HTML on source changes
+   - Regenerates HTML on source changes with Paged.js script injection
    - Vite handles browser HMR automatically
 
 2. **Browser Client** (`src/assets/preview/scripts/`):
    - Parent window with toolbar UI (preview.js)
-   - Iframe containing preview.html with Vivliostyle viewer
+   - Iframe containing preview.html with Paged.js polyfill
    - previewAPI exposed on iframe window for page navigation
+   - Scroll-based page detection for accurate current page tracking
    - Event-driven updates (pageChanged, renderingComplete)
    - No state duplication - iframe is source of truth
 

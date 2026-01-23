@@ -220,7 +220,36 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## Unreleased
 
-No unreleased changes at this time. See [GitHub Issues](https://github.com/dimm-city/pagedmd/issues) for planned features.
+### Added
+
+- **WeasyPrint PDF Engine** - Added WeasyPrint v68.0+ as a new PDF generation engine
+  - DriveThru RPG compatible PDF output for print-on-demand
+  - PDF/A variant support (pdf/a-1b, pdf/a-2b, pdf/a-3b, pdf/ua-1)
+  - Size optimization options (images, fonts, all, none)
+  - `--weasyprint-path` CLI option for custom executable location
+  - New wrapper: `src/build/formats/weasyprint-wrapper.ts`
+
+- **Paged.js Preview** - Restored Paged.js as the browser preview engine
+  - Scroll-based page detection for accurate navigation
+  - Full previewAPI for toolbar integration
+  - Better CSS Paged Media alignment between preview and PDF output
+  - New files: `paged.polyfill.js`, `paged-interface.js`
+
+### Changed
+
+- **Default PDF Engine** - WeasyPrint is now the default when installed (v68.0+)
+  - Previous default: Vivliostyle CLI (now fallback)
+  - New priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
+
+- **Preview Engine** - Changed from Vivliostyle viewer to Paged.js polyfill
+  - iframe now loads `/preview.html` directly instead of Vivliostyle viewer
+  - Paged.js scripts injected into generated HTML
+
+### Documentation
+
+- Updated CLAUDE.md with WeasyPrint and Paged.js architecture details
+- Updated README.md with new engine information and installation instructions
+- Updated troubleshooting guide with WeasyPrint-specific guidance
 
 ---
 

@@ -17,7 +17,7 @@ import type { ServerState } from './server-context.ts';
  *
  * Processes all markdown files in the input directory, generates HTML,
  * and writes the result to preview.html in the temp directory.
- * Vivliostyle loads HTML as-is, no script injection needed.
+ * Injects Paged.js polyfill and interface scripts for CSS Paged Media rendering.
  *
  * This function is called during:
  * - Initial server startup
@@ -47,11 +47,24 @@ export async function generateAndWriteHtml(
 ): Promise<void> {
   const htmlContent = await generateHtmlFromMarkdown(inputPath, config);
 
-  // Vivliostyle loads HTML as-is, no script injection needed
-  // Just ensure proper doctype
+  // Inject Paged.js scripts for CSS Paged Media rendering
+  const pagedJsScripts = `
+    <script src="/preview/scripts/paged.polyfill.js"></script>
+    <script src="/preview/scripts/paged-interface.js"></script>
+  `;
+
   let processedHtml = htmlContent;
+
+  // Ensure DOCTYPE
   if (!processedHtml.trim().toLowerCase().startsWith('<!doctype')) {
     processedHtml = '<!DOCTYPE html>\n' + processedHtml;
+  }
+
+  // Inject Paged.js scripts before </body>
+  if (processedHtml.includes('</body>')) {
+    processedHtml = processedHtml.replace('</body>', `${pagedJsScripts}</body>`);
+  } else {
+    processedHtml += pagedJsScripts;
   }
 
   const outputPath = path.join(tempDir, 'preview.html');

@@ -42,6 +42,7 @@ interface BuildCommandOptions {
   profile?: boolean;
   pdfEngine?: string;
   princePath?: string;
+  weasyPrintPath?: string;
   docraptorApiKey?: string;
   docraptorTestMode?: boolean;
 }
@@ -77,9 +78,10 @@ program
   .option("--format <format>", "Output format: html or pdf (default: pdf)", "pdf")
   .option(
     "--pdf-engine <engine>",
-    "PDF engine: auto, vivliostyle, prince, docraptor (default: auto)"
+    "PDF engine: auto, weasyprint, vivliostyle, prince, docraptor (default: auto)"
   )
   .option("--prince-path <path>", "Path to Prince binary (if not in PATH)")
+  .option("--weasyprint-path <path>", "Path to WeasyPrint binary (if not in PATH)")
   .option("--docraptor-api-key <key>", "DocRaptor API key (or use DOCRAPTOR_API_KEY env var)")
   .option("--docraptor-test-mode", "Use DocRaptor test mode (watermarked, unlimited)")
   .option("--watch", "Watch for file changes and automatically rebuild", false)
@@ -191,7 +193,8 @@ Examples:
   $ pagedmd build ./my-book                 # Build from specific directory
   $ pagedmd build chapter.md                # Build single file
   $ pagedmd build --output my-book.pdf      # Custom output path
-  $ pagedmd build --pdf-engine vivliostyle  # Use Vivliostyle for PDF
+  $ pagedmd build --pdf-engine weasyprint   # Use WeasyPrint for PDF (default if installed)
+  $ pagedmd build --pdf-engine vivliostyle  # Use Vivliostyle for PDF (bundled fallback)
   $ pagedmd build --pdf-engine prince       # Use Prince for PDF (if installed)
   $ pagedmd pdf-engines                     # Show available PDF engines
 
@@ -206,7 +209,7 @@ Custom CSS Configuration:
       - styles/custom.css
       - styles/extra.css
     pdf:
-      engine: auto           # auto, vivliostyle, prince, docraptor
+      engine: auto           # auto, weasyprint, vivliostyle, prince, docraptor
       pressReady: true       # Generate press-ready PDF/X-1a (default: true)
       cropMarks: true        # Add crop marks
       bleed: 3mm             # Bleed area
@@ -274,7 +277,7 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
 
     // PDF engine options
     if (opts.pdfEngine) {
-      const validEngines = ["auto", "vivliostyle", "prince", "docraptor"];
+      const validEngines = ["auto", "vivliostyle", "prince", "docraptor", "weasyprint"];
       if (!validEngines.includes(opts.pdfEngine)) {
         throw new ConfigError(
           `Invalid PDF engine: "${opts.pdfEngine}"`,
@@ -285,6 +288,9 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
     }
     if (opts.princePath) {
       buildOptions.princePath = opts.princePath;
+    }
+    if (opts.weasyPrintPath) {
+      buildOptions.weasyPrintPath = opts.weasyPrintPath;
     }
     if (opts.docraptorApiKey) {
       buildOptions.docraptorApiKey = opts.docraptorApiKey;

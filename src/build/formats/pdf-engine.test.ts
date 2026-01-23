@@ -14,8 +14,8 @@ describe('PDF Engine Detection', () => {
   test('detectAvailableEngines returns status for all engines', async () => {
     const engines = await detectAvailableEngines();
 
-    // Should return status for all 3 engines
-    expect(engines).toHaveLength(3);
+    // Should return status for all 4 engines (vivliostyle, prince, docraptor, weasyprint)
+    expect(engines).toHaveLength(4);
 
     // Vivliostyle should always be available (bundled)
     const vivliostyle = engines.find((e) => e.engine === 'vivliostyle');
@@ -32,6 +32,10 @@ describe('PDF Engine Detection', () => {
     expect(docraptor).toBeDefined();
     expect(docraptor?.available).toBe(false); // No API key in test env
     expect(docraptor?.reason).toContain('API key');
+
+    // WeasyPrint status (may or may not be installed)
+    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
+    expect(weasyprint).toBeDefined();
   });
 
   test('DocRaptor is available when API key is provided', async () => {
@@ -45,11 +49,11 @@ describe('PDF Engine Detection', () => {
 });
 
 describe('PDF Engine Selection', () => {
-  test('selectPdfEngine returns vivliostyle by default (when Prince not installed)', async () => {
-    // Without Prince installed, should fall back to vivliostyle
+  test('selectPdfEngine returns available engine by default', async () => {
+    // Auto-selects based on priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
     const engine = await selectPdfEngine();
-    // Could be prince if installed, otherwise vivliostyle
-    expect(['vivliostyle', 'prince']).toContain(engine);
+    // Could be any available engine depending on environment
+    expect(['vivliostyle', 'prince', 'weasyprint']).toContain(engine);
   });
 
   test('selectPdfEngine respects explicit engine choice', async () => {
@@ -81,6 +85,7 @@ describe('Engine Info', () => {
     expect(info).toContain('vivliostyle');
     expect(info).toContain('prince');
     expect(info).toContain('docraptor');
+    expect(info).toContain('weasyprint');
     expect(info).toContain('Default:');
   }, 30000); // Increase timeout for engine detection
 });
@@ -103,13 +108,27 @@ describe('Engine Options', () => {
     expect(engine).toBe('vivliostyle');
   });
 
-  test('auto mode selects vivliostyle when prince not available', async () => {
+  test('auto mode selects best available engine', async () => {
     const options: PdfEngineOptions = {
       engine: 'auto',
     };
 
     const engine = await selectPdfEngine(options);
-    // Should be vivliostyle or prince depending on environment
-    expect(['vivliostyle', 'prince']).toContain(engine);
+    // Should be prince, weasyprint, or vivliostyle depending on environment
+    // Priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
+    expect(['vivliostyle', 'prince', 'weasyprint']).toContain(engine);
+  });
+
+  test('weasyprint can be explicitly selected when available', async () => {
+    const engines = await detectAvailableEngines();
+    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
+
+    if (weasyprint?.available) {
+      const engine = await selectPdfEngine({ engine: 'weasyprint' });
+      expect(engine).toBe('weasyprint');
+    } else {
+      // Skip test if weasyprint not installed
+      expect(weasyprint?.reason).toContain('WeasyPrint');
+    }
   });
 });

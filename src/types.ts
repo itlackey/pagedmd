@@ -35,12 +35,13 @@ export enum OutputFormat {
 
 /**
  * PDF engine types for PDF generation
- * - 'auto': Automatically select best available engine (Prince > DocRaptor > Vivliostyle)
- * - 'vivliostyle': Use bundled Vivliostyle CLI (always available)
+ * - 'auto': Automatically select best available engine (Prince > DocRaptor > WeasyPrint > Vivliostyle)
+ * - 'weasyprint': Use WeasyPrint v68.0+ (DriveThru RPG compatible, NEW DEFAULT)
+ * - 'vivliostyle': Use bundled Vivliostyle CLI (bundled fallback)
  * - 'prince': Use local Prince XML installation
  * - 'docraptor': Use DocRaptor cloud API (requires API key)
  */
-export type PdfEngineType = 'auto' | 'vivliostyle' | 'prince' | 'docraptor';
+export type PdfEngineType = 'auto' | 'vivliostyle' | 'prince' | 'docraptor' | 'weasyprint';
 
 /**
  * Options for building PDF from markdown
@@ -66,10 +67,12 @@ export interface BuildOptions {
   force?: boolean;
   /** Enable detailed performance profiling */
   profile?: boolean;
-  /** PDF engine to use ('auto', 'vivliostyle', 'prince', 'docraptor') */
+  /** PDF engine to use ('auto', 'vivliostyle', 'prince', 'docraptor', 'weasyprint') */
   pdfEngine?: PdfEngineType;
   /** Path to Prince binary (if not in PATH) */
   princePath?: string;
+  /** Path to WeasyPrint binary (if not in PATH) */
+  weasyPrintPath?: string;
   /** DocRaptor API key (can also be set via DOCRAPTOR_API_KEY env var) */
   docraptorApiKey?: string;
   /** Use DocRaptor in test mode (watermarked PDFs, unlimited) */
