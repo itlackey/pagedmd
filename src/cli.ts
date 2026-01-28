@@ -78,7 +78,7 @@ program
   .option("--format <format>", "Output format: html or pdf (default: pdf)", "pdf")
   .option(
     "--pdf-engine <engine>",
-    "PDF engine: auto, weasyprint, vivliostyle, prince, docraptor (default: auto)"
+    "PDF engine: auto, weasyprint, prince, docraptor (default: auto)"
   )
   .option("--prince-path <path>", "Path to Prince binary (if not in PATH)")
   .option("--weasyprint-path <path>", "Path to WeasyPrint binary (if not in PATH)")
@@ -193,8 +193,7 @@ Examples:
   $ pagedmd build ./my-book                 # Build from specific directory
   $ pagedmd build chapter.md                # Build single file
   $ pagedmd build --output my-book.pdf      # Custom output path
-  $ pagedmd build --pdf-engine weasyprint   # Use WeasyPrint for PDF (default if installed)
-  $ pagedmd build --pdf-engine vivliostyle  # Use Vivliostyle for PDF (bundled fallback)
+  $ pagedmd build --pdf-engine weasyprint   # Use WeasyPrint for PDF (default)
   $ pagedmd build --pdf-engine prince       # Use Prince for PDF (if installed)
   $ pagedmd pdf-engines                     # Show available PDF engines
 
@@ -209,7 +208,7 @@ Custom CSS Configuration:
       - styles/custom.css
       - styles/extra.css
     pdf:
-      engine: auto           # auto, weasyprint, vivliostyle, prince, docraptor
+      engine: auto           # auto, weasyprint, prince, docraptor
       pressReady: true       # Generate press-ready PDF/X-1a (default: true)
       cropMarks: true        # Add crop marks
       bleed: 3mm             # Bleed area
@@ -277,7 +276,7 @@ export async function executeBuildProcess(opts: BuildCommandOptions, input: stri
 
     // PDF engine options
     if (opts.pdfEngine) {
-      const validEngines = ["auto", "vivliostyle", "prince", "docraptor", "weasyprint"];
+      const validEngines = ["auto", "weasyprint", "prince", "docraptor"];
       if (!validEngines.includes(opts.pdfEngine)) {
         throw new ConfigError(
           `Invalid PDF engine: "${opts.pdfEngine}"`,

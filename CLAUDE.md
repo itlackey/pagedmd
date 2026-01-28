@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents. The default PDF engine is **WeasyPrint** (if installed), with fallback to **Vivliostyle CLI** (bundled), and optional support for **Prince XML** (commercial, highest quality) and **DocRaptor API** (cloud-based Prince). The preview mode uses **Paged.js** for in-browser CSS Paged Media rendering.
+**pagedmd** is a markdown-to-PDF converter for professional print layout. It converts markdown files to HTML and renders them to PDF with custom CSS styling for print-ready documents. The default PDF engine is **WeasyPrint** (auto-installed during npm install), with optional support for **Prince XML** (commercial, highest quality) and **DocRaptor API** (cloud-based Prince). The preview mode uses **Paged.js** for in-browser CSS Paged Media rendering.
 
 ## Architecture
 
@@ -39,11 +39,11 @@ The build pipeline uses a strategy pattern for different output formats:
 
 3. **PDF Engine System** (`src/build/formats/pdf-engine.ts`)
    - **Multi-engine support** with automatic detection and selection:
-     - **WeasyPrint** (`weasyprint-wrapper.ts`) - Default if installed (v68.0+), DriveThru RPG compatible
-     - **Vivliostyle CLI** (`vivliostyle-wrapper.ts`) - Bundled fallback, always available
+     - **WeasyPrint** (`weasyprint-wrapper.ts`) - Default, auto-installed (v68.0+), DriveThru RPG compatible
      - **Prince XML** (`prince-wrapper.ts`) - Optional, if installed locally (highest quality)
      - **DocRaptor API** (`docraptor-wrapper.ts`) - Optional, cloud-based Prince
-   - **Auto-selection priority**: Prince > DocRaptor > WeasyPrint > Vivliostyle
+   - **Auto-selection priority**: Prince > DocRaptor > WeasyPrint
+   - **Auto-install**: WeasyPrint is automatically installed during `npm install` via postinstall script
    - **Configuration via manifest.yaml or CLI flags**
    - **Engine-specific options**: crop marks, bleed, press-ready, PDF/X profiles, PDF/A variants
 
@@ -193,8 +193,7 @@ bun src/cli.ts build --output my-book.pdf
 bun src/cli.ts build --format html
 
 # Build with specific PDF engine
-bun src/cli.ts build --pdf-engine weasyprint   # Use WeasyPrint (default if installed)
-bun src/cli.ts build --pdf-engine vivliostyle  # Use bundled Vivliostyle (fallback)
+bun src/cli.ts build --pdf-engine weasyprint   # Use WeasyPrint (default, auto-installed)
 bun src/cli.ts build --pdf-engine prince       # Use Prince XML (if installed)
 bun src/cli.ts build --pdf-engine docraptor    # Use DocRaptor API (needs API key)
 
@@ -441,26 +440,21 @@ The PDF engine system provides flexible PDF generation with multiple backend opt
 
 ### Available Engines
 
-1. **WeasyPrint** (default if installed)
+1. **WeasyPrint** (default, auto-installed)
    - Open-source Python HTML/CSS to PDF converter
-   - Requires WeasyPrint v68.0+ installed via pip: `pip install 'weasyprint>=68.0'`
+   - Automatically installed during `npm install` via postinstall script
+   - Requires WeasyPrint v68.0+ (auto-installed if pip is available)
    - **DriveThru RPG compatible** output for print-on-demand
    - Supports PDF/A variants (pdf/a-1b, pdf/a-2b, pdf/a-3b, pdf/ua-1)
    - Size optimization for images and fonts
 
-2. **Vivliostyle CLI** (bundled fallback)
-   - Open-source CSS Paged Media implementation
-   - No additional installation required
-   - Good quality output suitable for most use cases
-   - Supports press-ready PDF and crop marks
-
-3. **Prince XML** (optional, commercial)
+2. **Prince XML** (optional, commercial)
    - Industry-leading CSS Paged Media support
    - Highest quality output for professional print
    - Requires separate installation from https://www.princexml.com/
    - Supports PDF/X profiles, ICC color profiles, CMYK output
 
-4. **DocRaptor API** (optional, cloud-based)
+3. **DocRaptor API** (optional, cloud-based)
    - Prince XML as a cloud service
    - No local installation required
    - Requires API key from https://docraptor.com/
@@ -470,15 +464,13 @@ The PDF engine system provides flexible PDF generation with multiple backend opt
 
 1. **Prince** - If installed locally (highest quality)
 2. **DocRaptor** - If API key configured
-3. **WeasyPrint** - If v68.0+ installed (recommended default)
-4. **Vivliostyle** - Always available as fallback
+3. **WeasyPrint** - Default engine (auto-installed)
 
 ### Configuration
 
 **Via CLI:**
 ```bash
 pagedmd build --pdf-engine weasyprint  # Use WeasyPrint (default)
-pagedmd build --pdf-engine vivliostyle # Use Vivliostyle
 pagedmd build --pdf-engine prince      # Use Prince XML
 pagedmd build --pdf-engine prince --prince-path /opt/prince/bin/prince
 pagedmd build --pdf-engine docraptor --docraptor-api-key YOUR_KEY
@@ -491,7 +483,7 @@ title: My Book
 authors:
   - Author Name
 pdf:
-  engine: auto           # auto, weasyprint, vivliostyle, prince, docraptor
+  engine: auto           # auto, weasyprint, prince, docraptor
   weasyPrintPath: /usr/local/bin/weasyprint  # Optional custom path
   pdfVariant: pdf/a-1b   # WeasyPrint PDF/A variant
   optimizeSize: all      # WeasyPrint optimization: images, fonts, all, none
@@ -499,7 +491,7 @@ pdf:
   docraptor:
     apiKey: YOUR_API_KEY  # Or use DOCRAPTOR_API_KEY env var
     testMode: true        # Generate watermarked test PDFs
-  pressReady: true        # Generate press-ready PDF (Vivliostyle)
+  pressReady: true        # Generate press-ready PDF/X-1a
   profile: PDF/X-1a       # PDF profile (Prince/DocRaptor)
   cropMarks: true         # Add crop marks
   bleed: 3mm              # Bleed area for printing
@@ -515,10 +507,10 @@ pagedmd build --pdf-engine docraptor
 
 - `src/build/formats/pdf-engine.ts` - Engine detection, selection, and unified interface
 - `src/build/formats/weasyprint-wrapper.ts` - WeasyPrint CLI integration (default)
-- `src/build/formats/vivliostyle-wrapper.ts` - Vivliostyle CLI integration (fallback)
 - `src/build/formats/prince-wrapper.ts` - Prince XML integration
 - `src/build/formats/docraptor-wrapper.ts` - DocRaptor API integration
 - `src/build/formats/pdf-format.ts` - PDF format strategy using engine system
+- `scripts/postinstall.ts` - Auto-install script for WeasyPrint during npm install
 
 ## Development Workflow
 

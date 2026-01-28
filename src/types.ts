@@ -35,13 +35,12 @@ export enum OutputFormat {
 
 /**
  * PDF engine types for PDF generation
- * - 'auto': Automatically select best available engine (Prince > DocRaptor > WeasyPrint > Vivliostyle)
- * - 'weasyprint': Use WeasyPrint v68.0+ (DriveThru RPG compatible, NEW DEFAULT)
- * - 'vivliostyle': Use bundled Vivliostyle CLI (bundled fallback)
- * - 'prince': Use local Prince XML installation
+ * - 'auto': Automatically select best available engine (Prince > DocRaptor > WeasyPrint)
+ * - 'weasyprint': Use WeasyPrint v68.0+ (DriveThru RPG compatible, auto-installed)
+ * - 'prince': Use local Prince XML installation (highest quality)
  * - 'docraptor': Use DocRaptor cloud API (requires API key)
  */
-export type PdfEngineType = 'auto' | 'vivliostyle' | 'prince' | 'docraptor' | 'weasyprint';
+export type PdfEngineType = 'auto' | 'prince' | 'docraptor' | 'weasyprint';
 
 /**
  * Options for building PDF from markdown
@@ -67,7 +66,7 @@ export interface BuildOptions {
   force?: boolean;
   /** Enable detailed performance profiling */
   profile?: boolean;
-  /** PDF engine to use ('auto', 'vivliostyle', 'prince', 'docraptor', 'weasyprint') */
+  /** PDF engine to use ('auto', 'weasyprint', 'prince', 'docraptor') */
   pdfEngine?: PdfEngineType;
   /** Path to Prince binary (if not in PATH) */
   princePath?: string;

@@ -35,9 +35,9 @@ const ExtensionSchema = z.enum(["ttrpg", "dimmCity", "dimm-city", "containers"],
 /**
  * PDF engine options
  */
-const PdfEngineSchema = z.enum(["auto", "vivliostyle", "prince", "docraptor", "weasyprint"], {
+const PdfEngineSchema = z.enum(["auto", "prince", "docraptor", "weasyprint"], {
   errorMap: () => ({
-    message: "PDF engine must be one of: 'auto', 'weasyprint', 'vivliostyle', 'prince', 'docraptor'",
+    message: "PDF engine must be one of: 'auto', 'weasyprint', 'prince', 'docraptor'",
   }),
 });
 

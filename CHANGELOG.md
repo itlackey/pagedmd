@@ -131,9 +131,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - **Core Build System**
-  - Markdown-to-PDF conversion using Prince XML
+  - Markdown-to-PDF conversion using PDF engine system
   - HTML output format
-  - Live preview with Vivliostyle viewer
+  - Live preview with Paged.js polyfill
   - Watch mode for auto-rebuild on file changes
 
 - **Markdown Processing**
@@ -222,14 +222,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- **WeasyPrint PDF Engine** - Added WeasyPrint v68.0+ as a new PDF generation engine
+- **WeasyPrint PDF Engine** - Added WeasyPrint v68.0+ as the default PDF generation engine
   - DriveThru RPG compatible PDF output for print-on-demand
   - PDF/A variant support (pdf/a-1b, pdf/a-2b, pdf/a-3b, pdf/ua-1)
   - Size optimization options (images, fonts, all, none)
   - `--weasyprint-path` CLI option for custom executable location
   - New wrapper: `src/build/formats/weasyprint-wrapper.ts`
 
-- **Paged.js Preview** - Restored Paged.js as the browser preview engine
+- **WeasyPrint Auto-Install** - Automatic installation during `npm install`
+  - Postinstall script detects and installs WeasyPrint v68.0+ via pip
+  - Graceful fallback with helpful error messages if pip is unavailable
+  - New script: `scripts/postinstall.ts`
+
+- **Paged.js Preview** - Paged.js as the sole browser preview engine
   - Scroll-based page detection for accurate navigation
   - Full previewAPI for toolbar integration
   - Better CSS Paged Media alignment between preview and PDF output
@@ -237,18 +242,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- **Default PDF Engine** - WeasyPrint is now the default when installed (v68.0+)
-  - Previous default: Vivliostyle CLI (now fallback)
-  - New priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
+- **Default PDF Engine** - WeasyPrint is now the default (auto-installed)
+  - New priority: Prince > DocRaptor > WeasyPrint
+  - WeasyPrint auto-installed during `npm install` if pip is available
 
-- **Preview Engine** - Changed from Vivliostyle viewer to Paged.js polyfill
-  - iframe now loads `/preview.html` directly instead of Vivliostyle viewer
-  - Paged.js scripts injected into generated HTML
+- **Preview Engine** - Paged.js polyfill for CSS Paged Media rendering
+  - iframe loads `/preview.html` directly with Paged.js scripts injected
+  - Simplified architecture without external viewer dependencies
+
+### Removed
+
+- **Vivliostyle** - Completely removed from the project
+  - Removed `@vivliostyle/cli` and `@vivliostyle/viewer` npm dependencies
+  - Removed `src/assets/vendor/vivliostyle/` bundled files
+  - Removed `src/build/formats/vivliostyle-wrapper.ts`
+  - Removed `scripts/vendor-vivliostyle.sh`
+  - Removed vivliostyle option from PDF engine selection
+  - Updated CLI, types, and schema files to remove vivliostyle references
 
 ### Documentation
 
-- Updated CLAUDE.md with WeasyPrint and Paged.js architecture details
-- Updated README.md with new engine information and installation instructions
+- Updated CLAUDE.md with WeasyPrint auto-install and Paged.js architecture
+- Updated README.md with simplified engine documentation
 - Updated troubleshooting guide with WeasyPrint-specific guidance
 
 ---

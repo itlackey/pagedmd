@@ -14,14 +14,16 @@ describe('PDF Engine Detection', () => {
   test('detectAvailableEngines returns status for all engines', async () => {
     const engines = await detectAvailableEngines();
 
-    // Should return status for all 4 engines (vivliostyle, prince, docraptor, weasyprint)
-    expect(engines).toHaveLength(4);
+    // Should return status for all 3 engines (weasyprint, prince, docraptor)
+    expect(engines).toHaveLength(3);
 
-    // Vivliostyle should always be available (bundled)
-    const vivliostyle = engines.find((e) => e.engine === 'vivliostyle');
-    expect(vivliostyle).toBeDefined();
-    expect(vivliostyle?.available).toBe(true);
-    expect(vivliostyle?.version).toContain('Vivliostyle');
+    // WeasyPrint status (should be installed via postinstall)
+    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
+    expect(weasyprint).toBeDefined();
+    // WeasyPrint should be available if postinstall ran correctly
+    if (weasyprint?.available) {
+      expect(weasyprint.version).toContain('WeasyPrint');
+    }
 
     // Prince status (may or may not be installed)
     const prince = engines.find((e) => e.engine === 'prince');
@@ -32,10 +34,6 @@ describe('PDF Engine Detection', () => {
     expect(docraptor).toBeDefined();
     expect(docraptor?.available).toBe(false); // No API key in test env
     expect(docraptor?.reason).toContain('API key');
-
-    // WeasyPrint status (may or may not be installed)
-    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
-    expect(weasyprint).toBeDefined();
   });
 
   test('DocRaptor is available when API key is provided', async () => {
@@ -50,15 +48,23 @@ describe('PDF Engine Detection', () => {
 
 describe('PDF Engine Selection', () => {
   test('selectPdfEngine returns available engine by default', async () => {
-    // Auto-selects based on priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
+    // Auto-selects based on priority: Prince > DocRaptor > WeasyPrint
     const engine = await selectPdfEngine();
     // Could be any available engine depending on environment
-    expect(['vivliostyle', 'prince', 'weasyprint']).toContain(engine);
+    expect(['prince', 'weasyprint']).toContain(engine);
   });
 
-  test('selectPdfEngine respects explicit engine choice', async () => {
-    const engine = await selectPdfEngine({ engine: 'vivliostyle' });
-    expect(engine).toBe('vivliostyle');
+  test('selectPdfEngine respects explicit WeasyPrint choice', async () => {
+    const engines = await detectAvailableEngines();
+    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
+
+    if (weasyprint?.available) {
+      const engine = await selectPdfEngine({ engine: 'weasyprint' });
+      expect(engine).toBe('weasyprint');
+    } else {
+      // Skip test if weasyprint not installed - should not happen in normal setup
+      console.log('Skipping test: WeasyPrint not available');
+    }
   });
 
   test('selectPdfEngine throws for unavailable engine', async () => {
@@ -82,30 +88,33 @@ describe('Engine Info', () => {
     const info = await getEngineInfo();
 
     expect(info).toContain('Available PDF engines:');
-    expect(info).toContain('vivliostyle');
+    expect(info).toContain('weasyprint');
     expect(info).toContain('prince');
     expect(info).toContain('docraptor');
-    expect(info).toContain('weasyprint');
     expect(info).toContain('Default:');
   }, 30000); // Increase timeout for engine detection
 });
 
 describe('Engine Options', () => {
-  test('options are passed correctly to vivliostyle', async () => {
-    const options: PdfEngineOptions = {
-      engine: 'vivliostyle',
-      timeout: 60000,
-      debug: true,
-      verbose: true,
-      size: 'A4',
-      cropMarks: true,
-      bleed: '3mm',
-      pressReady: true,
-    };
+  test('options are passed correctly to weasyprint', async () => {
+    const engines = await detectAvailableEngines();
+    const weasyprint = engines.find((e) => e.engine === 'weasyprint');
 
-    // This should not throw
-    const engine = await selectPdfEngine(options);
-    expect(engine).toBe('vivliostyle');
+    if (weasyprint?.available) {
+      const options: PdfEngineOptions = {
+        engine: 'weasyprint',
+        timeout: 60000,
+        debug: true,
+        verbose: true,
+        pressReady: true,
+      };
+
+      // This should not throw
+      const engine = await selectPdfEngine(options);
+      expect(engine).toBe('weasyprint');
+    } else {
+      console.log('Skipping test: WeasyPrint not available');
+    }
   });
 
   test('auto mode selects best available engine', async () => {
@@ -114,9 +123,9 @@ describe('Engine Options', () => {
     };
 
     const engine = await selectPdfEngine(options);
-    // Should be prince, weasyprint, or vivliostyle depending on environment
-    // Priority: Prince > DocRaptor > WeasyPrint > Vivliostyle
-    expect(['vivliostyle', 'prince', 'weasyprint']).toContain(engine);
+    // Should be prince or weasyprint depending on environment
+    // Priority: Prince > DocRaptor > WeasyPrint
+    expect(['prince', 'weasyprint']).toContain(engine);
   });
 
   test('weasyprint can be explicitly selected when available', async () => {

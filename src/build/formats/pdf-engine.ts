@@ -2,9 +2,8 @@
  * PDF Engine Detection and Selection
  *
  * Provides a unified interface for PDF generation using multiple engines:
- * - WeasyPrint (default, if installed - DriveThru RPG compatible)
- * - Vivliostyle CLI (bundled fallback)
- * - Prince XML (optional, if installed locally)
+ * - WeasyPrint (default, auto-installed - DriveThru RPG compatible)
+ * - Prince XML (optional, if installed locally - highest quality)
  * - DocRaptor API (optional, cloud-based Prince)
  *
  * Engine selection priority:
@@ -12,8 +11,7 @@
  * 2. Auto-detection:
  *    a. Prince if available locally (highest quality)
  *    b. DocRaptor if API key configured
- *    c. WeasyPrint if installed (NEW DEFAULT - DriveThru RPG compatible)
- *    d. Vivliostyle (always available as bundled fallback)
+ *    c. WeasyPrint (default - auto-installed during npm install)
  */
 
 import { spawn } from "child_process";
@@ -24,13 +22,6 @@ import {
   type PrincePdfOptions,
   type PrincePdfResult,
 } from "./prince-wrapper.ts";
-import {
-  checkVivliostyleInstalled,
-  getVivliostyleVersion,
-  generatePdfWithVivliostyle,
-  type VivliostylePdfOptions,
-  type VivliostylePdfResult,
-} from "./vivliostyle-wrapper.ts";
 import {
   isDocRaptorConfigured,
   generatePdfWithDocRaptor,
@@ -50,7 +41,7 @@ import { debug, info, warn } from "../../utils/logger.ts";
 /**
  * Supported PDF engines
  */
-export type PdfEngine = "auto" | "vivliostyle" | "prince" | "docraptor" | "weasyprint";
+export type PdfEngine = "auto" | "prince" | "docraptor" | "weasyprint";
 
 /**
  * PDF engine availability status
@@ -220,14 +211,16 @@ export async function detectAvailableEngines(
 ): Promise<PdfEngineStatus[]> {
   const results: PdfEngineStatus[] = [];
 
-  // Check Vivliostyle (bundled, should always work)
-  const vivliostyleAvailable = await checkVivliostyleInstalled();
-  const vivliostyleVersion = vivliostyleAvailable ? await getVivliostyleVersion() : undefined;
+  // Check WeasyPrint (default engine)
+  const weasyPrintAvailable = await checkWeasyPrintInstalled(options.weasyPrintPath);
+  const weasyPrintVersion = weasyPrintAvailable ? await getWeasyPrintVersion(options.weasyPrintPath) : undefined;
   results.push({
-    engine: "vivliostyle",
-    available: vivliostyleAvailable,
-    version: vivliostyleVersion || undefined,
-    reason: vivliostyleAvailable ? undefined : "Vivliostyle CLI not found. Try: bun install",
+    engine: "weasyprint",
+    available: weasyPrintAvailable,
+    version: weasyPrintVersion || undefined,
+    reason: weasyPrintAvailable
+      ? undefined
+      : "WeasyPrint v68.0+ not installed. Install: pip install 'weasyprint>=68.0'",
   });
 
   // Check Prince
@@ -252,18 +245,6 @@ export async function detectAvailableEngines(
       : "DocRaptor API key not configured. Set DOCRAPTOR_API_KEY environment variable.",
   });
 
-  // Check WeasyPrint
-  const weasyPrintAvailable = await checkWeasyPrintInstalled(options.weasyPrintPath);
-  const weasyPrintVersion = weasyPrintAvailable ? await getWeasyPrintVersion(options.weasyPrintPath) : undefined;
-  results.push({
-    engine: "weasyprint",
-    available: weasyPrintAvailable,
-    version: weasyPrintVersion || undefined,
-    reason: weasyPrintAvailable
-      ? undefined
-      : "WeasyPrint v68.0+ not installed. Install: pip install 'weasyprint>=68.0'",
-  });
-
   return results;
 }
 
@@ -274,8 +255,7 @@ export async function detectAvailableEngines(
  * 1. If engine explicitly specified, use it (error if unavailable)
  * 2. Prince if available (highest quality, commercial features)
  * 3. DocRaptor if configured (Prince in the cloud)
- * 4. WeasyPrint if installed (NEW DEFAULT - DriveThru RPG compatible)
- * 5. Vivliostyle (always available as bundled fallback)
+ * 4. WeasyPrint (default - auto-installed during npm install)
  */
 export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<PdfEngine> {
   const requestedEngine = options.engine || "auto";
@@ -312,22 +292,20 @@ export async function selectPdfEngine(options: PdfEngineOptions = {}): Promise<P
     return "docraptor";
   }
 
-  // Priority 3: WeasyPrint (NEW - DriveThru RPG compatible)
+  // Priority 3: WeasyPrint (default - auto-installed)
   const weasyprint = engines.find((e) => e.engine === "weasyprint");
   if (weasyprint?.available) {
     info(`PDF engine: WeasyPrint (${weasyprint.version || "version unknown"})`);
     return "weasyprint";
   }
 
-  // Priority 4: Vivliostyle (bundled fallback)
-  const vivliostyle = engines.find((e) => e.engine === "vivliostyle");
-  if (vivliostyle?.available) {
-    info(`PDF engine: Vivliostyle (${vivliostyle.version || "version unknown"}) [fallback]`);
-    return "vivliostyle";
-  }
-
-  // Should never happen since Vivliostyle is bundled
-  throw new BuildError("No PDF engine available. Install WeasyPrint: pip install 'weasyprint>=68.0'");
+  // No engine available
+  throw new BuildError(
+    "No PDF engine available.\n\n" +
+      "WeasyPrint should have been auto-installed during npm install.\n" +
+      "Please install manually: pip install 'weasyprint>=68.0'\n\n" +
+      "See: https://doc.courtbouillon.org/weasyprint/stable/first_steps.html"
+  );
 }
 
 /**
@@ -343,24 +321,6 @@ function toPrinceOptions(options: PdfEngineOptions): PrincePdfOptions {
     convertColors: options.convertColors,
     stylesheets: options.stylesheets,
     javascript: options.javascript,
-  };
-}
-
-/**
- * Convert unified options to Vivliostyle-specific options
- * Note: pressReady defaults to true for PDF/X-1a output
- */
-function toVivliostyleOptions(options: PdfEngineOptions): VivliostylePdfOptions {
-  return {
-    timeout: options.timeout,
-    debug: options.debug,
-    verbose: options.verbose,
-    size: options.size,
-    cropMarks: options.cropMarks,
-    bleed: options.bleed,
-    // Default to true for PDF/X-1a output; user can opt-out with pressReady: false
-    pressReady: options.pressReady ?? true,
-    stylesheets: options.stylesheets,
   };
 }
 
@@ -401,7 +361,7 @@ function toWeasyPrintOptions(options: PdfEngineOptions): WeasyPrintPdfOptions {
 /**
  * Generate PDF using the selected engine
  *
- * @param inputPath - Path to HTML file (for Prince/Vivliostyle) or HTML content (for DocRaptor)
+ * @param inputPath - Path to HTML file
  * @param outputPath - Path for output PDF
  * @param options - PDF generation options
  * @param htmlContent - HTML content (required for DocRaptor, optional for local engines)
@@ -415,14 +375,6 @@ export async function generatePdf(
 ): Promise<PdfEngineResult> {
   const engine = await selectPdfEngine(options);
 
-  // Warn if PDF/X profile requested but using Vivliostyle (which doesn't support it)
-  if (engine === "vivliostyle" && options.pdfProfile?.toLowerCase().includes("pdf/x")) {
-    warn(
-      "PDF/X profile requested but Vivliostyle does not support native PDF/X output. " +
-        "The generated PDF will be standard PDF. For PDF/X-1a compliance, use Prince engine or post-process with Ghostscript."
-    );
-  }
-
   switch (engine) {
     case "prince": {
       const result = await generatePdfWithPrince(inputPath, outputPath, toPrinceOptions(options));
@@ -430,20 +382,6 @@ export async function generatePdf(
         outputPath: result.outputPath,
         duration: result.duration,
         engine: "prince",
-        pageCount: result.pageCount,
-      };
-    }
-
-    case "vivliostyle": {
-      const result = await generatePdfWithVivliostyle(
-        inputPath,
-        outputPath,
-        toVivliostyleOptions(options)
-      );
-      return {
-        outputPath: result.outputPath,
-        duration: result.duration,
-        engine: "vivliostyle",
         pageCount: result.pageCount,
       };
     }
@@ -501,7 +439,7 @@ export async function getEngineInfo(options: PdfEngineOptions = {}): Promise<str
   }
 
   // Add note about default
-  const selected = await selectPdfEngine(options).catch(() => "vivliostyle");
+  const selected = await selectPdfEngine(options).catch(() => "weasyprint (not installed)");
   lines.push("");
   lines.push(`Default: ${selected}`);
 

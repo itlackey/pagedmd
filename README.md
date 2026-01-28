@@ -1,6 +1,6 @@
 # pagedmd
 
-A powerful CLI tool and live preview UI for creating professional print-ready PDFs from markdown. Write your content in markdown and let pagedmd handle the complex CSS Paged Media layout. Uses WeasyPrint (default) or Vivliostyle for PDF generation and Paged.js for live preview. Prince XML and DocRaptor are also supported for highest quality output.
+A powerful CLI tool and live preview UI for creating professional print-ready PDFs from markdown. Write your content in markdown and let pagedmd handle the complex CSS Paged Media layout. Uses WeasyPrint (auto-installed) for PDF generation and Paged.js for live preview. Prince XML and DocRaptor are also supported for highest quality output.
 
 ## Features
 
@@ -410,7 +410,7 @@ pagedmd preview --no-watch
 
 ### Output Formats
 
-- **PDF** - Renders via WeasyPrint (default), Vivliostyle, Prince XML, or DocRaptor for professional print quality
+- **PDF** - Renders via WeasyPrint (default, auto-installed), Prince XML, or DocRaptor for professional print quality
 - **HTML** - Standalone HTML file for web viewing
 
 ## Project Structure
@@ -481,7 +481,7 @@ source ~/.bashrc  # or ~/.zshrc
 
 **Problem: PDF Generation Fails with "WeasyPrint Not Found"**
 
-If WeasyPrint is not installed, pagedmd falls back to Vivliostyle. To use WeasyPrint (recommended for DriveThru RPG compatibility):
+WeasyPrint should be auto-installed during `npm install` via the postinstall script. If auto-installation failed, install manually:
 
 ```bash
 # Install WeasyPrint v68.0+
@@ -490,6 +490,8 @@ pip install 'weasyprint>=68.0'
 # Verify installation
 weasyprint --version
 ```
+
+If pip is not available, install Python first: https://www.python.org/downloads/
 
 **Problem: PDF Generation Fails with "Prince Not Found"**
 
@@ -789,15 +791,14 @@ If you're still stuck:
    - Full error message
    - Steps to reproduce
 
-**Note**: For optimal DriveThru RPG compatibility, install WeasyPrint v68.0+: `pip install 'weasyprint>=68.0'`. If WeasyPrint is not installed, pagedmd falls back to Vivliostyle (bundled). For highest quality output, you can also install Prince XML from https://www.princexml.com/download/
+**Note**: WeasyPrint v68.0+ is automatically installed during `npm install` for optimal DriveThru RPG compatibility. For highest quality output, you can also install Prince XML from https://www.princexml.com/download/
 
 ### Contributing
 
 This project uses:
 - [Bun](https://bun.com) - Fast all-in-one JavaScript runtime
-- [WeasyPrint](https://weasyprint.org/) - Open-source HTML/CSS to PDF converter (default)
+- [WeasyPrint](https://weasyprint.org/) - Open-source HTML/CSS to PDF converter (default, auto-installed)
 - [Paged.js](https://pagedjs.org/) - CSS Paged Media polyfill for preview
-- [Vivliostyle](https://vivliostyle.org/) - CSS Paged Media (fallback PDF engine)
 - [Prince XML](https://www.princexml.com/) - Professional PDF typesetter (optional)
 - [markdown-it](https://github.com/markdown-it/markdown-it) - Markdown parser
 
